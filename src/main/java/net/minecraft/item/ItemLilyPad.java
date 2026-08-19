@@ -1,0 +1,69 @@
+package net.minecraft.item;
+
+import net.minecraft.block.Block;
+import net.minecraft.block.BlockLiquid;
+import net.minecraft.block.material.Material;
+import net.minecraft.block.state.IBlockState;
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.init.Blocks;
+import net.minecraft.stats.StatList;
+import net.minecraft.util.BlockPos;
+import net.minecraft.util.MovingObjectPosition;
+import net.minecraft.world.World;
+
+public class ItemLilyPad extends ItemColored
+{
+    public ItemLilyPad(Block block)
+    {
+        super(block, false);
+    }
+
+    public ItemStack onItemRightClick(ItemStack itemStackIn, World worldIn, EntityPlayer playerIn)
+    {
+        MovingObjectPosition movingObjectPosition = this.getMovingObjectPositionFromPlayer(worldIn, playerIn, true);
+
+        if (movingObjectPosition == null)
+        {
+            return itemStackIn;
+        }
+        else
+        {
+            if (movingObjectPosition.typeOfHit == MovingObjectPosition.MovingObjectType.BLOCK)
+            {
+                BlockPos waterPos = movingObjectPosition.getBlockPos();
+
+                if (!worldIn.isBlockModifiable(playerIn, waterPos))
+                {
+                    return itemStackIn;
+                }
+
+                if (!playerIn.canPlayerEdit(waterPos.offset(movingObjectPosition.sideHit), movingObjectPosition.sideHit, itemStackIn))
+                {
+                    return itemStackIn;
+                }
+
+                BlockPos lilyPadPos = waterPos.up();
+                IBlockState waterState = worldIn.getBlockState(waterPos);
+
+                if (waterState.getBlock().getMaterial() == Material.water && ((Integer)waterState.getValue(BlockLiquid.LEVEL)) == 0 && worldIn.isAirBlock(lilyPadPos))
+                {
+                    worldIn.setBlockState(lilyPadPos, Blocks.waterlily.getDefaultState());
+
+                    if (!playerIn.capabilities.isCreativeMode)
+                    {
+                        --itemStackIn.stackSize;
+                    }
+
+                    playerIn.triggerAchievement(StatList.objectUseStats[Item.getIdFromItem(this)]);
+                }
+            }
+
+            return itemStackIn;
+        }
+    }
+
+    public int getColorFromItemStack(ItemStack stack, int renderPass)
+    {
+        return Blocks.waterlily.getRenderColor(Blocks.waterlily.getStateFromMeta(stack.getMetadata()));
+    }
+}
