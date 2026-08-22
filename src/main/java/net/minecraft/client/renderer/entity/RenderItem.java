@@ -567,7 +567,43 @@ public class RenderItem implements IResourceManagerReloadListener
                 GlStateManager.enableBlend();
             }
 
+            if (stack.isItemDamaged())
+            {
+                int barWidth = (int)Math.round(13.0D - (double)stack.getItemDamage() * 13.0D / (double)stack.getMaxDamage());
+                int durability = (int)Math.round(255.0D - (double)stack.getItemDamage() * 255.0D / (double)stack.getMaxDamage());
+                GlStateManager.disableLighting();
+                GlStateManager.disableDepth();
+                GlStateManager.disableTexture2D();
+                GlStateManager.disableAlpha();
+                GlStateManager.disableBlend();
+                Tessellator tessellator = Tessellator.getInstance();
+                WorldRenderer worldRenderer = tessellator.getWorldRenderer();
+                this.draw(worldRenderer, xPosition + 2, yPosition + 13, 13, 2, 0, 0, 0, 255);
+                this.draw(worldRenderer, xPosition + 2, yPosition + 13, 12, 1, (255 - durability) / 4, 64, 0, 255);
+                int red = 255 - durability;
+                int green = durability;
+                int blue = 0;
+
+                if (Config.isCustomColors())
+                {
+                    int customColor = CustomColors.getDurabilityColor(durability);
+
+                    if (customColor >= 0)
+                    {
+                        red = customColor >> 16 & 255;
+                        green = customColor >> 8 & 255;
+                        blue = customColor >> 0 & 255;
                     }
+                }
+
+                this.draw(worldRenderer, xPosition + 2, yPosition + 13, barWidth, 1, red, green, blue, 255);
+                GlStateManager.enableBlend();
+                GlStateManager.enableAlpha();
+                GlStateManager.enableTexture2D();
+                GlStateManager.enableLighting();
+                GlStateManager.enableDepth();
+            }
+        }
     }
 
     private static String getStackSizeText(int stackSize)

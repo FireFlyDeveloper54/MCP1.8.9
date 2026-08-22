@@ -69,7 +69,6 @@ import net.minecraft.util.ReportedException;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.Vec3;
 import net.minecraft.world.World;
-import net.minecraft.world.WorldProvider;
 import net.minecraft.world.WorldSettings;
 import net.minecraft.world.biome.BiomeGenBase;
 import net.optifine.CustomColors;
@@ -1316,12 +1315,6 @@ public class EntityRenderer implements IResourceManagerReloadListener
         {
             this.mc.gameSettings.showDebugProfilerChart = true;
         }
-    }
-
-    public void renderStreamIndicator(float partialTicks)
-    {
-        this.setupOverlayRendering();
-        this.mc.ingameGUI.renderStreamIndicator(new ScaledResolution(this.mc));
     }
 
     private boolean isDrawBlockOutline()

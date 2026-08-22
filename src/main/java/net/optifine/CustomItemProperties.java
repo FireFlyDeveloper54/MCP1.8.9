@@ -1,7 +1,6 @@
 package net.optifine;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -37,7 +36,6 @@ import net.optifine.config.NbtTagValue;
 import net.optifine.config.ParserEnchantmentId;
 import net.optifine.config.RangeInt;
 import net.optifine.config.RangeListInt;
-import net.optifine.reflect.Reflector;
 import net.optifine.render.Blender;
 import net.optifine.util.StrUtils;
 import net.optifine.util.TextureUtils;

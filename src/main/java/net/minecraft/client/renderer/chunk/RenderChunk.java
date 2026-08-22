@@ -205,6 +205,22 @@ public class RenderChunk
                     visGraph.markBlockOpaque(mutablePos);
                 }
 
+                if (block.hasTileEntity())
+                {
+                    TileEntity tileEntity = chunkCache.getTileEntity(new BlockPos(mutablePos));
+                    TileEntitySpecialRenderer<TileEntity> tileEntityRenderer = TileEntityRendererDispatcher.instance.<TileEntity>getSpecialRenderer(tileEntity);
+
+                    if (tileEntity != null && tileEntityRenderer != null)
+                    {
+                        newCompiledChunk.addTileEntity(tileEntity);
+
+                        if (tileEntityRenderer.forceTileEntityRender())
+                        {
+                            tileEntities.add(tileEntity);
+                        }
+                    }
+                }
+
                 
                 EnumWorldBlockLayer[] renderLayers;
 

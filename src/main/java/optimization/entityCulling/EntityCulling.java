@@ -3,7 +3,6 @@ package optimization.entityCulling;
 import optimization.occlusionCulling.OcclusionCullingInstance;
 import net.minecraft.client.Minecraft;
 import java.util.HashSet;
-import java.util.List;
 
 public class EntityCulling {
     public static EntityCulling instance = new EntityCulling();

@@ -587,7 +587,56 @@ public abstract class RendererLivingEntity<T extends EntityLivingBase> extends R
 
     public void renderName(T entity, double x, double y, double z)
     {
+        if (this.canRenderName(entity))
+        {
+            double distanceSq = entity.getDistanceSqToEntity(this.renderManager.livingPlayer);
+            float nameTagRange = entity.isSneaking() ? NAME_TAG_RANGE_SNEAK : NAME_TAG_RANGE;
+
+            if (distanceSq < (double)(nameTagRange * nameTagRange))
+            {
+                String name = entity.getDisplayName().getFormattedText();
+                float labelScale = 0.02666667F;
+                GlStateManager.alphaFunc(516, 0.1F);
+
+                if (entity.isSneaking())
+                {
+                    FontRenderer fontRenderer = this.getFontRendererFromRenderManager();
+                    GlStateManager.pushMatrix();
+                    GlStateManager.translate((float)x, (float)y + entity.height + 0.5F - (entity.isChild() ? entity.height / 2.0F : 0.0F), (float)z);
+                    GL11.glNormal3f(0.0F, 1.0F, 0.0F);
+                    GlStateManager.rotate(-this.renderManager.playerViewY, 0.0F, 1.0F, 0.0F);
+                    GlStateManager.rotate(this.renderManager.playerViewX, 1.0F, 0.0F, 0.0F);
+                    GlStateManager.scale(-labelScale, -labelScale, labelScale);
+                    GlStateManager.translate(0.0F, 9.374999F, 0.0F);
+                    GlStateManager.disableLighting();
+                    GlStateManager.depthMask(false);
+                    GlStateManager.enableBlend();
+                    GlStateManager.disableTexture2D();
+                    GlStateManager.tryBlendFuncSeparate(770, 771, 1, 0);
+                    int halfTextWidth = fontRenderer.getStringWidth(name) / 2;
+                    Tessellator tessellator = Tessellator.getInstance();
+                    WorldRenderer worldRenderer = tessellator.getWorldRenderer();
+                    worldRenderer.begin(7, DefaultVertexFormats.POSITION_COLOR);
+                    worldRenderer.pos((double)(-halfTextWidth - 1), -1.0D, 0.0D).color(0.0F, 0.0F, 0.0F, 0.25F).endVertex();
+                    worldRenderer.pos((double)(-halfTextWidth - 1), 8.0D, 0.0D).color(0.0F, 0.0F, 0.0F, 0.25F).endVertex();
+                    worldRenderer.pos((double)(halfTextWidth + 1), 8.0D, 0.0D).color(0.0F, 0.0F, 0.0F, 0.25F).endVertex();
+                    worldRenderer.pos((double)(halfTextWidth + 1), -1.0D, 0.0D).color(0.0F, 0.0F, 0.0F, 0.25F).endVertex();
+                    tessellator.draw();
+                    GlStateManager.enableTexture2D();
+                    GlStateManager.depthMask(true);
+                    fontRenderer.drawString(name, -fontRenderer.getStringWidth(name) / 2, 0, 553648127);
+                    GlStateManager.enableLighting();
+                    GlStateManager.disableBlend();
+                    GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+                    GlStateManager.popMatrix();
+                }
+                else
+                {
+                    this.renderOffsetLivingLabel(entity, x, y - (entity.isChild() ? (double)(entity.height / 2.0F) : 0.0D), z, name, labelScale, distanceSq);
+                }
             }
+        }
+    }
 
     protected boolean canRenderName(T entity)
     {

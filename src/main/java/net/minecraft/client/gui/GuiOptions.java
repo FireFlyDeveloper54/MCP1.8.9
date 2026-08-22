@@ -5,11 +5,8 @@ import net.minecraft.client.audio.PositionedSoundRecord;
 import net.minecraft.client.audio.SoundCategory;
 import net.minecraft.client.audio.SoundEventAccessorComposite;
 import net.minecraft.client.audio.SoundHandler;
-import net.minecraft.client.gui.stream.GuiStreamOptions;
-import net.minecraft.client.gui.stream.GuiStreamUnavailable;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.client.settings.GameSettings;
-import net.minecraft.client.stream.IStream;
 import net.minecraft.util.ChatComponentText;
 import net.minecraft.util.ChatComponentTranslation;
 import net.minecraft.util.IChatComponent;
@@ -70,11 +67,6 @@ public class GuiOptions extends GuiScreen implements GuiYesNoCallback
                 this.difficultyButton.enabled = false;
             }
         }
-        else
-        {
-            GuiOptionButton realmsNotificationsButton = new GuiOptionButton(GameSettings.Options.REALMS_NOTIFICATIONS.returnEnumOrdinal(), this.width / 2 - 155 + optionIndex % 2 * 160, this.height / 6 - 12 + 24 * (optionIndex >> 1), GameSettings.Options.REALMS_NOTIFICATIONS, this.game_settings_1.getKeyBinding(GameSettings.Options.REALMS_NOTIFICATIONS));
-            this.buttonList.add(realmsNotificationsButton);
-        }
 
         this.buttonList.add(new GuiButton(110, this.width / 2 - 155, this.height / 6 + 48 - 6, 150, 20, I18n.format("options.skinCustomisation", new Object[0])));
         this.buttonList.add(new GuiButton(8675309, this.width / 2 + 5, this.height / 6 + 48 - 6, 150, 20, "Super Secret Settings...")
@@ -90,13 +82,12 @@ public class GuiOptions extends GuiScreen implements GuiYesNoCallback
             }
         });
         this.buttonList.add(new GuiButton(106, this.width / 2 - 155, this.height / 6 + 72 - 6, 150, 20, I18n.format("options.sounds", new Object[0])));
-        this.buttonList.add(new GuiButton(107, this.width / 2 + 5, this.height / 6 + 72 - 6, 150, 20, I18n.format("options.stream", new Object[0])));
-        this.buttonList.add(new GuiButton(101, this.width / 2 - 155, this.height / 6 + 96 - 6, 150, 20, I18n.format("options.video", new Object[0])));
-        this.buttonList.add(new GuiButton(100, this.width / 2 + 5, this.height / 6 + 96 - 6, 150, 20, I18n.format("options.controls", new Object[0])));
-        this.buttonList.add(new GuiButton(102, this.width / 2 - 155, this.height / 6 + 120 - 6, 150, 20, I18n.format("options.language", new Object[0])));
-        this.buttonList.add(new GuiButton(103, this.width / 2 + 5, this.height / 6 + 120 - 6, 150, 20, I18n.format("options.chat.title", new Object[0])));
-        this.buttonList.add(new GuiButton(105, this.width / 2 - 155, this.height / 6 + 144 - 6, 150, 20, I18n.format("options.resourcepack", new Object[0])));
-        this.buttonList.add(new GuiButton(104, this.width / 2 + 5, this.height / 6 + 144 - 6, 150, 20, I18n.format("options.snooper.view", new Object[0])));
+        this.buttonList.add(new GuiButton(101, this.width / 2 + 5, this.height / 6 + 72 - 6, 150, 20, I18n.format("options.video", new Object[0])));
+        this.buttonList.add(new GuiButton(100, this.width / 2 - 155, this.height / 6 + 96 - 6, 150, 20, I18n.format("options.controls", new Object[0])));
+        this.buttonList.add(new GuiButton(102, this.width / 2 + 5, this.height / 6 + 96 - 6, 150, 20, I18n.format("options.language", new Object[0])));
+        this.buttonList.add(new GuiButton(103, this.width / 2 - 155, this.height / 6 + 120 - 6, 150, 20, I18n.format("options.chat.title", new Object[0])));
+        this.buttonList.add(new GuiButton(105, this.width / 2 + 5, this.height / 6 + 120 - 6, 150, 20, I18n.format("options.resourcepack", new Object[0])));
+        this.buttonList.add(new GuiButton(104, this.width / 2 - 155, this.height / 6 + 144 - 6, 150, 20, I18n.format("options.snooper.view", new Object[0])));
         this.buttonList.add(new GuiButton(200, this.width / 2 - 100, this.height / 6 + 168, I18n.format("gui.done", new Object[0])));
     }
 
@@ -201,21 +192,6 @@ public class GuiOptions extends GuiScreen implements GuiYesNoCallback
             {
                 this.mc.gameSettings.saveOptions();
                 this.mc.displayGuiScreen(new GuiScreenOptionsSounds(this, this.game_settings_1));
-            }
-
-            if (button.id == 107)
-            {
-                this.mc.gameSettings.saveOptions();
-                IStream stream = this.mc.getTwitchStream();
-
-                if (stream.isLoggedIn() && stream.isStreamingSupported())
-                {
-                    this.mc.displayGuiScreen(new GuiStreamOptions(this, this.game_settings_1));
-                }
-                else
-                {
-                    GuiStreamUnavailable.show(this);
-                }
             }
         }
     }

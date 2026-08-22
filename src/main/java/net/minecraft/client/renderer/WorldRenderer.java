@@ -19,7 +19,6 @@ import net.optifine.SmartAnimations;
 import net.optifine.render.RenderEnv;
 import net.optifine.shaders.SVertexBuilder;
 import net.optifine.util.TextureUtils;
-import org.apache.logging.log4j.LogManager;
 import org.lwjgl.opengl.GL11;
 
 public class WorldRenderer

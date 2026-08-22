@@ -1,6 +1,5 @@
 package net.minecraft.client.gui;
 
-import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -19,8 +18,6 @@ import net.minecraft.client.renderer.WorldRenderer;
 import net.minecraft.client.renderer.texture.DynamicTexture;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.client.resources.I18n;
-import net.minecraft.client.settings.GameSettings;
-import net.minecraft.realms.RealmsBridge;
 import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.util.MathHelper;
 import net.minecraft.util.ResourceLocation;
@@ -62,16 +59,10 @@ public class GuiMainMenu extends GuiScreen implements GuiYesNoCallback
     private int openGLWarningX2;
     private int openGLWarningY2;
     private ResourceLocation backgroundTexture;
-    private GuiButton realmsButton;
-    private boolean hasCheckedForRealmsNotification;
-    private GuiScreen realmsNotification;
-    private GuiButton modButton;
-    private GuiScreen modUpdateNotification;
 
     public GuiMainMenu()
     {
         this.openGLWarning2 = OPENGL_WARNING_MESSAGE;
-        this.hasCheckedForRealmsNotification = false;
         this.splashText = "missingno";
         BufferedReader bufferedreader = null;
 
@@ -134,19 +125,9 @@ public class GuiMainMenu extends GuiScreen implements GuiYesNoCallback
         }
     }
 
-    private boolean shouldShowRealmsNotification()
-    {
-        return Minecraft.getMinecraft().gameSettings.getOptionOrdinalValue(GameSettings.Options.REALMS_NOTIFICATIONS) && this.realmsNotification != null;
-    }
-
     public void updateScreen()
     {
         ++this.panoramaTimer;
-
-        if (this.shouldShowRealmsNotification())
-        {
-            this.realmsNotification.updateScreen();
-        }
     }
 
     public boolean doesGuiPauseGame()
@@ -190,9 +171,9 @@ public class GuiMainMenu extends GuiScreen implements GuiYesNoCallback
             this.addSingleplayerMultiplayerButtons(j, 24);
         }
 
-        this.buttonList.add(new GuiButton(0, this.width / 2 - 100, j + 72 + 12, 98, 20, I18n.format("menu.options", new Object[0])));
-        this.buttonList.add(new GuiButton(4, this.width / 2 + 2, j + 72 + 12, 98, 20, I18n.format("menu.quit", new Object[0])));
-        this.buttonList.add(new GuiButtonLanguage(5, this.width / 2 - 124, j + 72 + 12));
+        this.buttonList.add(new GuiButton(0, this.width / 2 - 100, j + 48 + 12, 98, 20, I18n.format("menu.options", new Object[0])));
+        this.buttonList.add(new GuiButton(4, this.width / 2 + 2, j + 48 + 12, 98, 20, I18n.format("menu.quit", new Object[0])));
+        this.buttonList.add(new GuiButtonLanguage(5, this.width / 2 - 124, j + 48 + 12));
 
         synchronized (this.threadLock)
         {
@@ -204,31 +185,12 @@ public class GuiMainMenu extends GuiScreen implements GuiYesNoCallback
             this.openGLWarningX2 = this.openGLWarningX1 + k;
             this.openGLWarningY2 = this.openGLWarningY1 + 24;
         }
-
-        this.mc.setConnectedToRealms(false);
-
-        if (Minecraft.getMinecraft().gameSettings.getOptionOrdinalValue(GameSettings.Options.REALMS_NOTIFICATIONS) && !this.hasCheckedForRealmsNotification)
-        {
-            RealmsBridge realmsbridge = new RealmsBridge();
-            this.realmsNotification = realmsbridge.getNotificationScreen(this);
-            this.hasCheckedForRealmsNotification = true;
-        }
-
-        if (this.shouldShowRealmsNotification())
-        {
-            this.realmsNotification.setGuiSize(this.width, this.height);
-            this.realmsNotification.initGui();
-        }
     }
 
     private void addSingleplayerMultiplayerButtons(int y, int verticalSpacing)
     {
         this.buttonList.add(new GuiButton(1, this.width / 2 - 100, y, I18n.format("menu.singleplayer", new Object[0])));
         this.buttonList.add(new GuiButton(2, this.width / 2 - 100, y + verticalSpacing * 1, I18n.format("menu.multiplayer", new Object[0])));
-
-        
-        this.buttonList.add(this.realmsButton = new GuiButton(14, this.width / 2 - 100, y + verticalSpacing * 2, I18n.format("menu.online", new Object[0])));
-    
     }
 
     private void addDemoButtons(int y, int verticalSpacing)
@@ -266,11 +228,6 @@ public class GuiMainMenu extends GuiScreen implements GuiYesNoCallback
             this.mc.displayGuiScreen(new GuiMultiplayer(this));
         }
 
-        if (button.id == 14 && this.realmsButton.visible)
-        {
-            this.switchToRealms();
-        }
-
         if (button.id == 4)
         {
             this.mc.shutdown();
@@ -293,12 +250,6 @@ public class GuiMainMenu extends GuiScreen implements GuiYesNoCallback
                 this.mc.displayGuiScreen(guiyesno);
             }
         }
-    }
-
-    private void switchToRealms()
-    {
-        RealmsBridge realmsbridge = new RealmsBridge();
-        realmsbridge.switchToRealms(this);
     }
 
     public void confirmClicked(boolean result, int id)
@@ -588,16 +539,6 @@ public class GuiMainMenu extends GuiScreen implements GuiYesNoCallback
         }
 
         super.drawScreen(mouseX, mouseY, partialTicks);
-
-        if (this.shouldShowRealmsNotification())
-        {
-            this.realmsNotification.drawScreen(mouseX, mouseY, partialTicks);
-        }
-
-        if (this.modUpdateNotification != null)
-        {
-            this.modUpdateNotification.drawScreen(mouseX, mouseY, partialTicks);
-        }
     }
 
     protected void mouseClicked(int mouseX, int mouseY, int mouseButton) throws IOException
@@ -612,19 +553,6 @@ public class GuiMainMenu extends GuiScreen implements GuiYesNoCallback
                 guiconfirmopenlink.disableSecurityWarning();
                 this.mc.displayGuiScreen(guiconfirmopenlink);
             }
-        }
-
-        if (this.shouldShowRealmsNotification())
-        {
-            this.realmsNotification.mouseClicked(mouseX, mouseY, mouseButton);
-        }
-    }
-
-    public void onGuiClosed()
-    {
-        if (this.realmsNotification != null)
-        {
-            this.realmsNotification.onGuiClosed();
         }
     }
 }

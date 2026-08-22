@@ -1,6 +1,5 @@
 package net.optifine.reflect;
 
-import net.optifine.Log;
 
 public class ReflectorClass implements IResolvable
 {

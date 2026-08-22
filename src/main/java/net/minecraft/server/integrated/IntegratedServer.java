@@ -400,7 +400,16 @@ public class IntegratedServer extends MinecraftServer
 
     public void initiateShutdown()
     {
-        
+        Futures.getUnchecked(this.addScheduledTask(new Runnable()
+        {
+            public void run()
+            {
+                for (EntityPlayerMP entityPlayerMP : Lists.newArrayList(IntegratedServer.this.getConfigurationManager().getPlayerList()))
+                {
+                    IntegratedServer.this.getConfigurationManager().playerLoggedOut(entityPlayerMP);
+                }
+            }
+        }));
         super.initiateShutdown();
 
         if (this.lanServerPing != null)

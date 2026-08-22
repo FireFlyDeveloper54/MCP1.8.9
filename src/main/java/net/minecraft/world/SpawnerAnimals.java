@@ -1,10 +1,7 @@
 package net.minecraft.world;
 
-import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -185,8 +182,8 @@ public final class SpawnerAnimals
                                                 if (flag2)
                                                 {
                                                     this.mapSampleEntitiesByClass.remove(biomegenbase$spawnlistentry.entityClass);
+                                                    ientitylivingdata = entityliving.onInitialSpawn(worldServerIn.getDifficultyForLocation(new BlockPos(entityliving)), ientitylivingdata);
 
-                                                    
                                                     if (entityliving.isNotColliding())
                                                     {
                                                         ++eighthIntValue;

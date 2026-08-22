@@ -67,7 +67,6 @@ import net.optifine.GlErrors;
 import net.optifine.Lang;
 import net.optifine.config.ConnectedParser;
 import net.optifine.expr.IExpressionBool;
-import net.optifine.reflect.Reflector;
 import net.optifine.render.GlAlphaState;
 import net.optifine.render.GlBlendState;
 import net.optifine.shaders.config.EnumShaderOption;

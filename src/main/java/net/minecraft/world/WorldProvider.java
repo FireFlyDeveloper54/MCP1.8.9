@@ -92,7 +92,8 @@ public abstract class WorldProvider
             --celestialAngle;
         }
 
-        return 1.0F - (float)((Math.cos((double)celestialAngle * Math.PI) + 1.0D) / 2.0D);
+        float cosineAngle = 1.0F - (float)((Math.cos((double)celestialAngle * Math.PI) + 1.0D) / 2.0D);
+        return celestialAngle + (cosineAngle - celestialAngle) / 3.0F;
     }
 
     public int getMoonPhase(long worldTime)
