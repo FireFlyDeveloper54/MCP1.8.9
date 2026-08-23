@@ -14,7 +14,7 @@ public class CapeUtils
 {
     public static void downloadCape(AbstractClientPlayer player)
     {
-        // OptiFine online cape downloads are disabled for this local MCP project.
+
         player.setLocationOfCape((ResourceLocation)null);
         player.setElytraOfCape(false);
     }

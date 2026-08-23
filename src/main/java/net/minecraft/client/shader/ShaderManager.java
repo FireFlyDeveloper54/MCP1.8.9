@@ -406,4 +406,9 @@ public class ShaderManager
     {
         return this.program;
     }
+
+    public List<String> getAttributeNames()
+    {
+        return this.attributes;
+    }
 }

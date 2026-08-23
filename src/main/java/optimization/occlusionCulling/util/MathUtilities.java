@@ -2,9 +2,7 @@ package optimization.occlusionCulling.util;
 
 import net.minecraft.util.MathHelper;
 
-/**
- * Contains MathHelper methods
- */
+
 public final class MathUtilities {
 
     private MathUtilities() {

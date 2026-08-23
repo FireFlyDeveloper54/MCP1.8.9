@@ -1888,7 +1888,6 @@ public class GameSettings
         }
 
 
-
         if (option == GameSettings.Options.TRANSLUCENT_BLOCKS)
         {
             if (this.ofTranslucentBlocks == 0)

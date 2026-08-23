@@ -1,9 +1,6 @@
 package optimization.betterfps;
 
-/**
- * @author KuChaZi
- * @version 2025/2/22 16:01
- */
+
 public class VanillaMath {
     private static final float[] SIN_TABLE = new float[65536];
 

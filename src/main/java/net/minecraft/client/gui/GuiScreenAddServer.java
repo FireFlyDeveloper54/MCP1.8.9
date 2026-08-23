@@ -151,8 +151,7 @@ public class GuiScreenAddServer extends GuiScreen
             return closingBracket > 0 ? trimmed.substring(1, closingBracket) : trimmed;
         }
 
-        // An unbracketed IPv6 literal contains multiple colons and must not be
-        // passed through IDN validation as if it were a DNS name.
+
         int firstColon = trimmed.indexOf(':');
         int lastColon = trimmed.lastIndexOf(':');
         return firstColon >= 0 && firstColon != lastColon ? trimmed : (firstColon >= 0 ? trimmed.substring(0, firstColon) : trimmed);

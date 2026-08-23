@@ -1332,7 +1332,7 @@ public abstract class Entity implements ICommandSender
 
     protected final Vec3 getVectorForRotation(float pitch, float yaw)
     {
-        // cos/sin(-yaw*deg2rad - pi) = -cos/sin(-yaw*deg2rad) => use degree path + flip
+
         float[] yawSC = new float[2];
         float[] pitchSC = new float[2];
         MathHelper.sinCosDeg(-yaw, yawSC);

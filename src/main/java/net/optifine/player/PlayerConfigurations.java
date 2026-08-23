@@ -49,7 +49,7 @@ public class PlayerConfigurations
             {
                 playerConfiguration = new PlayerConfiguration();
                 getMapConfigurations().put(playerName, playerConfiguration);
-                // OptiFine online player-item downloads are disabled for this local MCP project.
+
             }
 
             return playerConfiguration;

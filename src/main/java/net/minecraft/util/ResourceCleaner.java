@@ -2,10 +2,7 @@ package net.minecraft.util;
 
 import java.lang.reflect.Method;
 
-/**
- * JDK 8 keeps {@code finalize}; JDK 9+ uses {@code java.lang.ref.Cleaner} via reflection
- * so this class still compiles and runs from Java 8 through 25.
- */
+
 public final class ResourceCleaner
 {
     private static final Object CLEANER;

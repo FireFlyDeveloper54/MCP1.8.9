@@ -27,36 +27,35 @@ public class LightingEngine {
 
     private final Profiler profiler;
 
-    //Layout of longs: [padding(4)] [y(8)] [x(26)] [z(26)]
+
     private final PooledLongQueue[] queuedLightUpdates = new PooledLongQueue[SKY_BLOCK_VALUES.length];
 
-    //Layout of longs: see above
+
     private final PooledLongQueue[] queuedDarkenings = new PooledLongQueue[MAX_LIGHT + 1];
     private final PooledLongQueue[] queuedBrightenings = new PooledLongQueue[MAX_LIGHT + 1];
 
-    //Layout of longs: [newLight(4)] [pos(60)]
+
     private final PooledLongQueue initialBrightenings;
-    //Layout of longs: [padding(4)] [pos(60)]
+
     private final PooledLongQueue initialDarkenings;
 
     private boolean updating = false;
 
-    //Layout parameters
-    //Length of bit segments
+
     private static final int
             lX = 26,
             lY = 8,
             lZ = 26,
             lL = 4;
 
-    //Bit segment shifts/positions
+
     private static final int
             sZ = 0,
             sX = sZ + lZ,
             sY = sX + lX,
             sL = sY + lY;
 
-    //Bit segment masks
+
     private static final long
             mX = (1L << lX) - 1,
             mY = (1L << lY) - 1,
@@ -64,7 +63,7 @@ public class LightingEngine {
             mL = (1L << lL) - 1,
             mPos = (mY << sY) | (mX << sX) | (mZ << sZ);
 
-    //Bit to check whether y had overflow
+
     private static final long yCheck = 1L << (sY + lY);
 
     private static final long[] neighborShifts = new long[6];
@@ -76,16 +75,15 @@ public class LightingEngine {
         }
     }
 
-    //Mask to extract chunk identifier
+
     private static final long mChunk = ((mX >> 4) << (4 + sX)) | ((mZ >> 4) << (4 + sZ));
 
-    //Iteration state data
-    //Cache position to avoid allocation of new object each time
+
     private final MutableBlockPos curPos = new MutableBlockPos();
     private Chunk curChunk;
     private long curChunkIdentifier;
     private long curData;
-    //Cached data about neighboring blocks (of tempPos)
+
     private boolean isNeighborDataValid = false;
 
     private final NeighborInfo[] neighborInfos = new NeighborInfo[6];
@@ -138,7 +136,7 @@ public class LightingEngine {
 
         queue.add(pos);
 
-        //make sure there are not too many queued light updates
+
         if (queue.size() >= MAX_SCHEDULED_COUNT) {
             this.processLightUpdatesForType(lightType);
         }
@@ -150,16 +148,15 @@ public class LightingEngine {
     }
 
     public void processLightUpdatesForType(final EnumSkyBlock lightType) {
-        // We only want to perform updates if we're being called from a tick event on the client
-        // There are many locations in the client code which will end up making calls to this method, usually from
-        // other threads.
+
+
         if (this.world.isRemote && !this.isCallingFromMainThread()) {
             return;
         }
 
         final PooledLongQueue queue = this.queuedLightUpdates[lightType.ordinal()];
 
-        // Quickly check if the queue is empty before we acquire a more expensive lock.
+
         if (queue.isEmpty()) {
             return;
         }
@@ -199,14 +196,14 @@ public class LightingEngine {
     }
 
     private void processLightUpdatesForTypeInner(final EnumSkyBlock lightType, final PooledLongQueue queue) {
-        //avoid nested calls
+
         if (this.updating) {
             throw new IllegalStateException("Already processing updates!");
         }
 
         this.updating = true;
 
-        this.curChunkIdentifier = -1; //reset chunk cache
+        this.curChunkIdentifier = -1;
 
         this.profiler.startSection("lighting");
 
@@ -214,7 +211,7 @@ public class LightingEngine {
 
         this.queueIt = queue.iterator();
 
-        //process the queued updates and enqueue them for further processing
+
         while (this.nextItem()) {
             if (this.curChunk == null) {
                 continue;
@@ -224,10 +221,10 @@ public class LightingEngine {
             final int newLight = this.calculateNewLightFromCursor(lightType);
 
             if (oldLight < newLight) {
-                //don't enqueue directly for brightening in order to avoid duplicate scheduling
+
                 this.initialBrightenings.add(((long) newLight << sL) | this.curData);
             } else if (oldLight > newLight) {
-                //don't enqueue directly for darkening in order to avoid duplicate scheduling
+
                 this.initialDarkenings.add(this.curData);
             }
         }
@@ -238,7 +235,7 @@ public class LightingEngine {
             final int newLight = (int) (this.curData >> sL & mL);
 
             if (newLight > this.getCursorCachedLight(lightType)) {
-                //Sets the light to newLight to only schedule once. Clear leading bits of curData for later
+
                 this.enqueueBrightening(this.curPos, this.curData & mPos, newLight, this.curChunk, lightType);
             }
         }
@@ -249,28 +246,28 @@ public class LightingEngine {
             final int oldLight = this.getCursorCachedLight(lightType);
 
             if (oldLight != 0) {
-                //Sets the light to 0 to only schedule once
+
                 this.enqueueDarkening(this.curPos, this.curData, oldLight, this.curChunk, lightType);
             }
         }
 
         this.profiler.endSection();
 
-        //Iterate through enqueued updates (brightening and darkening in parallel) from brightest to darkest so that we only need to iterate once
+
         for (int curLight = MAX_LIGHT; curLight >= 0; --curLight) {
             this.profiler.startSection("darkening");
 
             this.queueIt = this.queuedDarkenings[curLight].iterator();
 
             while (this.nextItem()) {
-                if (this.getCursorCachedLight(lightType) >= curLight) //don't darken if we got brighter due to some other change
+                if (this.getCursorCachedLight(lightType) >= curLight)
                 {
                     continue;
                 }
 
                 final IBlockState state = LightingEngineHelpers.posToState(this.curPos, this.curChunk);
                 final int luminosity = this.getCursorLuminosity(state, lightType);
-                final int opacity; //if luminosity is high enough, opacity is irrelevant
+                final int opacity;
 
                 if (luminosity >= MAX_LIGHT - 1) {
                     opacity = 1;
@@ -278,9 +275,9 @@ public class LightingEngine {
                     opacity = this.getPosOpacity(this.curPos, state);
                 }
 
-                //only darken neighbors if we indeed became darker
+
                 if (this.calculateNewLightFromCursor(luminosity, opacity, lightType) < curLight) {
-                    //need to calculate new light value from neighbors IGNORING neighbors which are scheduled for darkening
+
                     int newLight = luminosity;
 
                     this.fetchNeighborDataFromCursor(lightType);
@@ -300,23 +297,23 @@ public class LightingEngine {
 
                         final MutableBlockPos nPos = info.pos;
 
-                        if (curLight - this.getPosOpacity(nPos, LightingEngineHelpers.posToState(nPos, info.section)) >= nLight) //schedule neighbor for darkening if we possibly light it
+                        if (curLight - this.getPosOpacity(nPos, LightingEngineHelpers.posToState(nPos, info.section)) >= nLight)
                         {
                             this.enqueueDarkening(nPos, info.key, nLight, nChunk, lightType);
                         }
-                        else //only use for new light calculation if not
+                        else
                         {
-                            //if we can't darken the neighbor, no one else can (because of processing order) -> safe to let us be illuminated by it
+
                             newLight = Math.max(newLight, nLight - opacity);
                         }
                     }
 
-                    //schedule brightening since light level was set to 0
+
                     this.enqueueBrighteningFromCursor(newLight, lightType);
                 }
-                else //we didn't become darker, so we need to re-set our initial light value (was set to 0) and notify neighbors
+                else
                 {
-                    this.enqueueBrighteningFromCursor(curLight, lightType); //do not spread to neighbors immediately to avoid scheduling multiple times
+                    this.enqueueBrighteningFromCursor(curLight, lightType);
                 }
             }
 
@@ -327,7 +324,7 @@ public class LightingEngine {
             while (this.nextItem()) {
                 final int oldLight = this.getCursorCachedLight(lightType);
 
-                if (oldLight == curLight) //only process this if nothing else has happened at this position since scheduling
+                if (oldLight == curLight)
                 {
                     this.world.notifyLightSet(this.curPos);
 
@@ -344,11 +341,9 @@ public class LightingEngine {
 
     }
 
-    /**
-     * Gets data for neighbors of <code>curPos</code> and saves the results into neighbor state data members. If a neighbor can't be accessed/doesn't exist, the corresponding entry in <code>neighborChunks</code> is <code>null</code> - others are not reset
-     */
+
     private void fetchNeighborDataFromCursor(final EnumSkyBlock lightType) {
-        //only update if curPos was changed
+
         if (this.isNeighborDataValid) {
             return;
         }
@@ -477,18 +472,14 @@ public class LightingEngine {
         this.enqueueBrightening(this.curPos, this.curData, newLight, this.curChunk, lightType);
     }
 
-    /**
-     * Enqueues the pos for brightening and sets its light value to <code>newLight</code>
-     */
+
     private void enqueueBrightening(final BlockPos pos, final long longPos, final int newLight, final Chunk chunk, final EnumSkyBlock lightType) {
         this.queuedBrightenings[newLight].add(longPos);
 
         chunk.setLightFor(lightType, pos, newLight);
     }
 
-    /**
-     * Enqueues the pos for darkening and sets its light value to 0
-     */
+
     private void enqueueDarkening(final BlockPos pos, final long longPos, final int oldLight, final Chunk chunk, final EnumSkyBlock lightType) {
         this.queuedDarkenings[oldLight].add(longPos);
 
@@ -511,11 +502,7 @@ public class LightingEngine {
         return (y << sY) | (x + (1 << lX - 1) << sX) | (z + (1 << lZ - 1) << sZ);
     }
 
-    /**
-     * Polls a new item from <code>curQueue</code> and fills in state data members
-     *
-     * @return If there was an item to poll
-     */
+
     private boolean nextItem() {
         if (!this.queueIt.hasNext()) {
             this.queueIt.finish();
@@ -543,9 +530,7 @@ public class LightingEngine {
         return this.curChunk.getCachedLightFor(lightType, this.curPos);
     }
 
-    /**
-     * Calculates the luminosity for <code>curPos</code>, taking into account <code>lightType</code>
-     */
+
     private int getCursorLuminosity(final IBlockState state, final EnumSkyBlock lightType) {
         if (lightType == EnumSkyBlock.SKY) {
             if (this.curChunk.canSeeSky(this.curPos)) {

@@ -702,7 +702,6 @@ public class Reflector
     }
 
 
-
     public static Object newInstance(ReflectorConstructor constr, Object... params)
     {
         Constructor constructor = constr.getTargetConstructor();

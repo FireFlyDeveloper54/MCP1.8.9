@@ -61,6 +61,7 @@ public class FontRenderer implements IResourceManagerReloadListener
     private boolean blend = false;
     private GlBlendState oldBlendState = new GlBlendState();
     private ResourceLocation lastBoundTexture;
+    private boolean glyphBatchOpen;
 
     public FontRenderer(GameSettings gameSettingsIn, ResourceLocation location, TextureManager textureManagerIn, boolean unicode)
     {
@@ -292,14 +293,27 @@ public class FontRenderer implements IResourceManagerReloadListener
 
     private void drawGlyphQuad(float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4, float u1, float v1, float u2, float v2)
     {
-        Tessellator tessellator = Tessellator.getInstance();
-        WorldRenderer worldRenderer = tessellator.getWorldRenderer();
-        worldRenderer.begin(5, DefaultVertexFormats.POSITION_TEX);
+        WorldRenderer worldRenderer = Tessellator.getInstance().getWorldRenderer();
+
+        if (!this.glyphBatchOpen)
+        {
+            worldRenderer.begin(7, DefaultVertexFormats.POSITION_TEX);
+            this.glyphBatchOpen = true;
+        }
+
         worldRenderer.pos((double)x1, (double)y1, 0.0D).tex((double)u1, (double)v1).endVertex();
         worldRenderer.pos((double)x2, (double)y2, 0.0D).tex((double)u1, (double)v2).endVertex();
-        worldRenderer.pos((double)x3, (double)y3, 0.0D).tex((double)u2, (double)v1).endVertex();
         worldRenderer.pos((double)x4, (double)y4, 0.0D).tex((double)u2, (double)v2).endVertex();
-        tessellator.draw();
+        worldRenderer.pos((double)x3, (double)y3, 0.0D).tex((double)u2, (double)v1).endVertex();
+    }
+
+    private void flushGlyphBatch()
+    {
+        if (this.glyphBatchOpen)
+        {
+            Tessellator.getInstance().draw();
+            this.glyphBatchOpen = false;
+        }
     }
 
     private float getUnicodeGlyphYOffset(char ch)
@@ -541,6 +555,11 @@ public class FontRenderer implements IResourceManagerReloadListener
 
     protected void doDraw(float charWidth)
     {
+        if (this.strikethroughStyle || this.underlineStyle)
+        {
+            this.flushGlyphBatch();
+        }
+
         if (this.strikethroughStyle)
         {
             Tessellator tessellator = Tessellator.getInstance();
@@ -615,7 +634,9 @@ public class FontRenderer implements IResourceManagerReloadListener
             this.posX = x;
             this.posY = y;
             this.lastBoundTexture = null;
+            this.glyphBatchOpen = false;
             this.renderStringAtPos(text, dropShadow);
+            this.flushGlyphBatch();
             return (int)this.posX;
         }
     }
@@ -1065,6 +1086,7 @@ public class FontRenderer implements IResourceManagerReloadListener
 
     protected void setColor(float red, float green, float blue, float alpha)
     {
+        this.flushGlyphBatch();
         GlStateManager.color(red, green, blue, alpha);
     }
 
@@ -1077,6 +1099,7 @@ public class FontRenderer implements IResourceManagerReloadListener
     {
         if (!location.equals(this.lastBoundTexture))
         {
+            this.flushGlyphBatch();
             this.renderEngine.bindTexture(location);
             this.lastBoundTexture = location;
         }

@@ -1,8 +1,6 @@
 package optimization.betterfps;
 
-/**
- * @author Guilherme Chaguri
- */
+
 public class RivensFullMath {
 
     private static final float BF_SIN_TO_COS;

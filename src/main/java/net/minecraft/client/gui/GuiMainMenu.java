@@ -387,7 +387,13 @@ public class GuiMainMenu extends GuiScreen implements GuiYesNoCallback
         this.mc.getTextureManager().bindTexture(this.backgroundTexture);
         GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR);
         GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
-        GL11.glCopyTexSubImage2D(GL11.GL_TEXTURE_2D, 0, 0, 0, 0, 0, 256, 256);
+        int copyWidth = Math.min(256, net.minecraft.client.GameWindow.getWidth());
+        int copyHeight = Math.min(256, net.minecraft.client.GameWindow.getHeight());
+
+        if (copyWidth > 0 && copyHeight > 0)
+        {
+            GL11.glCopyTexSubImage2D(GL11.GL_TEXTURE_2D, 0, 0, 0, 0, 0, copyWidth, copyHeight);
+        }
         GlStateManager.enableBlend();
         GlStateManager.tryBlendFuncSeparate(770, 771, 1, 0);
         GlStateManager.colorMask(true, true, true, false);

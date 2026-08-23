@@ -29,7 +29,7 @@ public class CrashReporter
             }
 
             extendCrashReport(category);
-            // OptiFine online crash report uploads are disabled for this local MCP project.
+
         }
         catch (Exception exception)
         {

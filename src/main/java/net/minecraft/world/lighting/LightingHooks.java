@@ -21,7 +21,7 @@ public final class LightingHooks {
     private static final EnumFacing.AxisDirection[] ENUM_AXIS_DIRECTION_VALUES = EnumFacing.AxisDirection.values();
     private static final EnumFacing[] HORIZONTAL_FACINGS = EnumFacing.Plane.HORIZONTAL.facings();
 
-    private static final int FLAG_COUNT = 32; //2 light types * 4 directions * 2 halves * (inwards + outwards)
+    private static final int FLAG_COUNT = 32;
 
     private LightingHooks() {
     }
@@ -55,7 +55,7 @@ public final class LightingHooks {
                 final int zOffset = dir.getFrontOffsetZ();
 
                 final boolean neighborColumnExists = (((x + xOffset) | (z + zOffset)) & 16) == 0
-                        //Checks whether the position is at the specified border (the 16 bit is set for both 15+1 and 0-1)
+
                         || LightingEngineHelpers.getLoadedChunk(world.getChunkProvider(),chunk.xPosition + xOffset, chunk.zPosition + zOffset) != null;
 
                 if (neighborColumnExists) {
@@ -147,16 +147,14 @@ public final class LightingHooks {
 
             for (final EnumSkyBlock lightType : ENUM_SKY_BLOCK_VALUES) {
                 for (final EnumFacing.AxisDirection axisDir : ENUM_AXIS_DIRECTION_VALUES) {
-                    //Merge flags upon loading of a chunk. This ensures that all flags are always already on the IN boundary below
+
                     mergeFlags(lightType, chunk, nChunk, dir, axisDir);
                     mergeFlags(lightType, nChunk, chunk, dir.getOpposite(), axisDir);
 
-                    //Check everything that might have been canceled due to this chunk not being loaded.
-                    //Also, pass in chunks if already known
-                    //The boundary to the neighbor chunk (both ways)
+
                     scheduleRelightChecksForBoundary(world, chunk, nChunk, null, lightType, xOffset, zOffset, axisDir);
                     scheduleRelightChecksForBoundary(world, nChunk, chunk, null, lightType, -xOffset, -zOffset, axisDir);
-                    //The boundary to the diagonal neighbor (since the checks in that chunk were aborted if this chunk wasn't loaded, see scheduleRelightChecksForBoundary)
+
                     scheduleRelightChecksForBoundary(world, nChunk, null, chunk, lightType, (zOffset != 0 ? axisDir.getOffset() : 0),
                             (xOffset != 0 ? axisDir.getOffset() : 0),
                             dir.getAxisDirection() == EnumFacing.AxisDirection.POSITIVE ?
@@ -178,7 +176,7 @@ public final class LightingHooks {
         final int outIndex = getFlagIndex(lightType, dir.getOpposite(), axisDir, EnumBoundaryFacing.OUT);
 
         inChunk.getNeighborLightChecks()[inIndex] |= outChunk.getNeighborLightChecks()[outIndex];
-        //no need to call Chunk.setModified() since checks are not deleted from outChunk
+
     }
 
     private static void scheduleRelightChecksForBoundary(final World world, final Chunk chunk, Chunk nChunk, Chunk sChunk, final EnumSkyBlock lightType, final int xOffset, final int zOffset, final EnumFacing.AxisDirection axisDir) {
@@ -186,7 +184,7 @@ public final class LightingHooks {
             return;
         }
 
-        final int flagIndex = getFlagIndex(lightType, xOffset, zOffset, axisDir, EnumBoundaryFacing.IN); //OUT checks from neighbor are already merged
+        final int flagIndex = getFlagIndex(lightType, xOffset, zOffset, axisDir, EnumBoundaryFacing.IN);
 
         final int flags = chunk.getNeighborLightChecks()[flagIndex];
 
@@ -206,7 +204,7 @@ public final class LightingHooks {
             sChunk = LightingEngineHelpers.getLoadedChunk(world.getChunkProvider(), chunk.xPosition + (zOffset != 0 ? axisDir.getOffset() : 0), chunk.zPosition + (xOffset != 0 ? axisDir.getOffset() : 0));
 
             if (sChunk == null) {
-                return; //Cancel, since the checks in the corner columns require the corner column of sChunk
+                return;
             }
         }
 
@@ -215,30 +213,29 @@ public final class LightingHooks {
         chunk.getNeighborLightChecks()[flagIndex] = 0;
 
         if (nChunk.getNeighborLightChecks() != null) {
-            nChunk.getNeighborLightChecks()[reverseIndex] = 0; //Clear only now that it's clear that the checks are processed
+            nChunk.getNeighborLightChecks()[reverseIndex] = 0;
         }
 
         chunk.setChunkModified();
         nChunk.setChunkModified();
 
-        //Get the area to check
-        //Start in the corner...
+
         int xMin = chunk.xPosition << 4;
         int zMin = chunk.zPosition << 4;
 
-        //move to other side of chunk if the direction is positive
+
         if ((xOffset | zOffset) > 0) {
             xMin += 15 * xOffset;
             zMin += 15 * zOffset;
         }
 
-        //shift to other half if necessary (shift perpendicular to dir)
+
         if (axisDir == EnumFacing.AxisDirection.POSITIVE) {
-            xMin += 8 * (zOffset & 1); //x & 1 is same as abs(x) for x=-1,0,1
+            xMin += 8 * (zOffset & 1);
             zMin += 8 * (xOffset & 1);
         }
 
-        //get maximal values (shift perpendicular to dir)
+
         final int xMax = xMin + 7 * (zOffset & 1);
         final int zMax = zMin + 7 * (xOffset & 1);
 

@@ -378,7 +378,6 @@ public class Chunk
     }
 
 
-
     private void relightBlock(int x, int y, int z)
     {
         int oldHeight = this.heightMap[z << 4 | x];
@@ -409,7 +408,6 @@ public class Chunk
             this.isModified = true;
         }
     }
-
 
 
     public int getBlockLightOpacity(BlockPos pos)
@@ -740,7 +738,6 @@ public class Chunk
         int blockLight = storage.getExtBlocklightValue(x, y & 15, z);
         return blockLight > skyLight ? blockLight : skyLight;
     }
-
 
 
     public void addEntity(Entity entityIn)

@@ -49,7 +49,7 @@ public class GuiScreenCapeOF extends GuiScreenOF
 
             if (button.id == 210)
             {
-                // OptiFine online cape editor links are disabled for this local MCP project.
+
                 this.showMessage(I18n.format("of.message.capeOF.openEditorError", new Object[0]), 10000L);
             }
 

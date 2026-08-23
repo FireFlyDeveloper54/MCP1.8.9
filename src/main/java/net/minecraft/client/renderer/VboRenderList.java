@@ -27,8 +27,18 @@ public class VboRenderList extends ChunkRenderContainer
                     GlStateManager.pushMatrix();
                     this.preRenderChunk(renderchunk1);
                     renderchunk1.multModelviewMatrix();
-                    vertexbuffer1.bindBuffer();
-                    this.setupArrayPointers();
+
+                    if (Config.isShaders())
+                    {
+                        vertexbuffer1.bindBuffer();
+                        this.setupArrayPointers();
+                    }
+                    else
+                    {
+                        vertexbuffer1.bindDrawState();
+                        net.minecraft.client.renderer.CorePipeline.prepareDraw(true, true);
+                    }
+
                     vertexbuffer1.drawArrays(7);
                     GlStateManager.popMatrix();
                 }

@@ -408,7 +408,11 @@ public class TextureUtils
             float maxAnisotropicLevel = GL11.glGetFloat(34047);
             float anisotropicLevel = (float)Config.getAnisotropicFilterLevel();
             anisotropicLevel = Math.min(anisotropicLevel, maxAnisotropicLevel);
-            GL11.glTexParameterf(GL11.GL_TEXTURE_2D, 34046, anisotropicLevel);
+
+            if (anisotropicLevel >= 1.0F)
+            {
+                GL11.glTexParameterf(GL11.GL_TEXTURE_2D, 34046, anisotropicLevel);
+            }
         }
     }
 
@@ -659,18 +663,12 @@ public class TextureUtils
 
     public static int getGLMaximumTextureSize()
     {
-        for (int i = 65536; i > 0; i >>= 1)
-        {
-            GlStateManager.glTexImage2D(32868, 0, 6408, i, i, 0, 6408, 5121, (IntBuffer)null);
-            int j = GL11.glGetError();
-            int k = GlStateManager.glGetTexLevelParameteri(32868, 0, 4096);
+        int size = GL11.glGetInteger(GL11.GL_MAX_TEXTURE_SIZE);
 
-            if (k != 0)
-            {
-                return i;
-            }
+        while (GL11.glGetError() != 0)
+        {
         }
 
-        return -1;
+        return size > 0 ? size : 8192;
     }
 }

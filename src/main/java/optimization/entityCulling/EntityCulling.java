@@ -10,13 +10,13 @@ public class EntityCulling {
     public CullTask cullTask;
     private Thread cullThread;
     protected boolean pressed = false;
-	// stats
+
 	public int renderedBlockEntities = 0;
 	public int skippedBlockEntities = 0;
 	public int renderedEntities = 0;
 	public int skippedEntities = 0;
 
-    // Legacy static defaults (used before GameSettings is available)
+
     public static boolean enabled = true;
     public static int tracingDistance = 128;
     public static int sleepDelay = 10;

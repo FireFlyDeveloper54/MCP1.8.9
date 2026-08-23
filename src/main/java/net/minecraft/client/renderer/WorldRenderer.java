@@ -71,7 +71,7 @@ public class WorldRenderer
             int i = this.byteBuffer.capacity();
             int j = i % 2097152;
             int k = j + (((this.rawIntBuffer.position() + size) * 4 - j) / 2097152 + 1) * 2097152;
-            // Buffer growth (rare, no logging in hot path)
+
             int l = this.rawIntBuffer.position();
             ByteBuffer bytebuffer = GLAllocation.createDirectByteBuffer(k);
             this.byteBuffer.position(0);

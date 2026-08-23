@@ -26,7 +26,7 @@ public class PlayerUsageSnooper
         if (!this.isRunning)
         {
             this.isRunning = true;
-            // Snooper is disabled for this local MCP project.
+
         }
     }
 

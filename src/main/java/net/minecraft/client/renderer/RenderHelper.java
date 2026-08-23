@@ -1,11 +1,9 @@
 package net.minecraft.client.renderer;
 
-import java.nio.FloatBuffer;
 import net.minecraft.util.Vec3;
 
 public class RenderHelper
 {
-    private static FloatBuffer colorBuffer = GLAllocation.createDirectFloatBuffer(16);
     private static final Vec3 LIGHT0_POS = (new Vec3(0.20000000298023224D, 1.0D, -0.699999988079071D)).normalize();
     private static final Vec3 LIGHT1_POS = (new Vec3(-0.20000000298023224D, 1.0D, 0.699999988079071D)).normalize();
 
@@ -25,19 +23,20 @@ public class RenderHelper
         GlStateManager.enableColorMaterial();
         GlStateManager.colorMaterial(1032, 5634);
         GlStateManager.shadeModel(7424);
+        float[] matrix = GlMatrix.getModelView();
+        GlStateManager.setLights(transformLight(matrix, LIGHT0_POS), transformLight(matrix, LIGHT1_POS), 0.4F, 0.6F);
     }
 
-    private static FloatBuffer setColorBuffer(double red, double green, double blue, double alpha)
+    private static float[] transformLight(float[] matrix, Vec3 direction)
     {
-        return setColorBuffer((float)red, (float)green, (float)blue, (float)alpha);
-    }
-
-    private static FloatBuffer setColorBuffer(float red, float green, float blue, float alpha)
-    {
-        colorBuffer.clear();
-        colorBuffer.put(red).put(green).put(blue).put(alpha);
-        colorBuffer.flip();
-        return colorBuffer;
+        float x = (float)direction.xCoord;
+        float y = (float)direction.yCoord;
+        float z = (float)direction.zCoord;
+        return new float[] {
+            matrix[0] * x + matrix[4] * y + matrix[8] * z,
+            matrix[1] * x + matrix[5] * y + matrix[9] * z,
+            matrix[2] * x + matrix[6] * y + matrix[10] * z
+        };
     }
 
     public static void enableGUIStandardItemLighting()

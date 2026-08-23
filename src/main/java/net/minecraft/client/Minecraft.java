@@ -2677,18 +2677,13 @@ public class Minecraft implements IThreadListener, IPlayerUsage
 
     public static int getGLMaximumTextureSize()
     {
-        for (int i = 16384; i > 0; i >>= 1)
-        {
-            GL11.glTexImage2D(GL11.GL_PROXY_TEXTURE_2D, 0, GL11.GL_RGBA, i, i, 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, (ByteBuffer)((ByteBuffer)null));
-            int j = GL11.glGetTexLevelParameteri(GL11.GL_PROXY_TEXTURE_2D, 0, GL11.GL_TEXTURE_WIDTH);
+        int size = GL11.glGetInteger(GL11.GL_MAX_TEXTURE_SIZE);
 
-            if (j != 0)
-            {
-                return i;
-            }
+        while (GL11.glGetError() != 0)
+        {
         }
 
-        return -1;
+        return size > 0 ? size : 8192;
     }
 
     public boolean isSnooperEnabled()

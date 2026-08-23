@@ -1,8 +1,6 @@
 package optimization.betterfps;
 
-/**
- * @author Guilherme Chaguri
- */
+
 public class RivensHalfMath {
 
     private static final float BF_SIN_TO_COS;
@@ -31,7 +29,7 @@ public class RivensHalfMath {
     public static float sin(float rad) {
         int index1 = (int) (rad * BF_radToIndex) & BF_SIN_MASK;
         int index2 = index1 & BF_SIN_MASK2;
-        // int mul = (((index1 - index2) >>> 31) << 1) + 1;
+
         int mul = ((index1 == index2) ? +1 : -1);
         return BF_sinHalf[index2] * mul;
     }

@@ -419,19 +419,18 @@ public class ModelRenderer
         if (this.vertexBuffer != null && this.compiledVertexCount > 0)
         {
             VertexFormat format = this.compiledFormat != null ? this.compiledFormat : DefaultVertexFormats.OLDMODEL_POSITION_TEX_NORMAL;
-            this.vertexBuffer.bindBuffer();
-
             if (Config.isShaders())
             {
+                this.vertexBuffer.bindBuffer();
                 ShadersRender.setupArrayPointersVbo();
             }
             else
             {
-                WorldVertexBufferUploader.setupVertexFormat(format, 0L);
+                this.vertexBuffer.bindDrawState();
+                net.minecraft.client.renderer.CorePipeline.prepareDraw(false, false);
             }
 
             GlStateManager.glDrawArrays(this.compiledMode, 0, this.compiledVertexCount);
-            WorldVertexBufferUploader.clearVertexFormat(format);
 
             if (Config.isShaders())
             {

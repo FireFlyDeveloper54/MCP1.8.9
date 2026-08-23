@@ -1,16 +1,6 @@
 package optimization.betterfps;
 
-/**
- * BetterFPS-style sin/cos algorithms (from Guilherme Chaguri / Naven port),
- * plus a hybrid combiner that keeps the useful parts of each.
- * Default is {@link Mode#HYBRID}.
- * <p>
- * Hot path: when mode is {@link Mode#HYBRID} (the default), {@link #sin}/{@link #cos}
- * go straight to {@link HybridMath} with no enum switch — monomorphic for the JIT.
- * {@link net.minecraft.util.MathHelper} also short-circuits to {@link HybridMath}
- * when {@link #isHybridFastPath()} is true so the default game path pays zero
- * dispatcher overhead.
- */
+
 public final class BetterFps
 {
     public enum Mode
@@ -26,10 +16,7 @@ public final class BetterFps
 
     private static Mode mode = Mode.HYBRID;
 
-    /**
-     * Cached fast-path flag so the default HYBRID case does not pay an enum switch
-     * on every sin/cos. Updated only in {@link #setMode(Mode)}.
-     */
+
     private static boolean hybridFastPath = true;
 
     private BetterFps()
@@ -41,7 +28,7 @@ public final class BetterFps
         return mode;
     }
 
-    /** {@code true} when the default {@link Mode#HYBRID} path is active (no mode switch). */
+
     public static boolean isHybridFastPath()
     {
         return hybridFastPath;
@@ -73,10 +60,7 @@ public final class BetterFps
         return cosSlow(radians);
     }
 
-    /**
-     * Fills {@code out[0]=sin}, {@code out[1]=cos}. Hybrid uses a shared-index path;
-     * other modes fall back to separate sin/cos calls.
-     */
+
     public static void sinCos(float radians, float[] out)
     {
         if (hybridFastPath)

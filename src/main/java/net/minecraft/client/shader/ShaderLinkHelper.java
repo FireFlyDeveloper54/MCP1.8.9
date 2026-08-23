@@ -1,10 +1,12 @@
 package net.minecraft.client.shader;
 
 import java.io.IOException;
+import java.util.List;
 import net.minecraft.client.renderer.OpenGlHelper;
 import net.minecraft.client.util.JsonException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.lwjgl.opengl.GL20;
 
 public class ShaderLinkHelper
 {
@@ -46,6 +48,16 @@ public class ShaderLinkHelper
     {
         manager.getFragmentShaderLoader().attachShader(manager);
         manager.getVertexShaderLoader().attachShader(manager);
+        List<String> attributes = manager.getAttributeNames();
+
+        if (attributes != null)
+        {
+            for (int i = 0; i < attributes.size(); ++i)
+            {
+                GL20.glBindAttribLocation(manager.getProgram(), i, attributes.get(i));
+            }
+        }
+
         OpenGlHelper.glLinkProgram(manager.getProgram());
         int linkStatus = OpenGlHelper.glGetProgrami(manager.getProgram(), OpenGlHelper.GL_LINK_STATUS);
 

@@ -1,6 +1,5 @@
 package net.minecraft.client.renderer;
 
-import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import net.minecraft.src.Config;
@@ -41,13 +40,15 @@ public class GlStateManager
     private static float overlayGreen;
     private static float overlayBlue;
     private static float overlayAlpha;
+    private static final float[] light0Dir = new float[] {0.2F, 1.0F, -0.7F};
+    private static final float[] light1Dir = new float[] {-0.2F, 1.0F, 0.7F};
+    private static float lightAmbient = 0.4F;
+    private static float lightDiffuse = 0.6F;
     public static boolean clearEnabled = true;
     private static LockCounter alphaLock = new LockCounter();
     private static GlAlphaState alphaLockState = new GlAlphaState();
     private static LockCounter blendLock = new LockCounter();
     private static GlBlendState blendLockState = new GlBlendState();
-    private static boolean creatingDisplayList = false;
-
     public static void pushAttrib()
     {
     }
@@ -483,6 +484,11 @@ public class GlStateManager
         activeShadeModel = mode;
     }
 
+    public static int getShadeModel()
+    {
+        return activeShadeModel;
+    }
+
     public static void enableRescaleNormal()
     {
         rescaleNormalState.setEnabled();
@@ -495,7 +501,10 @@ public class GlStateManager
 
     public static void viewport(int x, int y, int width, int height)
     {
-        GL11.glViewport(x, y, width, height);
+        if (width > 0 && height > 0)
+        {
+            GL11.glViewport(x, y, width, height);
+        }
     }
 
     public static void colorMask(boolean red, boolean green, boolean blue, boolean alpha)
@@ -644,55 +653,11 @@ public class GlStateManager
         return normalZ;
     }
 
-    public static void glNormalPointer(int type, int stride, ByteBuffer pointer)
-    {
-    }
-
-    public static void glTexCoordPointer(int size, int type, int stride, int pointer)
-    {
-    }
-
-    public static void glTexCoordPointer(int size, int type, int stride, ByteBuffer pointer)
-    {
-    }
-
-    public static void glVertexPointer(int size, int type, int stride, int pointer)
-    {
-    }
-
-    public static void glVertexPointer(int size, int type, int stride, ByteBuffer pointer)
-    {
-    }
-
-    public static void glColorPointer(int size, int type, int stride, int pointer)
-    {
-    }
-
-    public static void glColorPointer(int size, int type, int stride, ByteBuffer pointer)
-    {
-    }
-
-    public static void glDisableClientState(int capability)
-    {
-    }
-
-    public static void glEnableClientState(int capability)
-    {
-    }
-
-    public static void glBegin(int mode)
-    {
-    }
-
-    public static void glEnd()
-    {
-    }
-
     public static void glDrawArrays(int mode, int first, int count)
     {
         CorePipeline.draw(mode, first, count);
 
-        if (Config.isShaders() && !creatingDisplayList)
+        if (Config.isShaders())
         {
             int instanceCount = Shaders.activeProgram.getCountInstances();
 
@@ -707,28 +672,6 @@ public class GlStateManager
                 Shaders.uniform_instanceId.setValue(0);
             }
         }
-    }
-
-    public static void callList(int list)
-    {
-    }
-
-    public static void callLists(IntBuffer lists)
-    {
-    }
-
-    public static void glDeleteLists(int list, int range)
-    {
-    }
-
-    public static void glNewList(int list, int mode)
-    {
-        creatingDisplayList = true;
-    }
-
-    public static void glEndList()
-    {
-        creatingDisplayList = false;
     }
 
     public static int glGetError()
@@ -758,6 +701,12 @@ public class GlStateManager
 
     public static void glTexParameterf(int target, int pname, float param)
     {
+        if (pname == 10242 || pname == 10243 || pname == 32882 || pname == 10241 || pname == 10240)
+        {
+            GL11.glTexParameteri(target, pname, (int)param);
+            return;
+        }
+
         GL11.glTexParameterf(target, pname, param);
     }
 
@@ -926,7 +875,7 @@ public class GlStateManager
     {
         drawMulti(mode, first, count);
 
-        if (Config.isShaders() && !creatingDisplayList)
+        if (Config.isShaders())
         {
             int instanceCount = Shaders.activeProgram.getCountInstances();
 
@@ -986,6 +935,58 @@ public class GlStateManager
         return overlayAlpha;
     }
 
+    public static void setLights(float[] light0, float[] light1, float ambient, float diffuse)
+    {
+        light0Dir[0] = light0[0];
+        light0Dir[1] = light0[1];
+        light0Dir[2] = light0[2];
+        light1Dir[0] = light1[0];
+        light1Dir[1] = light1[1];
+        light1Dir[2] = light1[2];
+        lightAmbient = ambient;
+        lightDiffuse = diffuse;
+    }
+
+    public static float getLight0X()
+    {
+        return light0Dir[0];
+    }
+
+    public static float getLight0Y()
+    {
+        return light0Dir[1];
+    }
+
+    public static float getLight0Z()
+    {
+        return light0Dir[2];
+    }
+
+    public static float getLight1X()
+    {
+        return light1Dir[0];
+    }
+
+    public static float getLight1Y()
+    {
+        return light1Dir[1];
+    }
+
+    public static float getLight1Z()
+    {
+        return light1Dir[2];
+    }
+
+    public static float getLightAmbient()
+    {
+        return lightAmbient;
+    }
+
+    public static float getLightDiffuse()
+    {
+        return lightDiffuse;
+    }
+
     static
     {
         for (int lightIndex = 0; lightIndex < 8; ++lightIndex)
@@ -1031,9 +1032,9 @@ public class GlStateManager
         }
     }
 
-    private static boolean isFixedFunctionCap(int capability)
+    public static boolean isFixedFunctionCap(int capability)
     {
-        return capability == 3008 || capability == 2896 || capability == 2912 || capability == 2903 || capability == 2977 || capability == 32826 || capability == 3553 || capability == 3168 || capability == 3169 || capability == 3170 || capability == 3171 || capability >= 16384 && capability <= 16391;
+        return capability == 3008 || capability == 2896 || capability == 2912 || capability == 2903 || capability == 2977 || capability == 32826 || capability == 3553 || capability == 3168 || capability == 3169 || capability == 3170 || capability == 3171 || capability == 2852 || capability == 2882 || capability >= 16384 && capability <= 16391;
     }
 
     public static float getColorRed()

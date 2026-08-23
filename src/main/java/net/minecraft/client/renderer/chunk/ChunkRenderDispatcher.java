@@ -14,12 +14,10 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.OpenGlHelper;
 import net.minecraft.client.renderer.RegionRenderCacheBuilder;
 import net.minecraft.client.renderer.VertexBufferUploader;
 import net.minecraft.client.renderer.WorldRenderer;
-import net.minecraft.client.renderer.WorldVertexBufferUploader;
 import net.minecraft.client.renderer.vertex.VertexBuffer;
 import net.minecraft.util.EnumWorldBlockLayer;
 import net.minecraft.util.MathHelper;
@@ -33,7 +31,6 @@ public class ChunkRenderDispatcher
     private final List<ChunkRenderWorker> listThreadedWorkers;
     private final BlockingQueue<ChunkCompileTaskGenerator> queueChunkUpdates;
     private final BlockingQueue<RegionRenderCacheBuilder> queueFreeRenderBuilders;
-    private final WorldVertexBufferUploader worldVertexUploader;
     private final VertexBufferUploader vertexUploader;
     private final Queue < ListenableFutureTask<? >> queueChunkUploads;
     private final ChunkRenderWorker renderWorker;
@@ -49,7 +46,6 @@ public class ChunkRenderDispatcher
     {
         this.listThreadedWorkers = Lists.<ChunkRenderWorker>newArrayList();
         this.queueChunkUpdates = Queues.<ChunkCompileTaskGenerator>newArrayBlockingQueue(100);
-        this.worldVertexUploader = new WorldVertexBufferUploader();
         this.vertexUploader = new VertexBufferUploader();
         this.queueChunkUploads = Queues. < ListenableFutureTask<? >> newArrayDeque();
         this.listPausedBuilders = new ArrayList<RegionRenderCacheBuilder>();
@@ -283,12 +279,6 @@ public class ChunkRenderDispatcher
                 return listenablefuturetask;
             }
         }
-    }
-
-    private void uploadDisplayList(WorldRenderer worldRenderer, int displayList, RenderChunk chunkRenderer)
-    {
-        worldRenderer.setTranslation(0.0D, 0.0D, 0.0D);
-        worldRenderer.reset();
     }
 
     private void uploadVertexBuffer(WorldRenderer worldRenderer, VertexBuffer vertexBufferIn)

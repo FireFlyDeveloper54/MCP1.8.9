@@ -1,8 +1,5 @@
 package optimization.betterfps;
 
-/**
- * @author Guilherme Chaguri
- */
 
 public class JavaMath {
     public static float sin(float radians) {

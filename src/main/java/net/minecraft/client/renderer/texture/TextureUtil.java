@@ -124,6 +124,11 @@ public class TextureUtil
 
     private static void uploadTextureSub(int level, int[] pixels, int width, int height, int xOffset, int yOffset, boolean blur, boolean clamp, boolean mipmap)
     {
+        if (width <= 0 || height <= 0 || pixels == null)
+        {
+            return;
+        }
+
         int maxRowsPerUpload = 4194304 / width;
         setTextureBlurMipmap(blur, mipmap);
         setTextureClamped(clamp);
@@ -152,26 +157,27 @@ public class TextureUtil
 
     public static void allocateTextureImpl(int textureId, int mipmapLevels, int width, int height)
     {
-        Object splashLock = TextureUtil.class;
-
-        
-        synchronized (splashLock)
+        synchronized (TextureUtil.class)
         {
-            deleteTexture(textureId);
             bindTexture(textureId);
+            GL11.glBindTexture(GL11.GL_TEXTURE_2D, textureId);
         }
 
-        if (mipmapLevels >= 0)
+        if (mipmapLevels < 0)
         {
-            GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL12.GL_TEXTURE_MAX_LEVEL, mipmapLevels);
-            GL11.glTexParameterf(GL11.GL_TEXTURE_2D, GL12.GL_TEXTURE_MIN_LOD, 0.0F);
-            GL11.glTexParameterf(GL11.GL_TEXTURE_2D, GL12.GL_TEXTURE_MAX_LOD, (float)mipmapLevels);
-            GL11.glTexParameterf(GL11.GL_TEXTURE_2D, GL14.GL_TEXTURE_LOD_BIAS, 0.0F);
+            mipmapLevels = 0;
         }
+
+        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL12.GL_TEXTURE_MAX_LEVEL, mipmapLevels);
+        GL11.glTexParameterf(GL11.GL_TEXTURE_2D, GL12.GL_TEXTURE_MIN_LOD, 0.0F);
+        GL11.glTexParameterf(GL11.GL_TEXTURE_2D, GL12.GL_TEXTURE_MAX_LOD, (float)mipmapLevels);
+        GL11.glTexParameterf(GL11.GL_TEXTURE_2D, GL14.GL_TEXTURE_LOD_BIAS, 0.0F);
 
         for (int mipLevel = 0; mipLevel <= mipmapLevels; ++mipLevel)
         {
-            GL11.glTexImage2D(GL11.GL_TEXTURE_2D, mipLevel, GL11.GL_RGBA, width >> mipLevel, height >> mipLevel, 0, GL12.GL_BGRA, GL12.GL_UNSIGNED_INT_8_8_8_8_REV, (IntBuffer)((IntBuffer)null));
+            int mipWidth = Math.max(1, width >> mipLevel);
+            int mipHeight = Math.max(1, height >> mipLevel);
+            GL11.glTexImage2D(GL11.GL_TEXTURE_2D, mipLevel, GL11.GL_RGBA8, mipWidth, mipHeight, 0, GL12.GL_BGRA, GL12.GL_UNSIGNED_INT_8_8_8_8_REV, (IntBuffer)((IntBuffer)null));
         }
     }
 

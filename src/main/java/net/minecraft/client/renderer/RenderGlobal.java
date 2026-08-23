@@ -36,7 +36,6 @@ import net.minecraft.client.particle.EntityFX;
 import net.minecraft.client.renderer.chunk.ChunkRenderDispatcher;
 import net.minecraft.client.renderer.chunk.CompiledChunk;
 import net.minecraft.client.renderer.chunk.IRenderChunkFactory;
-import net.minecraft.client.renderer.chunk.ListChunkFactory;
 import net.minecraft.client.renderer.chunk.RenderChunk;
 import net.minecraft.client.renderer.chunk.VboChunkFactory;
 import net.minecraft.client.renderer.chunk.VisGraph;
@@ -134,9 +133,6 @@ public class RenderGlobal implements IWorldAccess, IResourceManagerReloadListene
     private List<RenderGlobal.ContainerLocalRenderInformation> renderInfos = Lists.<RenderGlobal.ContainerLocalRenderInformation>newArrayListWithCapacity(69696);
     private final Set<TileEntity> setTileEntities = Sets.<TileEntity>newHashSet();
     private ViewFrustum viewFrustum;
-    private int starGLCallList = -1;
-    private int glSkyList = -1;
-    private int glSkyList2 = -1;
     private VertexFormat vertexBufferFormat;
     private VertexBuffer starVBO;
     private VertexBuffer skyVBO;
@@ -169,7 +165,6 @@ public class RenderGlobal implements IWorldAccess, IResourceManagerReloadListene
     private ClippingHelper debugFixedClippingHelper;
     private final Vector4f[] debugTerrainMatrix = new Vector4f[8];
     private final Vector3d debugTerrainFrustumPosition = new Vector3d();
-    private boolean vboEnabled = false;
     IRenderChunkFactory renderChunkFactory;
     private double prevRenderSortX;
     private double prevRenderSortY;
@@ -215,7 +210,6 @@ public class RenderGlobal implements IWorldAccess, IResourceManagerReloadListene
         GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL11.GL_REPEAT);
         GlStateManager.bindTexture(0);
         this.updateDestroyBlockIcons();
-        this.vboEnabled = true;
         this.renderContainer = new VboRenderList();
         this.renderChunkFactory = new VboChunkFactory();
 
@@ -304,12 +298,6 @@ public class RenderGlobal implements IWorldAccess, IResourceManagerReloadListene
             this.sky2VBO.deleteGlBuffers();
         }
 
-        if (this.glSkyList2 >= 0)
-        {
-            GLAllocation.deleteDisplayLists(this.glSkyList2);
-            this.glSkyList2 = -1;
-        }
-
         this.sky2VBO = new VertexBuffer(this.vertexBufferFormat);
         this.renderSky(worldRenderer, -16.0F, true);
         worldRenderer.finishDrawing();
@@ -327,12 +315,6 @@ public class RenderGlobal implements IWorldAccess, IResourceManagerReloadListene
             this.skyVBO.deleteGlBuffers();
         }
 
-        if (this.glSkyList >= 0)
-        {
-            GLAllocation.deleteDisplayLists(this.glSkyList);
-            this.glSkyList = -1;
-        }
-
         this.skyVBO = new VertexBuffer(this.vertexBufferFormat);
         this.renderSky(worldRenderer, 16.0F, false);
         worldRenderer.finishDrawing();
@@ -342,11 +324,9 @@ public class RenderGlobal implements IWorldAccess, IResourceManagerReloadListene
 
     private void drawPositionVbo(VertexBuffer buffer)
     {
-        buffer.bindBuffer();
-        WorldVertexBufferUploader.setupVertexFormat(DefaultVertexFormats.POSITION, 0L);
+        buffer.bindDrawState();
+        CorePipeline.prepareDraw(false, false);
         buffer.drawArrays(7);
-        WorldVertexBufferUploader.clearVertexFormat(DefaultVertexFormats.POSITION);
-        buffer.unbindBuffer();
     }
 
     private void renderSky(WorldRenderer worldRendererIn, float posY, boolean reverseX)
@@ -385,12 +365,6 @@ public class RenderGlobal implements IWorldAccess, IResourceManagerReloadListene
         if (this.starVBO != null)
         {
             this.starVBO.deleteGlBuffers();
-        }
-
-        if (this.starGLCallList >= 0)
-        {
-            GLAllocation.deleteDisplayLists(this.starGLCallList);
-            this.starGLCallList = -1;
         }
 
         this.starVBO = new VertexBuffer(this.vertexBufferFormat);
@@ -513,7 +487,6 @@ public class RenderGlobal implements IWorldAccess, IResourceManagerReloadListene
             this.renderDistanceChunks = this.mc.gameSettings.renderDistanceChunks;
             this.renderDistance = this.renderDistanceChunks * 16;
             this.renderDistanceSq = this.renderDistance * this.renderDistance;
-            this.vboEnabled = true;
             this.renderContainer = new VboRenderList();
             this.renderChunkFactory = new VboChunkFactory();
 
@@ -2358,7 +2331,7 @@ public class RenderGlobal implements IWorldAccess, IResourceManagerReloadListene
             GlStateManager.enableBlend();
             GlStateManager.tryBlendFuncSeparate(770, 771, 1, 0);
             GlStateManager.color(0.0F, 0.0F, 0.0F, 0.4F);
-            GL11.glLineWidth(2.0F);
+            GL11.glLineWidth(1.0F);
             GlStateManager.disableTexture2D();
 
             if (Config.isShaders())

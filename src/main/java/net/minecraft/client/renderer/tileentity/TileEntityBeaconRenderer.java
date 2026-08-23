@@ -42,8 +42,8 @@ public class TileEntityBeaconRenderer extends TileEntitySpecialRenderer<TileEnti
                     TileEntityBeacon.BeamSegment beamSegment = (TileEntityBeacon.BeamSegment)beamSegments.get(segmentIndex);
                     int segmentEndY = segmentStartY + beamSegment.getHeight();
                     this.bindTexture(beaconBeam);
-                    GL11.glTexParameterf(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, 10497.0F);
-                    GL11.glTexParameterf(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, 10497.0F);
+                    GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL11.GL_REPEAT);
+                    GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL11.GL_REPEAT);
                     GlStateManager.disableLighting();
                     GlStateManager.disableCull();
                     GlStateManager.disableBlend();

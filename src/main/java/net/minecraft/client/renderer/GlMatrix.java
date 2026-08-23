@@ -14,6 +14,9 @@ public final class GlMatrix
 
     private static final int STACK_LIMIT = 32;
     private static int mode = MODELVIEW;
+    private static int modelViewRevision;
+    private static int projectionRevision;
+    private static int textureRevision;
     private static final ArrayList<float[]> modelView = new ArrayList<float[]>();
     private static final ArrayList<float[]> projection = new ArrayList<float[]>();
     private static final ArrayList<float[]> texture = new ArrayList<float[]>();
@@ -41,6 +44,7 @@ public final class GlMatrix
     public static void loadIdentity()
     {
         identity(current());
+        bump();
     }
 
     public static void pushMatrix()
@@ -62,6 +66,38 @@ public final class GlMatrix
         if (stack.size() > 1)
         {
             stack.remove(stack.size() - 1);
+            bump();
+        }
+    }
+
+    public static int getModelViewRevision()
+    {
+        return modelViewRevision;
+    }
+
+    public static int getProjectionRevision()
+    {
+        return projectionRevision;
+    }
+
+    public static int getTextureRevision()
+    {
+        return textureRevision;
+    }
+
+    private static void bump()
+    {
+        if (mode == PROJECTION)
+        {
+            ++projectionRevision;
+        }
+        else if (mode == TEXTURE)
+        {
+            ++textureRevision;
+        }
+        else
+        {
+            ++modelViewRevision;
         }
     }
 
@@ -88,6 +124,60 @@ public final class GlMatrix
         return top(projection);
     }
 
+    public static float[] getTexture()
+    {
+        return top(texture);
+    }
+
+    public static void getNormalMatrix(float[] out)
+    {
+        float[] m = top(modelView);
+        float m00 = m[0];
+        float m10 = m[1];
+        float m20 = m[2];
+        float m01 = m[4];
+        float m11 = m[5];
+        float m21 = m[6];
+        float m02 = m[8];
+        float m12 = m[9];
+        float m22 = m[10];
+        float c00 = m11 * m22 - m21 * m12;
+        float c01 = m20 * m12 - m10 * m22;
+        float c02 = m10 * m21 - m20 * m11;
+        float c10 = m21 * m02 - m01 * m22;
+        float c11 = m00 * m22 - m20 * m02;
+        float c12 = m20 * m01 - m00 * m21;
+        float c20 = m01 * m12 - m11 * m02;
+        float c21 = m10 * m02 - m00 * m12;
+        float c22 = m00 * m11 - m10 * m01;
+        float det = m00 * c00 + m01 * c01 + m02 * c02;
+
+        if (Math.abs(det) < 1.0E-8F)
+        {
+            out[0] = m00;
+            out[1] = m10;
+            out[2] = m20;
+            out[3] = m01;
+            out[4] = m11;
+            out[5] = m21;
+            out[6] = m02;
+            out[7] = m12;
+            out[8] = m22;
+            return;
+        }
+
+        float inv = 1.0F / det;
+        out[0] = c00 * inv;
+        out[1] = c10 * inv;
+        out[2] = c20 * inv;
+        out[3] = c01 * inv;
+        out[4] = c11 * inv;
+        out[5] = c21 * inv;
+        out[6] = c02 * inv;
+        out[7] = c12 * inv;
+        out[8] = c22 * inv;
+    }
+
     public static void ortho(double left, double right, double bottom, double top, double zNear, double zFar)
     {
         float[] ortho = identity();
@@ -101,6 +191,7 @@ public final class GlMatrix
         ortho[13] = (float)(-(top + bottom) * invTb);
         ortho[14] = (float)(-(zFar + zNear) * invFn);
         multiply(current(), ortho);
+        bump();
     }
 
     public static void frustum(double left, double right, double bottom, double top, double zNear, double zFar)
@@ -117,6 +208,7 @@ public final class GlMatrix
         frustum[11] = -1.0F;
         frustum[14] = (float)(-2.0D * zFar * zNear * invFn);
         multiply(current(), frustum);
+        bump();
     }
 
     public static void translate(float x, float y, float z)
@@ -126,6 +218,7 @@ public final class GlMatrix
         current[13] += current[1] * x + current[5] * y + current[9] * z;
         current[14] += current[2] * x + current[6] * y + current[10] * z;
         current[15] += current[3] * x + current[7] * y + current[11] * z;
+        bump();
     }
 
     public static void scale(float x, float y, float z)
@@ -138,6 +231,8 @@ public final class GlMatrix
             current[4 + i] *= y;
             current[8 + i] *= z;
         }
+
+        bump();
     }
 
     public static void rotate(float angle, float x, float y, float z)
@@ -167,6 +262,7 @@ public final class GlMatrix
         rotate[9] = y * z * c1 - x * s;
         rotate[10] = z * z * c1 + c;
         multiply(current(), rotate);
+        bump();
     }
 
     public static void multMatrix(FloatBuffer matrix)
@@ -180,6 +276,7 @@ public final class GlMatrix
         }
 
         multiply(current(), rhs);
+        bump();
     }
 
     private static ArrayList<float[]> stack()

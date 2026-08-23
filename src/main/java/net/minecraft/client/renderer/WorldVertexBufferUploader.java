@@ -18,8 +18,8 @@ public class WorldVertexBufferUploader
 
             VertexFormat vertexFormat = worldRenderer.getVertexFormat();
             ByteBuffer byteBuffer = worldRenderer.getByteBuffer();
-            CorePipeline.uploadImmediate(byteBuffer);
-            setupVertexFormat(vertexFormat, 0L);
+            long pointer = CorePipeline.uploadImmediate(byteBuffer);
+            setupVertexFormat(vertexFormat, pointer);
 
             if (worldRenderer.isMultiTexture())
             {
@@ -33,17 +33,9 @@ public class WorldVertexBufferUploader
             {
                 GlStateManager.glDrawArrays(worldRenderer.getDrawMode(), 0, worldRenderer.getVertexCount());
             }
-
-            clearVertexFormat(vertexFormat);
         }
 
         worldRenderer.reset();
-    }
-
-    public static void setupVertexFormat(VertexFormat vertexFormat, ByteBuffer byteBuffer)
-    {
-        CorePipeline.uploadImmediate(byteBuffer);
-        CorePipeline.setupVertexFormat(vertexFormat, 0L);
     }
 
     public static void setupVertexFormat(VertexFormat vertexFormat, long pointer)

@@ -234,7 +234,6 @@ public class RenderChunk
                     EnumWorldBlockLayer renderLayer = renderLayers[layerIndex];
 
                     
-                    
                     renderLayer = this.fixBlockLayer(blockState, renderLayer);
                     int renderLayerIndex = renderLayer.ordinal();
 

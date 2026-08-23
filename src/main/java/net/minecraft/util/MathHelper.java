@@ -39,10 +39,7 @@ public class MathHelper
         return BetterFps.cos(value);
     }
 
-    /**
-     * Fills {@code out[0]=sin(value)}, {@code out[1]=cos(value)}.
-     * Prefer this over separate sin/cos when both are needed for the same angle.
-     */
+
     public static void sinCos(float value, float[] out)
     {
         if (BetterFps.isHybridFastPath())
@@ -54,7 +51,7 @@ public class MathHelper
         BetterFps.sinCos(value, out);
     }
 
-    /** Degree-domain sin (skips deg→rad on the hybrid path). */
+
     public static float sinDeg(float degrees)
     {
         if (BetterFps.isHybridFastPath())
@@ -75,7 +72,7 @@ public class MathHelper
         return BetterFps.cosDeg(degrees);
     }
 
-    /** Fills {@code out[0]=sin(degrees)}, {@code out[1]=cos(degrees)}. */
+
     public static void sinCosDeg(float degrees, float[] out)
     {
         if (BetterFps.isHybridFastPath())

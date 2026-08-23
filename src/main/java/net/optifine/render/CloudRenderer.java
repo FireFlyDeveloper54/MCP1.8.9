@@ -3,7 +3,6 @@ package net.optifine.render;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.GLAllocation;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.OpenGlHelper;
 import net.minecraft.client.renderer.Tessellator;
@@ -30,7 +29,6 @@ public class CloudRenderer
     private double lastPlayerX = 0.0D;
     private double lastPlayerY = 0.0D;
     private double lastPlayerZ = 0.0D;
-    private int cloudDisplayList = -1;
     private VertexBuffer cloudBuffer;
     private VertexFormat cloudFormat;
     private int cloudMode;
@@ -40,7 +38,6 @@ public class CloudRenderer
     public CloudRenderer(Minecraft mc)
     {
         this.minecraft = mc;
-        this.cloudDisplayList = GLAllocation.generateDisplayLists(1);
     }
 
     public void prepareToRender(boolean renderFancy, int cloudTickCounter, float partialTicks, Vec3 cloudColor)
@@ -277,11 +274,9 @@ public class CloudRenderer
 
         if (this.cloudBuffer != null && this.cloudVertexCount > 0 && this.cloudFormat != null)
         {
-            this.cloudBuffer.bindBuffer();
-            WorldVertexBufferUploader.setupVertexFormat(this.cloudFormat, 0L);
+            this.cloudBuffer.bindDrawState();
+            net.minecraft.client.renderer.CorePipeline.prepareDraw(false, false);
             GlStateManager.glDrawArrays(this.cloudMode, 0, this.cloudVertexCount);
-            WorldVertexBufferUploader.clearVertexFormat(this.cloudFormat);
-            this.cloudBuffer.unbindBuffer();
         }
 
         GlStateManager.popMatrix();

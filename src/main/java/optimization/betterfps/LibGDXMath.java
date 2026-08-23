@@ -1,8 +1,6 @@
 package optimization.betterfps;
 
-/**
- * @author Guilherme Chaguri
- */
+
 public class LibGDXMath {
     public static final float BF_PI = 3.1415927f;
 

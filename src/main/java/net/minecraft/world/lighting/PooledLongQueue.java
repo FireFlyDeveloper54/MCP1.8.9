@@ -3,10 +3,10 @@ package net.minecraft.world.lighting;
 import java.util.ArrayDeque;
 import java.util.Deque;
 
-//Implement own queue with pooled segments to reduce allocation costs and reduce idle memory footprint
+
 public class PooledLongQueue {
-    private static final int CACHED_QUEUE_SEGMENTS_COUNT = 1 << 12; // 4096
-    private static final int QUEUE_SEGMENT_SIZE = 1 << 10; // 1024
+    private static final int CACHED_QUEUE_SEGMENTS_COUNT = 1 << 12;
+    private static final int QUEUE_SEGMENT_SIZE = 1 << 10;
 
     private final Pool pool;
 
@@ -14,14 +14,7 @@ public class PooledLongQueue {
 
     private int size = 0;
 
-    /**
-     * -- GETTER --
-     *  Thread-safe method to check whether or not this queue has work to do. Significantly cheaper than acquiring a lock.
-     *
-     * @return True if the queue is empty, otherwise false
-     */
-    // Stores whether or not the queue is empty. Updates to this field will be seen by all threads immediately. Writes
-    // to volatile fields are generally quite a bit more expensive, so we avoid repeatedly setting this flag to true.
+
     private volatile boolean empty = true;
 
     public boolean isEmpty() {
@@ -32,19 +25,12 @@ public class PooledLongQueue {
         this.pool = pool;
     }
 
-    /**
-     * Not thread-safe! If you must know whether or not the queue is empty, please use {@link PooledLongQueue#isEmpty()}.
-     *
-     * @return The number of encoded values present in this queue
-     */
+
     public int size() {
         return this.size;
     }
 
-    /**
-     * Not thread-safe! Adds an encoded long value into this queue.
-     * @param val The encoded value to add
-     */
+
     public void add(final long val) {
         if (this.cur == null) {
             this.empty = false;
@@ -63,10 +49,7 @@ public class PooledLongQueue {
         ++this.size;
     }
 
-    /**
-     * Not thread safe! Creates an iterator over the values in this queue. Values will be returned in a FIFO fashion.
-     * @return The iterator
-     */
+
     public LongQueueIterator iterator() {
         return new LongQueueIterator(this.cur);
     }

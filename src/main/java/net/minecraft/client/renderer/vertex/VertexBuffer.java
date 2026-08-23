@@ -1,14 +1,18 @@
 package net.minecraft.client.renderer.vertex;
 
 import java.nio.ByteBuffer;
+import net.minecraft.client.renderer.CorePipeline;
 import net.minecraft.client.renderer.OpenGlHelper;
 import net.optifine.render.VboRange;
 import net.optifine.render.VboRegion;
 import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL30;
 
 public class VertexBuffer
 {
     private int glBufferId;
+    private int vertexArrayId;
+    private boolean vertexArrayDirty = true;
     private final VertexFormat vertexFormat;
     private int count;
     private VboRegion vboRegion;
@@ -38,6 +42,7 @@ public class VertexBuffer
             OpenGlHelper.glBufferData(OpenGlHelper.GL_ARRAY_BUFFER, byteBuffer, 35044);
             this.unbindBuffer();
             this.count = byteBuffer.limit() / this.vertexFormat.getNextOffset();
+            this.vertexArrayDirty = true;
         }
     }
 
@@ -63,8 +68,40 @@ public class VertexBuffer
         OpenGlHelper.glBindBuffer(OpenGlHelper.GL_ARRAY_BUFFER, 0);
     }
 
+    public void bindDrawState()
+    {
+        if (this.vboRegion != null)
+        {
+            return;
+        }
+
+        if (this.vertexArrayId == 0)
+        {
+            this.vertexArrayId = GL30.glGenVertexArrays();
+            this.vertexArrayDirty = true;
+        }
+
+        OpenGlHelper.bindVertexArray(this.vertexArrayId);
+
+        if (this.vertexArrayDirty)
+        {
+            this.bindBuffer();
+            CorePipeline.bindFormat(this.vertexFormat, 0L);
+            CorePipeline.bindQuadIndexBuffer();
+            this.vertexArrayDirty = false;
+        }
+    }
+
     public void deleteGlBuffers()
     {
+        if (this.vertexArrayId != 0)
+        {
+            OpenGlHelper.invalidateVertexArray(this.vertexArrayId);
+            GL30.glDeleteVertexArrays(this.vertexArrayId);
+            this.vertexArrayId = 0;
+            this.vertexArrayDirty = true;
+        }
+
         if (this.glBufferId >= 0)
         {
             OpenGlHelper.glDeleteBuffers(this.glBufferId);

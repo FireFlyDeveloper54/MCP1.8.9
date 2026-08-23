@@ -14,7 +14,7 @@ public class LightingEngineHelpers {
 
     private static final IBlockState DEFAULT_BLOCK_STATE = Blocks.air.getDefaultState();
 
-    // Avoids some additional logic in Chunk#getBlockState... 0 is always air
+
     static IBlockState posToState(final BlockPos pos, final Chunk chunk) {
         int sectionIndex = pos.getY() >> 4;
         ExtendedBlockStorage[] sections = chunk.getBlockStorageArray();

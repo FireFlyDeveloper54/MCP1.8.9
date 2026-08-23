@@ -461,7 +461,7 @@ public class Config
 
     private static void startVersionCheckThread()
     {
-        // OptiFine online version checks are disabled for this local MCP project.
+
     }
 
     public static boolean isMipmaps()

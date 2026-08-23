@@ -95,6 +95,7 @@ public class OpenGlHelper
     public static final int GL_QUADS = 7;
     public static final int GL_TRIANGLES = 4;
     private static int defaultVertexArray;
+    private static int boundVertexArray = -1;
 
     public static void initializeTextures()
     {
@@ -439,6 +440,8 @@ public class OpenGlHelper
         {
             GL20.glUseProgram(program);
         }
+
+        CorePipeline.onProgramBound(program);
     }
 
     public static int glCreateProgram()
@@ -679,14 +682,37 @@ public class OpenGlHelper
         }
 
         defaultVertexArray = GL30.glGenVertexArrays();
-        GL30.glBindVertexArray(defaultVertexArray);
+        boundVertexArray = -1;
+        bindVertexArray(defaultVertexArray);
+    }
+
+    public static void bindVertexArray(int vertexArray)
+    {
+        if (vertexArray != boundVertexArray)
+        {
+            boundVertexArray = vertexArray;
+            GL30.glBindVertexArray(vertexArray);
+        }
     }
 
     public static void bindDefaultVertexArray()
     {
         if (defaultVertexArray != 0)
         {
-            GL30.glBindVertexArray(defaultVertexArray);
+            bindVertexArray(defaultVertexArray);
+        }
+    }
+
+    public static int getBoundVertexArray()
+    {
+        return boundVertexArray;
+    }
+
+    public static void invalidateVertexArray(int vertexArray)
+    {
+        if (boundVertexArray == vertexArray)
+        {
+            boundVertexArray = -1;
         }
     }
 
@@ -923,15 +949,6 @@ public class OpenGlHelper
 
     public static void setLightmapTextureCoords(int target, float textureX, float textureY)
     {
-        if (arbMultitexture)
-        {
-            ARBMultitexture.glMultiTexCoord2fARB(target, textureX, textureY);
-        }
-        else
-        {
-            GL13.glMultiTexCoord2f(target, textureX, textureY);
-        }
-
         if (target == lightmapTexUnit)
         {
             lastBrightnessX = textureX;

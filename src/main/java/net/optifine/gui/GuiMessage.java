@@ -64,9 +64,7 @@ public class GuiMessage extends GuiScreen
         }
     }
 
-    /**
-     * Called from the main game loop to update the screen.
-     */
+
     public void updateScreen()
     {
         super.updateScreen();
