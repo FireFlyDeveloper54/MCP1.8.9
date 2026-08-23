@@ -302,6 +302,12 @@ public class WorldRenderer
         }
     }
 
+    public void cancelDrawing()
+    {
+        this.isDrawing = false;
+        this.reset();
+    }
+
     public void reset()
     {
         this.vertexCount = 0;
@@ -949,7 +955,7 @@ public class WorldRenderer
         {
             int j = startQuad * 4;
             int k = i * 4;
-            GL11.glDrawArrays(this.drawMode, j, k);
+            GlStateManager.glDrawArrays(this.drawMode, j, k);
         }
     }
 

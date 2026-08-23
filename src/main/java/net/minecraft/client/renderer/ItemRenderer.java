@@ -190,7 +190,7 @@ public class ItemRenderer
         this.mc.getTextureManager().bindTexture(RES_MAP_BACKGROUND);
         Tessellator tessellator = Tessellator.getInstance();
         WorldRenderer worldRenderer = tessellator.getWorldRenderer();
-        GL11.glNormal3f(0.0F, 0.0F, -1.0F);
+        GlStateManager.normal(0.0F, 0.0F, -1.0F);
         worldRenderer.begin(7, DefaultVertexFormats.POSITION_TEX);
         worldRenderer.pos(-7.0D, 135.0D, 0.0D).tex(0.0D, 1.0D).endVertex();
         worldRenderer.pos(135.0D, 135.0D, 0.0D).tex(1.0D, 1.0D).endVertex();

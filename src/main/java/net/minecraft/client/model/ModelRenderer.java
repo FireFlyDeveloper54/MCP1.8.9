@@ -40,6 +40,7 @@ public class ModelRenderer
     private VertexFormat compiledFormat;
     private int compiledMode;
     private int compiledVertexCount;
+    private float compiledScale;
     public boolean mirror;
     public boolean showModel;
     public boolean isHidden;
@@ -387,63 +388,29 @@ public class ModelRenderer
     private void compileDisplayList(float scale)
     {
         this.deleteVertexBuffer();
-
-        if (OpenGlHelper.vboSupported && this.spriteList.isEmpty())
-        {
-            Tessellator tessellator = Tessellator.getInstance();
-            WorldRenderer worldRenderer = tessellator.getWorldRenderer();
-            VertexFormat format = Config.isShaders() ? SVertexFormat.defVertexFormatTextured : DefaultVertexFormats.OLDMODEL_POSITION_TEX_NORMAL;
-
-            if (!this.cubeList.isEmpty())
-            {
-                worldRenderer.begin(7, format);
-
-                for (int cubeIndex = 0; cubeIndex < this.cubeList.size(); ++cubeIndex)
-                {
-                    this.cubeList.get(cubeIndex).render(worldRenderer, scale);
-                }
-
-                worldRenderer.finishDrawing();
-                this.compiledVertexCount = worldRenderer.getVertexCount();
-                this.compiledMode = worldRenderer.getDrawMode();
-                this.compiledFormat = format;
-                this.vertexBuffer = new VertexBuffer(format);
-                this.vertexBuffer.bufferData(worldRenderer.getByteBuffer());
-                worldRenderer.reset();
-            }
-
-            this.compiled = true;
-            return;
-        }
-
-        if (this.displayList == 0)
-        {
-            this.displayList = GLAllocation.generateDisplayLists(1);
-        }
-
-        GL11.glNewList(this.displayList, GL11.GL_COMPILE);
+        this.compiledScale = scale;
         Tessellator tessellator = Tessellator.getInstance();
         WorldRenderer worldRenderer = tessellator.getWorldRenderer();
+        VertexFormat format = Config.isShaders() ? SVertexFormat.defVertexFormatTextured : DefaultVertexFormats.OLDMODEL_POSITION_TEX_NORMAL;
 
         if (!this.cubeList.isEmpty())
         {
-            worldRenderer.begin(7, Config.isShaders() ? SVertexFormat.defVertexFormatTextured : DefaultVertexFormats.OLDMODEL_POSITION_TEX_NORMAL);
+            worldRenderer.begin(7, format);
 
             for (int cubeIndex = 0; cubeIndex < this.cubeList.size(); ++cubeIndex)
             {
                 this.cubeList.get(cubeIndex).render(worldRenderer, scale);
             }
 
-            tessellator.draw();
+            worldRenderer.finishDrawing();
+            this.compiledVertexCount = worldRenderer.getVertexCount();
+            this.compiledMode = worldRenderer.getDrawMode();
+            this.compiledFormat = format;
+            this.vertexBuffer = new VertexBuffer(format);
+            this.vertexBuffer.bufferData(worldRenderer.getByteBuffer());
+            worldRenderer.reset();
         }
 
-        for (int spriteIndex = 0; spriteIndex < this.spriteList.size(); ++spriteIndex)
-        {
-            ModelSprite modelSprite = this.spriteList.get(spriteIndex);
-            modelSprite.render(tessellator, scale);
-        }
-
-        GL11.glEndList();
         this.compiled = true;
     }
 
@@ -475,9 +442,15 @@ public class ModelRenderer
 
             this.vertexBuffer.unbindBuffer();
         }
-        else if (this.displayList != 0)
+
+        if (!this.spriteList.isEmpty())
         {
-            GlStateManager.callList(this.displayList);
+            Tessellator tessellator = Tessellator.getInstance();
+
+            for (int spriteIndex = 0; spriteIndex < this.spriteList.size(); ++spriteIndex)
+            {
+                this.spriteList.get(spriteIndex).render(tessellator, this.compiledScale);
+            }
         }
     }
 

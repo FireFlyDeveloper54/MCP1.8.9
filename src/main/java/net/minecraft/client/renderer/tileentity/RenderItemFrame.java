@@ -208,7 +208,7 @@ public class RenderItemFrame extends Render<EntityItemFrame>
                     FontRenderer fontRenderer = this.getFontRendererFromRenderManager();
                     GlStateManager.pushMatrix();
                     GlStateManager.translate((float)x + 0.0F, (float)y + entity.height + 0.5F, (float)z);
-                    GL11.glNormal3f(0.0F, 1.0F, 0.0F);
+                    GlStateManager.normal(0.0F, 1.0F, 0.0F);
                     GlStateManager.rotate(-this.renderManager.playerViewY, 0.0F, 1.0F, 0.0F);
                     GlStateManager.rotate(this.renderManager.playerViewX, 1.0F, 0.0F, 0.0F);
                     GlStateManager.scale(-labelScale, -labelScale, labelScale);

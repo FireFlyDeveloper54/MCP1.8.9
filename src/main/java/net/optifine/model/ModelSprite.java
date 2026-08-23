@@ -79,14 +79,14 @@ public class ModelSprite
         double renderWidth = (double)(MathHelper.abs(deltaU) * (texWidth / 16.0F));
         double renderHeight = (double)(MathHelper.abs(deltaV) * (texHeight / 16.0F));
         WorldRenderer worldRenderer = tess.getWorldRenderer();
-        GL11.glNormal3f(0.0F, 0.0F, -1.0F);
+        GlStateManager.normal(0.0F, 0.0F, -1.0F);
         worldRenderer.begin(7, DefaultVertexFormats.POSITION_TEX);
         worldRenderer.pos(0.0D, renderHeight, 0.0D).tex((double)minU, (double)maxV).endVertex();
         worldRenderer.pos(renderWidth, renderHeight, 0.0D).tex((double)maxU, (double)maxV).endVertex();
         worldRenderer.pos(renderWidth, 0.0D, 0.0D).tex((double)maxU, (double)minV).endVertex();
         worldRenderer.pos(0.0D, 0.0D, 0.0D).tex((double)minU, (double)minV).endVertex();
         tess.draw();
-        GL11.glNormal3f(0.0F, 0.0F, 1.0F);
+        GlStateManager.normal(0.0F, 0.0F, 1.0F);
         worldRenderer.begin(7, DefaultVertexFormats.POSITION_TEX);
         worldRenderer.pos(0.0D, 0.0D, (double)width).tex((double)minU, (double)minV).endVertex();
         worldRenderer.pos(renderWidth, 0.0D, (double)width).tex((double)maxU, (double)minV).endVertex();
@@ -95,7 +95,7 @@ public class ModelSprite
         tess.draw();
         float halfTexelU = 0.5F * deltaU / (float)sizeX;
         float halfTexelV = 0.5F * deltaV / (float)sizeY;
-        GL11.glNormal3f(-1.0F, 0.0F, 0.0F);
+        GlStateManager.normal(-1.0F, 0.0F, 0.0F);
         worldRenderer.begin(7, DefaultVertexFormats.POSITION_TEX);
 
         for (int x = 0; x < sizeX; ++x)
@@ -109,7 +109,7 @@ public class ModelSprite
         }
 
         tess.draw();
-        GL11.glNormal3f(1.0F, 0.0F, 0.0F);
+        GlStateManager.normal(1.0F, 0.0F, 0.0F);
         worldRenderer.begin(7, DefaultVertexFormats.POSITION_TEX);
 
         for (int x = 0; x < sizeX; ++x)
@@ -124,7 +124,7 @@ public class ModelSprite
         }
 
         tess.draw();
-        GL11.glNormal3f(0.0F, 1.0F, 0.0F);
+        GlStateManager.normal(0.0F, 1.0F, 0.0F);
         worldRenderer.begin(7, DefaultVertexFormats.POSITION_TEX);
 
         for (int y = 0; y < sizeY; ++y)
@@ -139,7 +139,7 @@ public class ModelSprite
         }
 
         tess.draw();
-        GL11.glNormal3f(0.0F, -1.0F, 0.0F);
+        GlStateManager.normal(0.0F, -1.0F, 0.0F);
         worldRenderer.begin(7, DefaultVertexFormats.POSITION_TEX);
 
         for (int y = 0; y < sizeY; ++y)

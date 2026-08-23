@@ -215,18 +215,9 @@ public class RenderGlobal implements IWorldAccess, IResourceManagerReloadListene
         GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL11.GL_REPEAT);
         GlStateManager.bindTexture(0);
         this.updateDestroyBlockIcons();
-        this.vboEnabled = OpenGlHelper.useVbo();
-
-        if (this.vboEnabled)
-        {
-            this.renderContainer = new VboRenderList();
-            this.renderChunkFactory = new VboChunkFactory();
-        }
-        else
-        {
-            this.renderContainer = new RenderList();
-            this.renderChunkFactory = new ListChunkFactory();
-        }
+        this.vboEnabled = true;
+        this.renderContainer = new VboRenderList();
+        this.renderChunkFactory = new VboChunkFactory();
 
         this.vertexBufferFormat = new VertexFormat();
         this.vertexBufferFormat.addElement(new VertexFormatElement(0, VertexFormatElement.EnumType.FLOAT, VertexFormatElement.EnumUsage.POSITION, 3));
@@ -319,22 +310,11 @@ public class RenderGlobal implements IWorldAccess, IResourceManagerReloadListene
             this.glSkyList2 = -1;
         }
 
-        if (this.vboEnabled)
-        {
-            this.sky2VBO = new VertexBuffer(this.vertexBufferFormat);
-            this.renderSky(worldRenderer, -16.0F, true);
-            worldRenderer.finishDrawing();
-            this.sky2VBO.bufferData(worldRenderer.getByteBuffer());
-            worldRenderer.reset();
-        }
-        else
-        {
-            this.glSkyList2 = GLAllocation.generateDisplayLists(1);
-            GL11.glNewList(this.glSkyList2, GL11.GL_COMPILE);
-            this.renderSky(worldRenderer, -16.0F, true);
-            tessellator.draw();
-            GL11.glEndList();
-        }
+        this.sky2VBO = new VertexBuffer(this.vertexBufferFormat);
+        this.renderSky(worldRenderer, -16.0F, true);
+        worldRenderer.finishDrawing();
+        this.sky2VBO.bufferData(worldRenderer.getByteBuffer());
+        worldRenderer.reset();
     }
 
     private void generateSky()
@@ -353,22 +333,11 @@ public class RenderGlobal implements IWorldAccess, IResourceManagerReloadListene
             this.glSkyList = -1;
         }
 
-        if (this.vboEnabled)
-        {
-            this.skyVBO = new VertexBuffer(this.vertexBufferFormat);
-            this.renderSky(worldRenderer, 16.0F, false);
-            worldRenderer.finishDrawing();
-            this.skyVBO.bufferData(worldRenderer.getByteBuffer());
-            worldRenderer.reset();
-        }
-        else
-        {
-            this.glSkyList = GLAllocation.generateDisplayLists(1);
-            GL11.glNewList(this.glSkyList, GL11.GL_COMPILE);
-            this.renderSky(worldRenderer, 16.0F, false);
-            tessellator.draw();
-            GL11.glEndList();
-        }
+        this.skyVBO = new VertexBuffer(this.vertexBufferFormat);
+        this.renderSky(worldRenderer, 16.0F, false);
+        worldRenderer.finishDrawing();
+        this.skyVBO.bufferData(worldRenderer.getByteBuffer());
+        worldRenderer.reset();
     }
 
     private void drawPositionVbo(VertexBuffer buffer)
@@ -424,24 +393,11 @@ public class RenderGlobal implements IWorldAccess, IResourceManagerReloadListene
             this.starGLCallList = -1;
         }
 
-        if (this.vboEnabled)
-        {
-            this.starVBO = new VertexBuffer(this.vertexBufferFormat);
-            this.renderStars(worldRenderer);
-            worldRenderer.finishDrawing();
-            this.starVBO.bufferData(worldRenderer.getByteBuffer());
-            worldRenderer.reset();
-        }
-        else
-        {
-            this.starGLCallList = GLAllocation.generateDisplayLists(1);
-            GlStateManager.pushMatrix();
-            GL11.glNewList(this.starGLCallList, GL11.GL_COMPILE);
-            this.renderStars(worldRenderer);
-            tessellator.draw();
-            GL11.glEndList();
-            GlStateManager.popMatrix();
-        }
+        this.starVBO = new VertexBuffer(this.vertexBufferFormat);
+        this.renderStars(worldRenderer);
+        worldRenderer.finishDrawing();
+        this.starVBO.bufferData(worldRenderer.getByteBuffer());
+        worldRenderer.reset();
     }
 
     private void renderStars(WorldRenderer worldRendererIn)
@@ -557,19 +513,9 @@ public class RenderGlobal implements IWorldAccess, IResourceManagerReloadListene
             this.renderDistanceChunks = this.mc.gameSettings.renderDistanceChunks;
             this.renderDistance = this.renderDistanceChunks * 16;
             this.renderDistanceSq = this.renderDistance * this.renderDistance;
-            boolean flag = this.vboEnabled;
-            this.vboEnabled = OpenGlHelper.useVbo();
-
-            if (flag && !this.vboEnabled)
-            {
-                this.renderContainer = new RenderList();
-                this.renderChunkFactory = new ListChunkFactory();
-            }
-            else if (!flag && this.vboEnabled)
-            {
-                this.renderContainer = new VboRenderList();
-                this.renderChunkFactory = new VboChunkFactory();
-            }
+            this.vboEnabled = true;
+            this.renderContainer = new VboRenderList();
+            this.renderChunkFactory = new VboChunkFactory();
 
             this.generateStars();
             this.generateSky();
@@ -1394,16 +1340,7 @@ public class RenderGlobal implements IWorldAccess, IResourceManagerReloadListene
     {
         this.mc.entityRenderer.enableLightmap();
 
-        if (OpenGlHelper.useVbo())
-        {
-            GL11.glEnableClientState(GL11.GL_VERTEX_ARRAY);
-            OpenGlHelper.setClientActiveTexture(OpenGlHelper.defaultTexUnit);
-            GL11.glEnableClientState(GL11.GL_TEXTURE_COORD_ARRAY);
-            OpenGlHelper.setClientActiveTexture(OpenGlHelper.lightmapTexUnit);
-            GL11.glEnableClientState(GL11.GL_TEXTURE_COORD_ARRAY);
-            OpenGlHelper.setClientActiveTexture(OpenGlHelper.defaultTexUnit);
-            GL11.glEnableClientState(GL11.GL_COLOR_ARRAY);
-        }
+        OpenGlHelper.bindDefaultVertexArray();
 
         if (Config.isShaders())
         {
@@ -1417,31 +1354,7 @@ public class RenderGlobal implements IWorldAccess, IResourceManagerReloadListene
             ShadersRender.postRenderChunkLayer(blockLayerIn);
         }
 
-        if (OpenGlHelper.useVbo())
-        {
-            for (VertexFormatElement vertexFormatElement : DefaultVertexFormats.BLOCK.getElements())
-            {
-                VertexFormatElement.EnumUsage vertexformatelement$enumusage = vertexFormatElement.getUsage();
-                int i = vertexFormatElement.getIndex();
-
-                switch (vertexformatelement$enumusage)
-                {
-                    case POSITION:
-                        GL11.glDisableClientState(GL11.GL_VERTEX_ARRAY);
-                        break;
-
-                    case UV:
-                        OpenGlHelper.setClientActiveTexture(OpenGlHelper.defaultTexUnit + i);
-                        GL11.glDisableClientState(GL11.GL_TEXTURE_COORD_ARRAY);
-                        OpenGlHelper.setClientActiveTexture(OpenGlHelper.defaultTexUnit);
-                        break;
-
-                    case COLOR:
-                        GL11.glDisableClientState(GL11.GL_COLOR_ARRAY);
-                        GlStateManager.resetColor();
-                }
-            }
-        }
+        WorldVertexBufferUploader.clearVertexFormat(DefaultVertexFormats.BLOCK);
 
         this.mc.entityRenderer.disableLightmap();
     }
@@ -1616,14 +1529,7 @@ public class RenderGlobal implements IWorldAccess, IResourceManagerReloadListene
 
             if (Config.isSkyEnabled())
             {
-                if (this.vboEnabled)
-                {
-                    this.drawPositionVbo(this.skyVBO);
-                }
-                else
-                {
-                    GlStateManager.callList(this.glSkyList);
-                }
+                this.drawPositionVbo(this.skyVBO);
             }
 
             GlStateManager.disableFog();
@@ -1756,14 +1662,7 @@ public class RenderGlobal implements IWorldAccess, IResourceManagerReloadListene
             {
                 GlStateManager.color(twentyNinthFloatValue, twentyNinthFloatValue, twentyNinthFloatValue, twentyNinthFloatValue);
 
-                if (this.vboEnabled)
-                {
-                    this.drawPositionVbo(this.starVBO);
-                }
-                else
-                {
-                    GlStateManager.callList(this.starGLCallList);
-                }
+                this.drawPositionVbo(this.starVBO);
             }
 
             GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
@@ -1792,14 +1691,7 @@ public class RenderGlobal implements IWorldAccess, IResourceManagerReloadListene
                 GlStateManager.pushMatrix();
                 GlStateManager.translate(0.0F, 12.0F, 0.0F);
 
-                if (this.vboEnabled)
-                {
-                    this.drawPositionVbo(this.sky2VBO);
-                }
-                else
-                {
-                    GlStateManager.callList(this.glSkyList2);
-                }
+                this.drawPositionVbo(this.sky2VBO);
 
                 GlStateManager.popMatrix();
                 float twentiethFloatValue = 1.0F;
@@ -1848,14 +1740,7 @@ public class RenderGlobal implements IWorldAccess, IResourceManagerReloadListene
 
             if (Config.isSkyEnabled())
             {
-                if (this.vboEnabled)
-                {
-                    this.drawPositionVbo(this.sky2VBO);
-                }
-                else
-                {
-                    GlStateManager.callList(this.glSkyList2);
-                }
+                this.drawPositionVbo(this.sky2VBO);
             }
 
             GlStateManager.popMatrix();
@@ -1909,43 +1794,57 @@ public class RenderGlobal implements IWorldAccess, IResourceManagerReloadListene
                     {
                         this.cloudRenderer.startUpdateGlList();
 
-                        if (pass != 2)
+                        try
                         {
-                            float fifthFloatValue = (f * 30.0F + thirdFloatValue * 59.0F + fourthFloatValue * 11.0F) / 100.0F;
-                            float sixthFloatValue = (f * 30.0F + thirdFloatValue * 70.0F) / 100.0F;
-                            float seventhFloatValue = (f * 30.0F + fourthFloatValue * 70.0F) / 100.0F;
-                            f = fifthFloatValue;
-                            thirdFloatValue = sixthFloatValue;
-                            fourthFloatValue = seventhFloatValue;
-                        }
-
-                        float twentyThirdFloatValue = 4.8828125E-4F;
-                        double doubleValue = (double)((float)this.cloudTickCounter + partialTicks);
-                        double secondDoubleValue = this.mc.getRenderViewEntity().prevPosX + (this.mc.getRenderViewEntity().posX - this.mc.getRenderViewEntity().prevPosX) * (double)partialTicks + doubleValue * 0.029999999329447746D;
-                        double thirdDoubleValue = this.mc.getRenderViewEntity().prevPosZ + (this.mc.getRenderViewEntity().posZ - this.mc.getRenderViewEntity().prevPosZ) * (double)partialTicks;
-                        int k = MathHelper.floor_double(secondDoubleValue / 2048.0D);
-                        int l = MathHelper.floor_double(thirdDoubleValue / 2048.0D);
-                        secondDoubleValue = secondDoubleValue - (double)(k * 2048);
-                        thirdDoubleValue = thirdDoubleValue - (double)(l * 2048);
-                        float eighthFloatValue = this.theWorld.provider.getCloudHeight() - secondFloatValue + 0.33F;
-                        eighthFloatValue = eighthFloatValue + this.mc.gameSettings.ofCloudsHeight * 128.0F;
-                        float ninthFloatValue = (float)(secondDoubleValue * 4.8828125E-4D);
-                        float tenthFloatValue = (float)(thirdDoubleValue * 4.8828125E-4D);
-                        worldrenderer.begin(7, DefaultVertexFormats.POSITION_TEX_COLOR);
-
-                        for (int intValue = -256; intValue < 256; intValue += 32)
-                        {
-                            for (int secondIntValue = -256; secondIntValue < 256; secondIntValue += 32)
+                            if (pass != 2)
                             {
-                                worldrenderer.pos((double)(intValue + 0), (double)eighthFloatValue, (double)(secondIntValue + 32)).tex((double)((float)(intValue + 0) * 4.8828125E-4F + ninthFloatValue), (double)((float)(secondIntValue + 32) * 4.8828125E-4F + tenthFloatValue)).color(f, thirdFloatValue, fourthFloatValue, 0.8F).endVertex();
-                                worldrenderer.pos((double)(intValue + 32), (double)eighthFloatValue, (double)(secondIntValue + 32)).tex((double)((float)(intValue + 32) * 4.8828125E-4F + ninthFloatValue), (double)((float)(secondIntValue + 32) * 4.8828125E-4F + tenthFloatValue)).color(f, thirdFloatValue, fourthFloatValue, 0.8F).endVertex();
-                                worldrenderer.pos((double)(intValue + 32), (double)eighthFloatValue, (double)(secondIntValue + 0)).tex((double)((float)(intValue + 32) * 4.8828125E-4F + ninthFloatValue), (double)((float)(secondIntValue + 0) * 4.8828125E-4F + tenthFloatValue)).color(f, thirdFloatValue, fourthFloatValue, 0.8F).endVertex();
-                                worldrenderer.pos((double)(intValue + 0), (double)eighthFloatValue, (double)(secondIntValue + 0)).tex((double)((float)(intValue + 0) * 4.8828125E-4F + ninthFloatValue), (double)((float)(secondIntValue + 0) * 4.8828125E-4F + tenthFloatValue)).color(f, thirdFloatValue, fourthFloatValue, 0.8F).endVertex();
+                                float fifthFloatValue = (f * 30.0F + thirdFloatValue * 59.0F + fourthFloatValue * 11.0F) / 100.0F;
+                                float sixthFloatValue = (f * 30.0F + thirdFloatValue * 70.0F) / 100.0F;
+                                float seventhFloatValue = (f * 30.0F + fourthFloatValue * 70.0F) / 100.0F;
+                                f = fifthFloatValue;
+                                thirdFloatValue = sixthFloatValue;
+                                fourthFloatValue = seventhFloatValue;
+                            }
+
+                            float twentyThirdFloatValue = 4.8828125E-4F;
+                            double doubleValue = (double)((float)this.cloudTickCounter + partialTicks);
+                            double secondDoubleValue = this.mc.getRenderViewEntity().prevPosX + (this.mc.getRenderViewEntity().posX - this.mc.getRenderViewEntity().prevPosX) * (double)partialTicks + doubleValue * 0.029999999329447746D;
+                            double thirdDoubleValue = this.mc.getRenderViewEntity().prevPosZ + (this.mc.getRenderViewEntity().posZ - this.mc.getRenderViewEntity().prevPosZ) * (double)partialTicks;
+                            int k = MathHelper.floor_double(secondDoubleValue / 2048.0D);
+                            int l = MathHelper.floor_double(thirdDoubleValue / 2048.0D);
+                            secondDoubleValue = secondDoubleValue - (double)(k * 2048);
+                            thirdDoubleValue = thirdDoubleValue - (double)(l * 2048);
+                            float eighthFloatValue = this.theWorld.provider.getCloudHeight() - secondFloatValue + 0.33F;
+                            eighthFloatValue = eighthFloatValue + this.mc.gameSettings.ofCloudsHeight * 128.0F;
+                            float ninthFloatValue = (float)(secondDoubleValue * 4.8828125E-4D);
+                            float tenthFloatValue = (float)(thirdDoubleValue * 4.8828125E-4D);
+                            worldrenderer.begin(7, DefaultVertexFormats.POSITION_TEX_COLOR);
+
+                            for (int intValue = -256; intValue < 256; intValue += 32)
+                            {
+                                for (int secondIntValue = -256; secondIntValue < 256; secondIntValue += 32)
+                                {
+                                    worldrenderer.pos((double)(intValue + 0), (double)eighthFloatValue, (double)(secondIntValue + 32)).tex((double)((float)(intValue + 0) * 4.8828125E-4F + ninthFloatValue), (double)((float)(secondIntValue + 32) * 4.8828125E-4F + tenthFloatValue)).color(f, thirdFloatValue, fourthFloatValue, 0.8F).endVertex();
+                                    worldrenderer.pos((double)(intValue + 32), (double)eighthFloatValue, (double)(secondIntValue + 32)).tex((double)((float)(intValue + 32) * 4.8828125E-4F + ninthFloatValue), (double)((float)(secondIntValue + 32) * 4.8828125E-4F + tenthFloatValue)).color(f, thirdFloatValue, fourthFloatValue, 0.8F).endVertex();
+                                    worldrenderer.pos((double)(intValue + 32), (double)eighthFloatValue, (double)(secondIntValue + 0)).tex((double)((float)(intValue + 32) * 4.8828125E-4F + ninthFloatValue), (double)((float)(secondIntValue + 0) * 4.8828125E-4F + tenthFloatValue)).color(f, thirdFloatValue, fourthFloatValue, 0.8F).endVertex();
+                                    worldrenderer.pos((double)(intValue + 0), (double)eighthFloatValue, (double)(secondIntValue + 0)).tex((double)((float)(intValue + 0) * 4.8828125E-4F + ninthFloatValue), (double)((float)(secondIntValue + 0) * 4.8828125E-4F + tenthFloatValue)).color(f, thirdFloatValue, fourthFloatValue, 0.8F).endVertex();
+                                }
+                            }
+
+                            tessellator.draw();
+                        }
+                        catch (Throwable throwable)
+                        {
+                            this.cloudRenderer.abortCapture();
+                            throw throwable instanceof RuntimeException ? (RuntimeException)throwable : new RuntimeException(throwable);
+                        }
+                        finally
+                        {
+                            if (CloudRenderer.isCapturing())
+                            {
+                                this.cloudRenderer.endUpdateGlList();
                             }
                         }
-
-                        tessellator.draw();
-                        this.cloudRenderer.endUpdateGlList();
                     }
 
                     this.cloudRenderer.renderGlList();
@@ -2053,6 +1952,8 @@ public class RenderGlobal implements IWorldAccess, IResourceManagerReloadListene
         {
             this.cloudRenderer.startUpdateGlList();
 
+            try
+            {
             for (int outerIndex = -3; outerIndex <= 4; ++outerIndex)
             {
                 for (int innerIndex = -3; innerIndex <= 4; ++innerIndex)
@@ -2126,8 +2027,19 @@ public class RenderGlobal implements IWorldAccess, IResourceManagerReloadListene
                     tessellator.draw();
                 }
             }
-
-            this.cloudRenderer.endUpdateGlList();
+            }
+            catch (Throwable throwable)
+            {
+                this.cloudRenderer.abortCapture();
+                throw throwable instanceof RuntimeException ? (RuntimeException)throwable : new RuntimeException(throwable);
+            }
+            finally
+            {
+                if (CloudRenderer.isCapturing())
+                {
+                    this.cloudRenderer.endUpdateGlList();
+                }
+            }
         }
 
         GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);

@@ -54,7 +54,7 @@ public class VertexBuffer
         }
         else
         {
-            GL11.glDrawArrays(mode, 0, this.count);
+            net.minecraft.client.renderer.GlStateManager.glDrawArrays(mode, 0, this.count);
         }
     }
 

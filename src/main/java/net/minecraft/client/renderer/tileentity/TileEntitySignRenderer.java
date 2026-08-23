@@ -89,7 +89,7 @@ public class TileEntitySignRenderer extends TileEntitySpecialRenderer<TileEntity
             float textScale = 0.015625F * modelScale;
             GlStateManager.translate(0.0F, 0.5F * modelScale, 0.07F * modelScale);
             GlStateManager.scale(textScale, -textScale, textScale);
-            GL11.glNormal3f(0.0F, 0.0F, -1.0F * textScale);
+            GlStateManager.normal(0.0F, 0.0F, -1.0F * textScale);
             GlStateManager.depthMask(false);
             int textColor = 0;
 

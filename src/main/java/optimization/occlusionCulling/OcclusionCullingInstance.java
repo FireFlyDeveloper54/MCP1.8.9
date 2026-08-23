@@ -47,6 +47,10 @@ public class OcclusionCullingInstance {
         }
     }
 
+    public DataProvider getProvider() {
+        return this.provider;
+    }
+
     public int getReach() {
         return this.reach;
     }

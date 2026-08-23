@@ -311,14 +311,9 @@ public class SVertexBuilder
 
             if (vertexStride == 56)
             {
-                ByteBuffer byteBuffer = wrr.getByteBuffer();
-                byteBuffer.position(32);
-                GL20.glVertexAttribPointer(Shaders.midTexCoordAttrib, 2, GL11.GL_FLOAT, false, vertexStride, byteBuffer);
-                byteBuffer.position(40);
-                GL20.glVertexAttribPointer(Shaders.tangentAttrib, 4, GL11.GL_SHORT, false, vertexStride, byteBuffer);
-                byteBuffer.position(48);
-                GL20.glVertexAttribPointer(Shaders.entityAttrib, 3, GL11.GL_SHORT, false, vertexStride, byteBuffer);
-                byteBuffer.position(0);
+                GL20.glVertexAttribPointer(Shaders.midTexCoordAttrib, 2, GL11.GL_FLOAT, false, vertexStride, 32L);
+                GL20.glVertexAttribPointer(Shaders.tangentAttrib, 4, GL11.GL_SHORT, false, vertexStride, 40L);
+                GL20.glVertexAttribPointer(Shaders.entityAttrib, 3, GL11.GL_SHORT, false, vertexStride, 48L);
                 GL20.glEnableVertexAttribArray(Shaders.midTexCoordAttrib);
                 GL20.glEnableVertexAttribArray(Shaders.tangentAttrib);
                 GL20.glEnableVertexAttribArray(Shaders.entityAttrib);

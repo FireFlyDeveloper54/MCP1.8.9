@@ -5,6 +5,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.EntityRenderer;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.ItemRenderer;
+import net.minecraft.client.renderer.CorePipeline;
 import net.minecraft.client.renderer.OpenGlHelper;
 import net.minecraft.client.renderer.RenderGlobal;
 import net.minecraft.client.renderer.Tessellator;
@@ -107,7 +108,7 @@ public class ShadersRender
             {
                 Shaders.readCenterDepth();
                 Shaders.beginHand(false);
-                GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
+                GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
                 Shaders.setSkipRenderHands(mainHandTranslucent, offHandTranslucent);
                 er.renderHand(partialTicks, xOffset, true, false, false);
                 Shaders.endHand();
@@ -124,7 +125,7 @@ public class ShadersRender
             Shaders.readCenterDepth();
             GlStateManager.enableBlend();
             Shaders.beginHand(true);
-            GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
+            GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
             Shaders.setSkipRenderHands(Shaders.isHandRenderedMain(), Shaders.isHandRenderedOff());
             er.renderHand(partialTicks, xOffset, true, false, true);
             Shaders.endHand();
@@ -141,18 +142,18 @@ public class ShadersRender
         if (renderTranslucent)
         {
             GlStateManager.depthFunc(519);
-            GL11.glPushMatrix();
+            GlStateManager.pushMatrix();
             IntBuffer previousDrawBuffers = Shaders.activeDrawBuffers;
             Shaders.setDrawBuffers(Shaders.drawBuffersNone);
             Shaders.renderItemKeepDepthMask = true;
             itemRenderer.renderItemInFirstPerson(partialTicks);
             Shaders.renderItemKeepDepthMask = false;
             Shaders.setDrawBuffers(previousDrawBuffers);
-            GL11.glPopMatrix();
+            GlStateManager.popMatrix();
         }
 
         GlStateManager.depthFunc(515);
-        GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
+        GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
         itemRenderer.renderItemInFirstPerson(partialTicks);
         Shaders.setRenderingFirstPersonHand(false);
     }
@@ -202,10 +203,10 @@ public class ShadersRender
             Shaders.preShadowPassThirdPersonView = minecraft.gameSettings.thirdPersonView;
             minecraft.gameSettings.thirdPersonView = 1;
             Shaders.checkGLError("pre shadow");
-            GL11.glMatrixMode(GL11.GL_PROJECTION);
-            GL11.glPushMatrix();
-            GL11.glMatrixMode(GL11.GL_MODELVIEW);
-            GL11.glPushMatrix();
+            GlStateManager.matrixMode(GL11.GL_PROJECTION);
+            GlStateManager.pushMatrix();
+            GlStateManager.matrixMode(GL11.GL_MODELVIEW);
+            GlStateManager.pushMatrix();
             minecraft.mcProfiler.endStartSection("shadow clear");
             EXTFramebufferObject.glBindFramebufferEXT(36160, Shaders.sfb);
             Shaders.checkGLError("shadow bind sfb");
@@ -370,11 +371,11 @@ public class ShadersRender
             Shaders.activeDrawBuffers = null;
             minecraft.getTextureManager().bindTexture(TextureMap.locationBlocksTexture);
             Shaders.useProgram(Shaders.ProgramTerrain);
-            GL11.glMatrixMode(GL11.GL_MODELVIEW);
-            GL11.glPopMatrix();
-            GL11.glMatrixMode(GL11.GL_PROJECTION);
-            GL11.glPopMatrix();
-            GL11.glMatrixMode(GL11.GL_MODELVIEW);
+            GlStateManager.matrixMode(GL11.GL_MODELVIEW);
+            GlStateManager.popMatrix();
+            GlStateManager.matrixMode(GL11.GL_PROJECTION);
+            GlStateManager.popMatrix();
+            GlStateManager.matrixMode(GL11.GL_MODELVIEW);
             Shaders.checkGLError("shadow end");
         }
     }
@@ -388,7 +389,7 @@ public class ShadersRender
 
         if (OpenGlHelper.useVbo())
         {
-            GL11.glEnableClientState(GL11.GL_NORMAL_ARRAY);
+            GL20.glEnableVertexAttribArray(CorePipeline.ATTR_NORMAL);
             GL20.glEnableVertexAttribArray(Shaders.midTexCoordAttrib);
             GL20.glEnableVertexAttribArray(Shaders.tangentAttrib);
             GL20.glEnableVertexAttribArray(Shaders.entityAttrib);
@@ -399,7 +400,7 @@ public class ShadersRender
     {
         if (OpenGlHelper.useVbo())
         {
-            GL11.glDisableClientState(GL11.GL_NORMAL_ARRAY);
+            GL20.glDisableVertexAttribArray(CorePipeline.ATTR_NORMAL);
             GL20.glDisableVertexAttribArray(Shaders.midTexCoordAttrib);
             GL20.glDisableVertexAttribArray(Shaders.tangentAttrib);
             GL20.glDisableVertexAttribArray(Shaders.entityAttrib);
@@ -413,17 +414,24 @@ public class ShadersRender
 
     public static void setupArrayPointersVbo()
     {
-        int strideInts = 14;
-        GL11.glVertexPointer(3, GL11.GL_FLOAT, 56, 0L);
-        GL11.glColorPointer(4, GL11.GL_UNSIGNED_BYTE, 56, 12L);
-        GL11.glTexCoordPointer(2, GL11.GL_FLOAT, 56, 16L);
-        OpenGlHelper.setClientActiveTexture(OpenGlHelper.lightmapTexUnit);
-        GL11.glTexCoordPointer(2, GL11.GL_SHORT, 56, 24L);
-        OpenGlHelper.setClientActiveTexture(OpenGlHelper.defaultTexUnit);
-        GL11.glNormalPointer(GL11.GL_BYTE, 56, 28L);
+        OpenGlHelper.bindDefaultVertexArray();
+        GL20.glEnableVertexAttribArray(CorePipeline.ATTR_POSITION);
+        GL20.glVertexAttribPointer(CorePipeline.ATTR_POSITION, 3, GL11.GL_FLOAT, false, 56, 0L);
+        GL20.glEnableVertexAttribArray(CorePipeline.ATTR_COLOR);
+        GL20.glVertexAttribPointer(CorePipeline.ATTR_COLOR, 4, GL11.GL_UNSIGNED_BYTE, true, 56, 12L);
+        GL20.glEnableVertexAttribArray(CorePipeline.ATTR_UV0);
+        GL20.glVertexAttribPointer(CorePipeline.ATTR_UV0, 2, GL11.GL_FLOAT, false, 56, 16L);
+        GL20.glEnableVertexAttribArray(CorePipeline.ATTR_UV1);
+        GL20.glVertexAttribPointer(CorePipeline.ATTR_UV1, 2, GL11.GL_SHORT, false, 56, 24L);
+        GL20.glEnableVertexAttribArray(CorePipeline.ATTR_NORMAL);
+        GL20.glVertexAttribPointer(CorePipeline.ATTR_NORMAL, 3, GL11.GL_BYTE, true, 56, 28L);
+        GL20.glEnableVertexAttribArray(Shaders.midTexCoordAttrib);
         GL20.glVertexAttribPointer(Shaders.midTexCoordAttrib, 2, GL11.GL_FLOAT, false, 56, 32L);
+        GL20.glEnableVertexAttribArray(Shaders.tangentAttrib);
         GL20.glVertexAttribPointer(Shaders.tangentAttrib, 4, GL11.GL_SHORT, false, 56, 40L);
+        GL20.glEnableVertexAttribArray(Shaders.entityAttrib);
         GL20.glVertexAttribPointer(Shaders.entityAttrib, 3, GL11.GL_SHORT, false, 56, 48L);
+        CorePipeline.prepareDraw(true, true);
     }
 
     public static void beaconBeamBegin()

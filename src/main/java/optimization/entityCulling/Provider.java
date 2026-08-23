@@ -12,17 +12,22 @@ public class Provider implements DataProvider {
     private final Minecraft client = Minecraft.getMinecraft();
     private WorldClient world = null;
     
+    public void bindWorld(WorldClient worldIn) {
+        this.world = worldIn;
+    }
+
     @Override
     public boolean prepareChunk(int chunkX, int chunkZ) {
-        world = client.theWorld;
-        if (world == null) {
+        WorldClient currentWorld = this.world != null ? this.world : client.theWorld;
+        this.world = currentWorld;
+        if (currentWorld == null) {
             return false;
         }
         if (!EntityCulling.instance.isLoadedChunksOnly()) {
             return true;
         }
 
-        IChunkProvider provider = world.getChunkProvider();
+        IChunkProvider provider = currentWorld.getChunkProvider();
         if (provider instanceof ChunkProviderClient) {
             return ((ChunkProviderClient) provider).getLoadedChunk(chunkX, chunkZ) != null;
         }

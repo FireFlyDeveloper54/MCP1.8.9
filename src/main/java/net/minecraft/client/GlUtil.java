@@ -58,7 +58,7 @@ public final class GlUtil
     {
         float ymax = zNear * (float)Math.tan(fovy * Math.PI / 360.0D);
         float ymin = -ymax;
-        GL11.glFrustum(ymin * aspect, ymax * aspect, ymin, ymax, zNear, zFar);
+        net.minecraft.client.renderer.GlStateManager.frustum((double)(ymin * aspect), (double)(ymax * aspect), (double)ymin, (double)ymax, (double)zNear, (double)zFar);
     }
 
     public static String gluErrorString(int error)

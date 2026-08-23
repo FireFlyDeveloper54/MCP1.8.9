@@ -1067,7 +1067,7 @@ public class Minecraft implements IThreadListener, IPlayerUsage
 
     protected void checkWindowResize()
     {
-        if (!this.fullscreen && GameWindow.wasResized())
+        if (GameWindow.wasResized())
         {
             int i = this.displayWidth;
             int j = this.displayHeight;
@@ -1685,9 +1685,8 @@ public class Minecraft implements IThreadListener, IPlayerUsage
             while (GameWindow.nextKeyEvent())
             {
                 int eventKey = GameWindow.getEventKey();
-                char eventCharacter = GameWindow.getEventCharacter();
                 boolean keyState = GameWindow.getEventKeyState();
-                int k = eventKey == 0 ? eventCharacter + 256 : eventKey;
+                int k = eventKey;
 
                 if (k != 0)
                 {

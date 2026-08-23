@@ -25,7 +25,6 @@ import net.minecraft.util.EnumWorldBlockLayer;
 import net.minecraft.util.MathHelper;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.lwjgl.opengl.GL11;
 
 public class ChunkRenderDispatcher
 {
@@ -263,14 +262,7 @@ public class ChunkRenderDispatcher
     {
         if (Minecraft.getMinecraft().isCallingFromMinecraftThread())
         {
-            if (OpenGlHelper.useVbo())
-            {
-                this.uploadVertexBuffer(worldRenderer, chunkRenderer.getVertexBufferByLayer(layer.ordinal()));
-            }
-            else
-            {
-                this.uploadDisplayList(worldRenderer, ((ListedRenderChunk)chunkRenderer).getDisplayList(layer, compiledChunkIn), chunkRenderer);
-            }
+            this.uploadVertexBuffer(worldRenderer, chunkRenderer.getVertexBufferByLayer(layer.ordinal()));
 
             worldRenderer.setTranslation(0.0D, 0.0D, 0.0D);
             return Futures.<Object>immediateFuture((Object)null);
@@ -295,12 +287,8 @@ public class ChunkRenderDispatcher
 
     private void uploadDisplayList(WorldRenderer worldRenderer, int displayList, RenderChunk chunkRenderer)
     {
-        GL11.glNewList(displayList, GL11.GL_COMPILE);
-        GlStateManager.pushMatrix();
-        chunkRenderer.multModelviewMatrix();
-        this.worldVertexUploader.draw(worldRenderer);
-        GlStateManager.popMatrix();
-        GL11.glEndList();
+        worldRenderer.setTranslation(0.0D, 0.0D, 0.0D);
+        worldRenderer.reset();
     }
 
     private void uploadVertexBuffer(WorldRenderer worldRenderer, VertexBuffer vertexBufferIn)

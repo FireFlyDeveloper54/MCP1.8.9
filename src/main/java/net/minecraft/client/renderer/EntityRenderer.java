@@ -1904,7 +1904,7 @@ public class EntityRenderer implements IResourceManagerReloadListener
             Tessellator tessellator = Tessellator.getInstance();
             WorldRenderer worldrenderer = tessellator.getWorldRenderer();
             GlStateManager.disableCull();
-            GL11.glNormal3f(0.0F, 1.0F, 0.0F);
+            GlStateManager.normal(0.0F, 1.0F, 0.0F);
             GlStateManager.enableBlend();
             GlStateManager.tryBlendFuncSeparate(770, 771, 1, 0);
             GlStateManager.alphaFunc(516, 0.1F);
@@ -2254,8 +2254,8 @@ public class EntityRenderer implements IResourceManagerReloadListener
             flag = ((EntityPlayer)entity).capabilities.isCreativeMode;
         }
 
-        GL11.glFogfv(GL11.GL_FOG_COLOR, (FloatBuffer)this.setFogColorBuffer(this.fogColorRed, this.fogColorGreen, this.fogColorBlue, 1.0F));
-        GL11.glNormal3f(0.0F, -1.0F, 0.0F);
+        GlStateManager.glFog(GL11.GL_FOG_COLOR, (FloatBuffer)this.setFogColorBuffer(this.fogColorRed, this.fogColorGreen, this.fogColorBlue, 1.0F));
+        GlStateManager.normal(0.0F, -1.0F, 0.0F);
         GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
         Block block = ActiveRenderInfo.getBlockAtEntityViewpoint(this.mc.theWorld, entity, partialTicks);
         float f = -1.0F;
@@ -2288,10 +2288,7 @@ public class EntityRenderer implements IResourceManagerReloadListener
                 GlStateManager.setFogEnd(floatValue);
             }
 
-            if (GL.getCapabilities().GL_NV_fog_distance && Config.isFogFancy())
-            {
-                GL11.glFogi(34138, 34139);
-            }
+
         }
         else if (this.cloudFog)
         {
@@ -2333,19 +2330,6 @@ public class EntityRenderer implements IResourceManagerReloadListener
             {
                 GlStateManager.setFogStart(fourthFloatValue * Config.getFogStart());
                 GlStateManager.setFogEnd(fourthFloatValue);
-            }
-
-            if (GL.getCapabilities().GL_NV_fog_distance)
-            {
-                if (Config.isFogFancy())
-                {
-                    GL11.glFogi(34138, 34139);
-                }
-
-                if (Config.isFogFast())
-                {
-                    GL11.glFogi(34138, 34140);
-                }
             }
 
             if (this.mc.theWorld.provider.doesXZShowFog((int)entity.posX, (int)entity.posZ))

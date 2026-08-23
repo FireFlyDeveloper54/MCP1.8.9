@@ -395,17 +395,7 @@ public class Config
             net.minecraft.src.Config.warn(exception1.getClass().getName() + ": " + exception1.getMessage(), exception1);
         }
 
-        try
-        {
-            String s = GL11.glGetString(GL11.GL_EXTENSIONS);
-            String[] astring1 = s.split(" ");
-            return astring1;
-        }
-        catch (Exception exception)
-        {
-            net.minecraft.src.Config.warn(exception.getClass().getName() + ": " + exception.getMessage(), exception);
-            return new String[0];
-        }
+        return new String[0];
     }
 
     public static void updateThreadPriorities()

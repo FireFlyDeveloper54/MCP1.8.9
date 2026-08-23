@@ -35,6 +35,7 @@ import net.minecraft.block.material.Material;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.ActiveRenderInfo;
 import net.minecraft.client.renderer.EntityRenderer;
+import net.minecraft.client.renderer.CorePipeline;
 import net.minecraft.client.renderer.GLAllocation;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.OpenGlHelper;
@@ -2546,6 +2547,7 @@ public class Shaders
                     checkGLError("at_tangent");
                 }
 
+                CorePipeline.bindPackAttribs(i);
                 ARBShaderObjects.glLinkProgramARB(i);
 
                 if (GL20.glGetProgrami(i, 35714) != 1)
@@ -2684,7 +2686,7 @@ public class Shaders
                 saveShader(filename, stringbuilder.toString());
             }
 
-            ARBShaderObjects.glShaderSourceARB(i, (CharSequence)stringbuilder);
+            ARBShaderObjects.glShaderSourceARB(i, CorePipeline.rewritePackShader(stringbuilder.toString(), CorePipeline.SHADER_VERTEX));
             ARBShaderObjects.glCompileShaderARB(i);
 
             if (GL20.glGetShaderi(i, 35713) != 1)
@@ -2783,7 +2785,7 @@ public class Shaders
                 saveShader(filename, stringbuilder.toString());
             }
 
-            ARBShaderObjects.glShaderSourceARB(i, (CharSequence)stringbuilder);
+            ARBShaderObjects.glShaderSourceARB(i, CorePipeline.rewritePackShader(stringbuilder.toString(), CorePipeline.SHADER_GEOMETRY));
             ARBShaderObjects.glCompileShaderARB(i);
 
             if (GL20.glGetShaderi(i, 35713) != 1)
@@ -3149,7 +3151,7 @@ public class Shaders
                 saveShader(filename, stringbuilder.toString());
             }
 
-            ARBShaderObjects.glShaderSourceARB(i, (CharSequence)stringbuilder);
+            ARBShaderObjects.glShaderSourceARB(i, CorePipeline.rewritePackShader(stringbuilder.toString(), CorePipeline.SHADER_FRAGMENT));
             ARBShaderObjects.glCompileShaderARB(i);
 
             if (GL20.glGetShaderi(i, 35713) != 1)
@@ -3296,14 +3298,23 @@ public class Shaders
             activeProgram = program;
             int i = program.getId();
             activeProgramID = i;
-            ARBShaderObjects.glUseProgramObjectARB(i);
+
+            if (i == 0)
+            {
+                CorePipeline.bindDefault();
+            }
+            else
+            {
+                ARBShaderObjects.glUseProgramObjectARB(i);
+                CorePipeline.notePackProgram(i);
+            }
 
             if (checkGLError("useProgram") != 0)
             {
                 program.setId(0);
                 i = program.getId();
                 activeProgramID = i;
-                ARBShaderObjects.glUseProgramObjectARB(i);
+                CorePipeline.bindDefault();
             }
 
             shaderUniforms.setProgram(i);
@@ -4368,11 +4379,11 @@ public class Shaders
         cameraPositionX = cameraX - (double)cameraOffsetX;
         cameraPositionY = cameraY;
         cameraPositionZ = cameraZ - (double)cameraOffsetZ;
-        GL11.glGetFloatv(GL11.GL_PROJECTION_MATRIX, (FloatBuffer)projection.position(0));
+        GlStateManager.getFloat(GL11.GL_PROJECTION_MATRIX, (FloatBuffer)projection.position(0));
         SMath.invertMat4FBFA((FloatBuffer)projectionInverse.position(0), (FloatBuffer)projection.position(0), faProjectionInverse, faProjection);
         projection.position(0);
         projectionInverse.position(0);
-        GL11.glGetFloatv(GL11.GL_MODELVIEW_MATRIX, (FloatBuffer)modelView.position(0));
+        GlStateManager.getFloat(GL11.GL_MODELVIEW_MATRIX, (FloatBuffer)modelView.position(0));
         SMath.invertMat4FBFA((FloatBuffer)modelViewInverse.position(0), (FloatBuffer)modelView.position(0), faModelViewInverse, faModelView);
         modelView.position(0);
         modelViewInverse.position(0);
@@ -4416,31 +4427,31 @@ public class Shaders
         cameraPositionX = cameraX - (double)cameraOffsetX;
         cameraPositionY = cameraY;
         cameraPositionZ = cameraZ - (double)cameraOffsetZ;
-        GL11.glGetFloatv(GL11.GL_PROJECTION_MATRIX, (FloatBuffer)projection.position(0));
+        GlStateManager.getFloat(GL11.GL_PROJECTION_MATRIX, (FloatBuffer)projection.position(0));
         SMath.invertMat4FBFA((FloatBuffer)projectionInverse.position(0), (FloatBuffer)projection.position(0), faProjectionInverse, faProjection);
         projection.position(0);
         projectionInverse.position(0);
-        GL11.glGetFloatv(GL11.GL_MODELVIEW_MATRIX, (FloatBuffer)modelView.position(0));
+        GlStateManager.getFloat(GL11.GL_MODELVIEW_MATRIX, (FloatBuffer)modelView.position(0));
         SMath.invertMat4FBFA((FloatBuffer)modelViewInverse.position(0), (FloatBuffer)modelView.position(0), faModelViewInverse, faModelView);
         modelView.position(0);
         modelViewInverse.position(0);
         GL11.glViewport(0, 0, shadowMapWidth, shadowMapHeight);
-        GL11.glMatrixMode(GL11.GL_PROJECTION);
-        GL11.glLoadIdentity();
+        GlStateManager.matrixMode(GL11.GL_PROJECTION);
+        GlStateManager.loadIdentity();
 
         if (shadowMapIsOrtho)
         {
-            GL11.glOrtho((double)(-shadowMapHalfPlane), (double)shadowMapHalfPlane, (double)(-shadowMapHalfPlane), (double)shadowMapHalfPlane, 0.05000000074505806D, 256.0D);
+            GlStateManager.ortho((double)(-shadowMapHalfPlane), (double)shadowMapHalfPlane, (double)(-shadowMapHalfPlane), (double)shadowMapHalfPlane, 0.05000000074505806D, 256.0D);
         }
         else
         {
             GlUtil.gluPerspective(shadowMapFOV, (float)shadowMapWidth / (float)shadowMapHeight, 0.05F, 256.0F);
         }
 
-        GL11.glMatrixMode(GL11.GL_MODELVIEW);
-        GL11.glLoadIdentity();
-        GL11.glTranslatef(0.0F, 0.0F, -100.0F);
-        GL11.glRotatef(90.0F, 1.0F, 0.0F, 0.0F);
+        GlStateManager.matrixMode(GL11.GL_MODELVIEW);
+        GlStateManager.loadIdentity();
+        GlStateManager.translate(0.0F, 0.0F, -100.0F);
+        GlStateManager.rotate(90.0F, 1.0F, 0.0F, 0.0F);
         celestialAngle = mc.theWorld.getCelestialAngle(partialTicks);
         sunAngle = celestialAngle < 0.75F ? celestialAngle + 0.25F : celestialAngle - 0.75F;
         float shadowBaseAngle = celestialAngle * -360.0F;
@@ -4448,14 +4459,14 @@ public class Shaders
 
         if ((double)sunAngle <= 0.5D)
         {
-            GL11.glRotatef(shadowBaseAngle - shadowAngleOffset, 0.0F, 0.0F, 1.0F);
-            GL11.glRotatef(sunPathRotation, 1.0F, 0.0F, 0.0F);
+            GlStateManager.rotate(shadowBaseAngle - shadowAngleOffset, 0.0F, 0.0F, 1.0F);
+            GlStateManager.rotate(sunPathRotation, 1.0F, 0.0F, 0.0F);
             shadowAngle = sunAngle;
         }
         else
         {
-            GL11.glRotatef(shadowBaseAngle + 180.0F - shadowAngleOffset, 0.0F, 0.0F, 1.0F);
-            GL11.glRotatef(sunPathRotation, 1.0F, 0.0F, 0.0F);
+            GlStateManager.rotate(shadowBaseAngle + 180.0F - shadowAngleOffset, 0.0F, 0.0F, 1.0F);
+            GlStateManager.rotate(sunPathRotation, 1.0F, 0.0F, 0.0F);
             shadowAngle = sunAngle - 0.5F;
         }
 
@@ -4463,7 +4474,7 @@ public class Shaders
         {
             float shadowInterval = shadowIntervalSize;
             float halfShadowInterval = shadowInterval / 2.0F;
-            GL11.glTranslatef((float)cameraX % shadowInterval - halfShadowInterval, (float)cameraY % shadowInterval - halfShadowInterval, (float)cameraZ % shadowInterval - halfShadowInterval);
+            GlStateManager.translate((float)cameraX % shadowInterval - halfShadowInterval, (float)cameraY % shadowInterval - halfShadowInterval, (float)cameraZ % shadowInterval - halfShadowInterval);
         }
 
         float sunRadians = sunAngle * ((float)Math.PI * 2F);
@@ -4485,11 +4496,11 @@ public class Shaders
         shadowLightPositionVector[1] = lightVectorY;
         shadowLightPositionVector[2] = lightVectorZ;
         shadowLightPositionVector[3] = 0.0F;
-        GL11.glGetFloatv(GL11.GL_PROJECTION_MATRIX, (FloatBuffer)shadowProjection.position(0));
+        GlStateManager.getFloat(GL11.GL_PROJECTION_MATRIX, (FloatBuffer)shadowProjection.position(0));
         SMath.invertMat4FBFA((FloatBuffer)shadowProjectionInverse.position(0), (FloatBuffer)shadowProjection.position(0), faShadowProjectionInverse, faShadowProjection);
         shadowProjection.position(0);
         shadowProjectionInverse.position(0);
-        GL11.glGetFloatv(GL11.GL_MODELVIEW_MATRIX, (FloatBuffer)shadowModelView.position(0));
+        GlStateManager.getFloat(GL11.GL_MODELVIEW_MATRIX, (FloatBuffer)shadowModelView.position(0));
         SMath.invertMat4FBFA((FloatBuffer)shadowModelViewInverse.position(0), (FloatBuffer)shadowModelView.position(0), faShadowModelViewInverse, faShadowModelView);
         shadowModelView.position(0);
         shadowModelViewInverse.position(0);
@@ -4509,7 +4520,7 @@ public class Shaders
 
     public static void preCelestialRotate()
     {
-        GL11.glRotatef(sunPathRotation * 1.0F, 0.0F, 0.0F, 1.0F);
+        GlStateManager.rotate(sunPathRotation * 1.0F, 0.0F, 0.0F, 1.0F);
         checkGLError("preCelestialRotate");
     }
 
@@ -4517,7 +4528,7 @@ public class Shaders
     {
         FloatBuffer floatBuffer = tempMatrixDirectBuffer;
         floatBuffer.clear();
-        GL11.glGetFloatv(GL11.GL_MODELVIEW_MATRIX, floatBuffer);
+        GlStateManager.getFloat(GL11.GL_MODELVIEW_MATRIX, floatBuffer);
         floatBuffer.get(tempMat, 0, 16);
         SMath.multiplyMat4xVec4(sunPosition, tempMat, sunPosModelView);
         SMath.multiplyMat4xVec4(moonPosition, tempMat, moonPosModelView);
@@ -4538,7 +4549,7 @@ public class Shaders
     {
         FloatBuffer floatBuffer = tempMatrixDirectBuffer;
         floatBuffer.clear();
-        GL11.glGetFloatv(GL11.GL_MODELVIEW_MATRIX, floatBuffer);
+        GlStateManager.getFloat(GL11.GL_MODELVIEW_MATRIX, floatBuffer);
         floatBuffer.get(tempMat, 0, 16);
         SMath.multiplyMat4xVec4(upPosition, tempMat, upPosModelView);
         setProgramUniform3f(uniform_upPosition, upPosition[0], upPosition[1], upPosition[2]);
@@ -4569,7 +4580,7 @@ public class Shaders
 
     public static void drawComposite()
     {
-        GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
+        GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
         drawCompositeQuad();
         int i = activeProgram.getCountInstances();
 
@@ -4678,13 +4689,13 @@ public class Shaders
     {
         if (!isShadowPass)
         {
-            GL11.glPushMatrix();
-            GL11.glLoadIdentity();
-            GL11.glMatrixMode(GL11.GL_PROJECTION);
-            GL11.glPushMatrix();
-            GL11.glLoadIdentity();
-            GL11.glOrtho(0.0D, 1.0D, 0.0D, 1.0D, 0.0D, 1.0D);
-            GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
+            GlStateManager.pushMatrix();
+            GlStateManager.loadIdentity();
+            GlStateManager.matrixMode(GL11.GL_PROJECTION);
+            GlStateManager.pushMatrix();
+            GlStateManager.loadIdentity();
+            GlStateManager.ortho(0.0D, 1.0D, 0.0D, 1.0D, 0.0D, 1.0D);
+            GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
             GlStateManager.enableTexture2D();
             GlStateManager.disableAlpha();
             GlStateManager.disableBlend();
@@ -4805,9 +4816,9 @@ public class Shaders
             GlStateManager.enableBlend();
             GlStateManager.depthFunc(515);
             GlStateManager.depthMask(true);
-            GL11.glPopMatrix();
-            GL11.glMatrixMode(GL11.GL_MODELVIEW);
-            GL11.glPopMatrix();
+            GlStateManager.popMatrix();
+            GlStateManager.matrixMode(GL11.GL_MODELVIEW);
+            GlStateManager.popMatrix();
             useProgram(ProgramNone);
         }
     }
@@ -4852,7 +4863,7 @@ public class Shaders
         GlStateManager.depthMask(true);
         GL11.glClearColor(clearColorR, clearColorG, clearColorB, 1.0F);
         GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
-        GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
+        GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
         GlStateManager.enableTexture2D();
         GlStateManager.disableAlpha();
         GlStateManager.disableBlend();
@@ -4963,9 +4974,9 @@ public class Shaders
     public static void preSkyList()
     {
         setUpPosition();
-        GL11.glColor3f(fogColorR, fogColorG, fogColorB);
+        GlStateManager.color(fogColorR, fogColorG, fogColorB, 1.0F);
         drawHorizon();
-        GL11.glColor3f(skyColorR, skyColorG, skyColorB);
+        GlStateManager.color(skyColorR, skyColorG, skyColorB, 1.0F);
     }
 
     public static void endSky()
@@ -5309,17 +5320,17 @@ public class Shaders
     {
         if ((double)configHandDepthMul != 1.0D)
         {
-            GL11.glScaled(1.0D, 1.0D, (double)configHandDepthMul);
+            GlStateManager.scale(1.0D, 1.0D, (double)configHandDepthMul);
         }
     }
 
     public static void beginHand(boolean translucent)
     {
-        GL11.glMatrixMode(GL11.GL_MODELVIEW);
-        GL11.glPushMatrix();
-        GL11.glMatrixMode(GL11.GL_PROJECTION);
-        GL11.glPushMatrix();
-        GL11.glMatrixMode(GL11.GL_MODELVIEW);
+        GlStateManager.matrixMode(GL11.GL_MODELVIEW);
+        GlStateManager.pushMatrix();
+        GlStateManager.matrixMode(GL11.GL_PROJECTION);
+        GlStateManager.pushMatrix();
+        GlStateManager.matrixMode(GL11.GL_MODELVIEW);
 
         if (translucent)
         {
@@ -5338,10 +5349,10 @@ public class Shaders
     {
         checkGLError("pre endHand");
         checkFramebufferStatus("pre endHand");
-        GL11.glMatrixMode(GL11.GL_PROJECTION);
-        GL11.glPopMatrix();
-        GL11.glMatrixMode(GL11.GL_MODELVIEW);
-        GL11.glPopMatrix();
+        GlStateManager.matrixMode(GL11.GL_PROJECTION);
+        GlStateManager.popMatrix();
+        GlStateManager.matrixMode(GL11.GL_MODELVIEW);
+        GlStateManager.popMatrix();
         GlStateManager.blendFunc(770, 771);
         checkGLError("endHand");
     }
@@ -5358,53 +5369,77 @@ public class Shaders
 
     public static void glEnableWrapper(int cap)
     {
-        GL11.glEnable(cap);
-
         if (cap == 3553)
         {
+            GlStateManager.enableTexture2D();
             enableTexture2D();
         }
         else if (cap == 2912)
         {
+            GlStateManager.enableFog();
             enableFog();
+        }
+        else if (cap == 3008)
+        {
+            GlStateManager.enableAlpha();
+        }
+        else if (cap == 2896)
+        {
+            GlStateManager.enableLighting();
+        }
+        else
+        {
+            GL11.glEnable(cap);
         }
     }
 
     public static void glDisableWrapper(int cap)
     {
-        GL11.glDisable(cap);
-
         if (cap == 3553)
         {
+            GlStateManager.disableTexture2D();
             disableTexture2D();
         }
         else if (cap == 2912)
         {
+            GlStateManager.disableFog();
             disableFog();
+        }
+        else if (cap == 3008)
+        {
+            GlStateManager.disableAlpha();
+        }
+        else if (cap == 2896)
+        {
+            GlStateManager.disableLighting();
+        }
+        else
+        {
+            GL11.glDisable(cap);
         }
     }
 
     public static void sglEnableT2D(int cap)
     {
-        GL11.glEnable(cap);
+        GlStateManager.enableTexture2D();
         enableTexture2D();
     }
 
     public static void sglDisableT2D(int cap)
     {
-        GL11.glDisable(cap);
+        GlStateManager.disableTexture2D();
         disableTexture2D();
     }
 
     public static void sglEnableFog(int cap)
     {
-        GL11.glEnable(cap);
+        GlStateManager.enableFog();
         enableFog();
     }
 
     public static void sglDisableFog(int cap)
     {
-        GL11.glDisable(cap);
+        GlStateManager.disableFog();
         disableFog();
     }
 
@@ -5479,7 +5514,7 @@ public class Shaders
 
     public static void sglFogi(int pname, int param)
     {
-        GL11.glFogi(pname, param);
+        GlStateManager.glFogi(pname, param);
 
         if (pname == 2917)
         {

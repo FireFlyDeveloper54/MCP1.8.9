@@ -45,6 +45,7 @@ public class CullTask implements Runnable {
 
         if (world == null || client.thePlayer == null || client.thePlayer.ticksExisted <= 10 || viewEntity == null) {
             this.snapshot = Snapshot.EMPTY;
+            this.bindProviderWorld(null);
             return;
         }
 
@@ -53,6 +54,14 @@ public class CullTask implements Runnable {
         Vec3 camera = viewEntity.getPositionEyes(EntityCulling.instance.isInterpolateCamera() ? 1.0F : 0.0F);
         boolean noCulling = client.thePlayer.isSpectator() || client.gameSettings.thirdPersonView != 0;
         this.snapshot = new Snapshot(world, entities, tiles, camera, noCulling);
+        this.bindProviderWorld(world);
+    }
+
+    private void bindProviderWorld(WorldClient world) {
+        OcclusionCullingInstance currentCulling = this.culling;
+        if (currentCulling != null && currentCulling.getProvider() instanceof Provider) {
+            ((Provider) currentCulling.getProvider()).bindWorld(world);
+        }
     }
 
     private void setTileEntityBounds(WorldClient world, TileEntity tileEntity, BlockPos pos) {

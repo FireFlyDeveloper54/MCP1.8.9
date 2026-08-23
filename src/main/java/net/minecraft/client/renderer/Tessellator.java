@@ -1,6 +1,7 @@
 package net.minecraft.client.renderer;
 
 import net.optifine.SmartAnimations;
+import net.optifine.render.CloudRenderer;
 
 public class Tessellator
 {
@@ -23,6 +24,11 @@ public class Tessellator
         if (this.worldRenderer.animatedSprites != null)
         {
             SmartAnimations.spritesRendered(this.worldRenderer.animatedSprites);
+        }
+
+        if (CloudRenderer.captureDraw(this.worldRenderer))
+        {
+            return;
         }
 
         this.worldRenderer.finishDrawing();
