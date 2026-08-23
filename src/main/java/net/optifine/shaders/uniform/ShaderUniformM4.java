@@ -21,7 +21,7 @@ public class ShaderUniformM4 extends ShaderUniformBase
 
         if (uniformLocation >= 0)
         {
-            ARBShaderObjects.glUniformMatrix4ARB(uniformLocation, transpose, matrix);
+            ARBShaderObjects.glUniformMatrix4fvARB(uniformLocation, transpose, matrix);
             this.checkGLError();
         }
     }

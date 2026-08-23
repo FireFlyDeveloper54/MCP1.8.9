@@ -9,6 +9,11 @@ public class FrameTimer
 
     public void addFrame(long runningTime)
     {
+        if (runningTime < 1L)
+        {
+            runningTime = 1L;
+        }
+
         this.frames[this.index] = runningTime;
         ++this.index;
 

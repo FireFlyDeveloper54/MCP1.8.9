@@ -14,7 +14,7 @@ import net.minecraft.client.resources.ResourcePackRepository;
 import net.minecraft.util.Util;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.lwjgl.Sys;
+import net.minecraft.client.GlUtil;
 
 public class GuiScreenResourcePacks extends GuiScreen
 {
@@ -147,7 +147,7 @@ public class GuiScreenResourcePacks extends GuiScreen
                 if (openViaSystemClass)
                 {
                     logger.info("Opening via system class!");
-                    Sys.openURL("file://" + resourcePackPath);
+                    GlUtil.openURL("file://" + resourcePackPath);
                 }
             }
             else if (button.id == 1)

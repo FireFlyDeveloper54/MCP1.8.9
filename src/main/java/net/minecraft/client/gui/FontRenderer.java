@@ -27,7 +27,6 @@ import net.optifine.CustomColors;
 import net.optifine.render.GlBlendState;
 import net.optifine.util.FontUtils;
 import org.apache.commons.io.IOUtils;
-import org.lwjgl.opengl.GL11;
 
 public class FontRenderer implements IResourceManagerReloadListener
 {
@@ -247,16 +246,7 @@ public class FontRenderer implements IResourceManagerReloadListener
         this.bindTexture(this.locationFontTexture);
         float f = this.charWidthFloat[ch];
         float floatValue2 = 7.99F;
-        GL11.glBegin(GL11.GL_TRIANGLE_STRIP);
-        GL11.glTexCoord2f((float)i / 128.0F, (float)j / 128.0F);
-        GL11.glVertex3f(this.posX + (float)k, this.posY, 0.0F);
-        GL11.glTexCoord2f((float)i / 128.0F, ((float)j + 7.99F) / 128.0F);
-        GL11.glVertex3f(this.posX - (float)k, this.posY + 7.99F, 0.0F);
-        GL11.glTexCoord2f(((float)i + floatValue2 - 1.0F) / 128.0F, (float)j / 128.0F);
-        GL11.glVertex3f(this.posX + floatValue2 - 1.0F + (float)k, this.posY, 0.0F);
-        GL11.glTexCoord2f(((float)i + floatValue2 - 1.0F) / 128.0F, ((float)j + 7.99F) / 128.0F);
-        GL11.glVertex3f(this.posX + floatValue2 - 1.0F - (float)k, this.posY + 7.99F, 0.0F);
-        GL11.glEnd();
+        this.drawGlyphQuad(this.posX + (float)k, this.posY, this.posX - (float)k, this.posY + 7.99F, this.posX + floatValue2 - 1.0F + (float)k, this.posY, this.posX + floatValue2 - 1.0F - (float)k, this.posY + 7.99F, (float)i / 128.0F, (float)j / 128.0F, ((float)i + floatValue2 - 1.0F) / 128.0F, ((float)j + 7.99F) / 128.0F);
         return f;
     }
 
@@ -295,18 +285,21 @@ public class FontRenderer implements IResourceManagerReloadListener
             float floatValue5 = floatValue2 - f - 0.02F;
             float floatValue6 = italic ? 1.0F : 0.0F;
             float glyphY = this.posY + this.getUnicodeGlyphYOffset(ch);
-            GL11.glBegin(GL11.GL_TRIANGLE_STRIP);
-            GL11.glTexCoord2f(floatValue3 / 256.0F, floatValue4 / 256.0F);
-            GL11.glVertex3f(this.posX + floatValue6, glyphY, 0.0F);
-            GL11.glTexCoord2f(floatValue3 / 256.0F, (floatValue4 + 15.98F) / 256.0F);
-            GL11.glVertex3f(this.posX - floatValue6, glyphY + 7.99F, 0.0F);
-            GL11.glTexCoord2f((floatValue3 + floatValue5) / 256.0F, floatValue4 / 256.0F);
-            GL11.glVertex3f(this.posX + floatValue5 / 2.0F + floatValue6, glyphY, 0.0F);
-            GL11.glTexCoord2f((floatValue3 + floatValue5) / 256.0F, (floatValue4 + 15.98F) / 256.0F);
-            GL11.glVertex3f(this.posX + floatValue5 / 2.0F - floatValue6, glyphY + 7.99F, 0.0F);
-            GL11.glEnd();
+            this.drawGlyphQuad(this.posX + floatValue6, glyphY, this.posX - floatValue6, glyphY + 7.99F, this.posX + floatValue5 / 2.0F + floatValue6, glyphY, this.posX + floatValue5 / 2.0F - floatValue6, glyphY + 7.99F, floatValue3 / 256.0F, floatValue4 / 256.0F, (floatValue3 + floatValue5) / 256.0F, (floatValue4 + 15.98F) / 256.0F);
             return (floatValue2 - f) / 2.0F + 1.0F;
         }
+    }
+
+    private void drawGlyphQuad(float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4, float u1, float v1, float u2, float v2)
+    {
+        Tessellator tessellator = Tessellator.getInstance();
+        WorldRenderer worldRenderer = tessellator.getWorldRenderer();
+        worldRenderer.begin(5, DefaultVertexFormats.POSITION_TEX);
+        worldRenderer.pos((double)x1, (double)y1, 0.0D).tex((double)u1, (double)v1).endVertex();
+        worldRenderer.pos((double)x2, (double)y2, 0.0D).tex((double)u1, (double)v2).endVertex();
+        worldRenderer.pos((double)x3, (double)y3, 0.0D).tex((double)u2, (double)v1).endVertex();
+        worldRenderer.pos((double)x4, (double)y4, 0.0D).tex((double)u2, (double)v2).endVertex();
+        tessellator.draw();
     }
 
     private float getUnicodeGlyphYOffset(char ch)

@@ -21,7 +21,7 @@ public class MathHelper
 
     public static float sin(float value)
     {
-        if (fastMath)
+        if (BetterFps.isHybridFastPath())
         {
             return HybridMath.sin(value);
         }
@@ -31,7 +31,7 @@ public class MathHelper
 
     public static float cos(float value)
     {
-        if (fastMath)
+        if (BetterFps.isHybridFastPath())
         {
             return HybridMath.cos(value);
         }
@@ -45,7 +45,7 @@ public class MathHelper
      */
     public static void sinCos(float value, float[] out)
     {
-        if (fastMath)
+        if (BetterFps.isHybridFastPath())
         {
             HybridMath.sinCos(value, out);
             return;
@@ -57,7 +57,7 @@ public class MathHelper
     /** Degree-domain sin (skips deg→rad on the hybrid path). */
     public static float sinDeg(float degrees)
     {
-        if (fastMath)
+        if (BetterFps.isHybridFastPath())
         {
             return HybridMath.sinDeg(degrees);
         }
@@ -67,7 +67,7 @@ public class MathHelper
 
     public static float cosDeg(float degrees)
     {
-        if (fastMath)
+        if (BetterFps.isHybridFastPath())
         {
             return HybridMath.cosDeg(degrees);
         }
@@ -78,7 +78,7 @@ public class MathHelper
     /** Fills {@code out[0]=sin(degrees)}, {@code out[1]=cos(degrees)}. */
     public static void sinCosDeg(float degrees, float[] out)
     {
-        if (fastMath)
+        if (BetterFps.isHybridFastPath())
         {
             HybridMath.sinCosDeg(degrees, out);
             return;

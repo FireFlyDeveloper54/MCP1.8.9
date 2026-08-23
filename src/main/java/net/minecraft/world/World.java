@@ -1154,38 +1154,45 @@ public abstract class World implements IBlockAccess
         boolean flag = entityIn.isOutsideBorder();
         boolean flag1 = this.isInsideBorder(worldborder, entityIn);
         IBlockState iblockstate = Blocks.stone.getDefaultState();
-        BlockPos.MutableBlockPos blockpos$mutableblockpos = new BlockPos.MutableBlockPos();
+        BlockPos.PooledMutableBlockPos blockpos$mutableblockpos = BlockPos.PooledMutableBlockPos.retain();
 
-        for (int thirdIntValue = i; thirdIntValue < j; ++thirdIntValue)
+        try
         {
-            for (int fourthIntValue = intValue; fourthIntValue < secondIntValue; ++fourthIntValue)
+            for (int thirdIntValue = i; thirdIntValue < j; ++thirdIntValue)
             {
-                if (this.isBlockLoaded(blockpos$mutableblockpos.set(thirdIntValue, 64, fourthIntValue)))
+                for (int fourthIntValue = intValue; fourthIntValue < secondIntValue; ++fourthIntValue)
                 {
-                    for (int fifthIntValue = k - 1; fifthIntValue < l; ++fifthIntValue)
+                    if (this.isBlockLoaded(blockpos$mutableblockpos.set(thirdIntValue, 64, fourthIntValue)))
                     {
-                        blockpos$mutableblockpos.set(thirdIntValue, fifthIntValue, fourthIntValue);
-
-                        if (flag && flag1)
+                        for (int fifthIntValue = k - 1; fifthIntValue < l; ++fifthIntValue)
                         {
-                            entityIn.setOutsideBorder(false);
-                        }
-                        else if (!flag && !flag1)
-                        {
-                            entityIn.setOutsideBorder(true);
-                        }
+                            blockpos$mutableblockpos.set(thirdIntValue, fifthIntValue, fourthIntValue);
 
-                        IBlockState iblockstate1 = iblockstate;
+                            if (flag && flag1)
+                            {
+                                entityIn.setOutsideBorder(false);
+                            }
+                            else if (!flag && !flag1)
+                            {
+                                entityIn.setOutsideBorder(true);
+                            }
 
-                        if (worldborder.contains(blockpos$mutableblockpos) || !flag1)
-                        {
-                            iblockstate1 = this.getBlockState(blockpos$mutableblockpos);
+                            IBlockState iblockstate1 = iblockstate;
+
+                            if (worldborder.contains(blockpos$mutableblockpos) || !flag1)
+                            {
+                                iblockstate1 = this.getBlockState(blockpos$mutableblockpos);
+                            }
+
+                            iblockstate1.getBlock().addCollisionBoxesToList(this, blockpos$mutableblockpos, iblockstate1, bb, list, entityIn);
                         }
-
-                        iblockstate1.getBlock().addCollisionBoxesToList(this, blockpos$mutableblockpos, iblockstate1, bb, list, entityIn);
                     }
                 }
             }
+        }
+        finally
+        {
+            blockpos$mutableblockpos.release();
         }
 
         double thirdDoubleValue = 0.25D;
@@ -1248,32 +1255,39 @@ public abstract class World implements IBlockAccess
         int l = MathHelper.floor_double(bb.maxY + 1.0D);
         int intValue2 = MathHelper.floor_double(bb.minZ);
         int secondIntValue2 = MathHelper.floor_double(bb.maxZ + 1.0D);
-        BlockPos.MutableBlockPos blockpos$mutableblockpos = new BlockPos.MutableBlockPos();
+        BlockPos.PooledMutableBlockPos blockpos$mutableblockpos = BlockPos.PooledMutableBlockPos.retain();
 
-        for (int nestedIndex = i; nestedIndex < j; ++nestedIndex)
+        try
         {
-            for (int outerIndex = intValue2; outerIndex < secondIntValue2; ++outerIndex)
+            for (int nestedIndex = i; nestedIndex < j; ++nestedIndex)
             {
-                if (this.isBlockLoaded(blockpos$mutableblockpos.set(nestedIndex, 64, outerIndex)))
+                for (int outerIndex = intValue2; outerIndex < secondIntValue2; ++outerIndex)
                 {
-                    for (int index = k - 1; index < l; ++index)
+                    if (this.isBlockLoaded(blockpos$mutableblockpos.set(nestedIndex, 64, outerIndex)))
                     {
-                        blockpos$mutableblockpos.set(nestedIndex, index, outerIndex);
-                        IBlockState iblockstate;
-
-                        if (nestedIndex >= -30000000 && nestedIndex < 30000000 && outerIndex >= -30000000 && outerIndex < 30000000)
+                        for (int index = k - 1; index < l; ++index)
                         {
-                            iblockstate = this.getBlockState(blockpos$mutableblockpos);
-                        }
-                        else
-                        {
-                            iblockstate = Blocks.bedrock.getDefaultState();
-                        }
+                            blockpos$mutableblockpos.set(nestedIndex, index, outerIndex);
+                            IBlockState iblockstate;
 
-                        iblockstate.getBlock().addCollisionBoxesToList(this, blockpos$mutableblockpos, iblockstate, bb, list, (Entity)null);
+                            if (nestedIndex >= -30000000 && nestedIndex < 30000000 && outerIndex >= -30000000 && outerIndex < 30000000)
+                            {
+                                iblockstate = this.getBlockState(blockpos$mutableblockpos);
+                            }
+                            else
+                            {
+                                iblockstate = Blocks.bedrock.getDefaultState();
+                            }
+
+                            iblockstate.getBlock().addCollisionBoxesToList(this, blockpos$mutableblockpos, iblockstate, bb, list, (Entity)null);
+                        }
                     }
                 }
             }
+        }
+        finally
+        {
+            blockpos$mutableblockpos.release();
         }
 
         return list;
@@ -1434,19 +1448,26 @@ public abstract class World implements IBlockAccess
         int x = pos.getX();
         int z = pos.getZ();
         int y = chunk.getTopFilledSegment() + 16;
-        BlockPos.MutableBlockPos checkPos = new BlockPos.MutableBlockPos();
+        BlockPos.PooledMutableBlockPos checkPos = BlockPos.PooledMutableBlockPos.retain();
 
-        while (y >= 0)
+        try
         {
-            checkPos.set(x, y - 1, z);
-            Material material = chunk.getBlock(checkPos).getMaterial();
-
-            if (material.blocksMovement() && material != Material.leaves)
+            while (y >= 0)
             {
-                break;
-            }
+                checkPos.set(x, y - 1, z);
+                Material material = chunk.getBlock(checkPos).getMaterial();
 
-            --y;
+                if (material.blocksMovement() && material != Material.leaves)
+                {
+                    break;
+                }
+
+                --y;
+            }
+        }
+        finally
+        {
+            checkPos.release();
         }
 
         return new BlockPos(x, y, z);
@@ -1829,22 +1850,29 @@ public abstract class World implements IBlockAccess
         int l = MathHelper.floor_double(bb.maxY);
         int intValue2 = MathHelper.floor_double(bb.minZ);
         int secondIntValue2 = MathHelper.floor_double(bb.maxZ);
-        BlockPos.MutableBlockPos blockpos$mutableblockpos = new BlockPos.MutableBlockPos();
+        BlockPos.PooledMutableBlockPos blockpos$mutableblockpos = BlockPos.PooledMutableBlockPos.retain();
 
-        for (int nestedIndex = i; nestedIndex <= j; ++nestedIndex)
+        try
         {
-            for (int outerIndex = k; outerIndex <= l; ++outerIndex)
+            for (int nestedIndex = i; nestedIndex <= j; ++nestedIndex)
             {
-                for (int index = intValue2; index <= secondIntValue2; ++index)
+                for (int outerIndex = k; outerIndex <= l; ++outerIndex)
                 {
-                    Block block = this.getBlockState(blockpos$mutableblockpos.set(nestedIndex, outerIndex, index)).getBlock();
-
-                    if (block.getMaterial() != Material.air)
+                    for (int index = intValue2; index <= secondIntValue2; ++index)
                     {
-                        return true;
+                        Block block = this.getBlockState(blockpos$mutableblockpos.set(nestedIndex, outerIndex, index)).getBlock();
+
+                        if (block.getMaterial() != Material.air)
+                        {
+                            return true;
+                        }
                     }
                 }
             }
+        }
+        finally
+        {
+            blockpos$mutableblockpos.release();
         }
 
         return false;
@@ -1858,22 +1886,29 @@ public abstract class World implements IBlockAccess
         int l = MathHelper.floor_double(bb.maxY);
         int intValue2 = MathHelper.floor_double(bb.minZ);
         int secondIntValue2 = MathHelper.floor_double(bb.maxZ);
-        BlockPos.MutableBlockPos blockpos$mutableblockpos = new BlockPos.MutableBlockPos();
+        BlockPos.PooledMutableBlockPos blockpos$mutableblockpos = BlockPos.PooledMutableBlockPos.retain();
 
-        for (int nestedIndex = i; nestedIndex <= j; ++nestedIndex)
+        try
         {
-            for (int outerIndex = k; outerIndex <= l; ++outerIndex)
+            for (int nestedIndex = i; nestedIndex <= j; ++nestedIndex)
             {
-                for (int index = intValue2; index <= secondIntValue2; ++index)
+                for (int outerIndex = k; outerIndex <= l; ++outerIndex)
                 {
-                    Block block = this.getBlockState(blockpos$mutableblockpos.set(nestedIndex, outerIndex, index)).getBlock();
-
-                    if (block.getMaterial().isLiquid())
+                    for (int index = intValue2; index <= secondIntValue2; ++index)
                     {
-                        return true;
+                        Block block = this.getBlockState(blockpos$mutableblockpos.set(nestedIndex, outerIndex, index)).getBlock();
+
+                        if (block.getMaterial().isLiquid())
+                        {
+                            return true;
+                        }
                     }
                 }
             }
+        }
+        finally
+        {
+            blockpos$mutableblockpos.release();
         }
 
         return false;
@@ -1890,22 +1925,29 @@ public abstract class World implements IBlockAccess
 
         if (this.isAreaLoaded(i, k, intValue2, j, l, secondIntValue2, true))
         {
-            BlockPos.MutableBlockPos blockpos$mutableblockpos = new BlockPos.MutableBlockPos();
+            BlockPos.PooledMutableBlockPos blockpos$mutableblockpos = BlockPos.PooledMutableBlockPos.retain();
 
-            for (int nestedIndex = i; nestedIndex < j; ++nestedIndex)
+            try
             {
-                for (int outerIndex = k; outerIndex < l; ++outerIndex)
+                for (int nestedIndex = i; nestedIndex < j; ++nestedIndex)
                 {
-                    for (int index = intValue2; index < secondIntValue2; ++index)
+                    for (int outerIndex = k; outerIndex < l; ++outerIndex)
                     {
-                        Block block = this.getBlockState(blockpos$mutableblockpos.set(nestedIndex, outerIndex, index)).getBlock();
-
-                        if (block == Blocks.fire || block == Blocks.flowing_lava || block == Blocks.lava)
+                        for (int index = intValue2; index < secondIntValue2; ++index)
                         {
-                            return true;
+                            Block block = this.getBlockState(blockpos$mutableblockpos.set(nestedIndex, outerIndex, index)).getBlock();
+
+                            if (block == Blocks.fire || block == Blocks.flowing_lava || block == Blocks.lava)
+                            {
+                                return true;
+                            }
                         }
                     }
                 }
+            }
+            finally
+            {
+                blockpos$mutableblockpos.release();
             }
         }
 
@@ -1929,30 +1971,37 @@ public abstract class World implements IBlockAccess
         {
             boolean flag = false;
             Vec3 localValue = Vec3.ZERO;
-            BlockPos.MutableBlockPos blockpos$mutableblockpos = new BlockPos.MutableBlockPos();
+            BlockPos.PooledMutableBlockPos blockpos$mutableblockpos = BlockPos.PooledMutableBlockPos.retain();
 
-            for (int fourthIntValue = i; fourthIntValue < j; ++fourthIntValue)
+            try
             {
-                for (int fifthIntValue = k; fifthIntValue < l; ++fifthIntValue)
+                for (int fourthIntValue = i; fourthIntValue < j; ++fourthIntValue)
                 {
-                    for (int sixthIntValue = secondIntValue; sixthIntValue < thirdIntValue; ++sixthIntValue)
+                    for (int fifthIntValue = k; fifthIntValue < l; ++fifthIntValue)
                     {
-                        blockpos$mutableblockpos.set(fourthIntValue, fifthIntValue, sixthIntValue);
-                        IBlockState iblockstate = this.getBlockState(blockpos$mutableblockpos);
-                        Block block = iblockstate.getBlock();
-
-                        if (block.getMaterial() == materialIn)
+                        for (int sixthIntValue = secondIntValue; sixthIntValue < thirdIntValue; ++sixthIntValue)
                         {
-                            double doubleValue = (double)((float)(fifthIntValue + 1) - BlockLiquid.getLiquidHeightPercent(((Integer)iblockstate.getValue(BlockLiquid.LEVEL)).intValue()));
+                            blockpos$mutableblockpos.set(fourthIntValue, fifthIntValue, sixthIntValue);
+                            IBlockState iblockstate = this.getBlockState(blockpos$mutableblockpos);
+                            Block block = iblockstate.getBlock();
 
-                            if ((double)l >= doubleValue)
+                            if (block.getMaterial() == materialIn)
                             {
-                                flag = true;
-                                localValue = block.modifyAcceleration(this, blockpos$mutableblockpos, entityIn, localValue);
+                                double doubleValue = (double)((float)(fifthIntValue + 1) - BlockLiquid.getLiquidHeightPercent(((Integer)iblockstate.getValue(BlockLiquid.LEVEL)).intValue()));
+
+                                if ((double)l >= doubleValue)
+                                {
+                                    flag = true;
+                                    localValue = block.modifyAcceleration(this, blockpos$mutableblockpos, entityIn, localValue);
+                                }
                             }
                         }
                     }
                 }
+            }
+            finally
+            {
+                blockpos$mutableblockpos.release();
             }
 
             if (localValue.lengthVector() > 0.0D && entityIn.isPushedByWater())
@@ -1976,20 +2025,27 @@ public abstract class World implements IBlockAccess
         int l = MathHelper.floor_double(bb.maxY + 1.0D);
         int intValue2 = MathHelper.floor_double(bb.minZ);
         int secondIntValue2 = MathHelper.floor_double(bb.maxZ + 1.0D);
-        BlockPos.MutableBlockPos blockpos$mutableblockpos = new BlockPos.MutableBlockPos();
+        BlockPos.PooledMutableBlockPos blockpos$mutableblockpos = BlockPos.PooledMutableBlockPos.retain();
 
-        for (int nestedIndex = i; nestedIndex < j; ++nestedIndex)
+        try
         {
-            for (int outerIndex = k; outerIndex < l; ++outerIndex)
+            for (int nestedIndex = i; nestedIndex < j; ++nestedIndex)
             {
-                for (int index = intValue2; index < secondIntValue2; ++index)
+                for (int outerIndex = k; outerIndex < l; ++outerIndex)
                 {
-                    if (this.getBlockState(blockpos$mutableblockpos.set(nestedIndex, outerIndex, index)).getBlock().getMaterial() == materialIn)
+                    for (int index = intValue2; index < secondIntValue2; ++index)
                     {
-                        return true;
+                        if (this.getBlockState(blockpos$mutableblockpos.set(nestedIndex, outerIndex, index)).getBlock().getMaterial() == materialIn)
+                        {
+                            return true;
+                        }
                     }
                 }
             }
+        }
+        finally
+        {
+            blockpos$mutableblockpos.release();
         }
 
         return false;
@@ -2003,34 +2059,41 @@ public abstract class World implements IBlockAccess
         int l = MathHelper.floor_double(bb.maxY + 1.0D);
         int intValue2 = MathHelper.floor_double(bb.minZ);
         int secondIntValue2 = MathHelper.floor_double(bb.maxZ + 1.0D);
-        BlockPos.MutableBlockPos blockpos$mutableblockpos = new BlockPos.MutableBlockPos();
+        BlockPos.PooledMutableBlockPos blockpos$mutableblockpos = BlockPos.PooledMutableBlockPos.retain();
 
-        for (int nestedIndex = i; nestedIndex < j; ++nestedIndex)
+        try
         {
-            for (int outerIndex = k; outerIndex < l; ++outerIndex)
+            for (int nestedIndex = i; nestedIndex < j; ++nestedIndex)
             {
-                for (int index = intValue2; index < secondIntValue2; ++index)
+                for (int outerIndex = k; outerIndex < l; ++outerIndex)
                 {
-                    IBlockState iblockstate = this.getBlockState(blockpos$mutableblockpos.set(nestedIndex, outerIndex, index));
-                    Block block = iblockstate.getBlock();
-
-                    if (block.getMaterial() == materialIn)
+                    for (int index = intValue2; index < secondIntValue2; ++index)
                     {
-                        int intValue3 = ((Integer)iblockstate.getValue(BlockLiquid.LEVEL)).intValue();
-                        double doubleValue = (double)(outerIndex + 1);
+                        IBlockState iblockstate = this.getBlockState(blockpos$mutableblockpos.set(nestedIndex, outerIndex, index));
+                        Block block = iblockstate.getBlock();
 
-                        if (intValue3 < 8)
+                        if (block.getMaterial() == materialIn)
                         {
-                            doubleValue = (double)(outerIndex + 1) - (double)intValue3 / 8.0D;
-                        }
+                            int intValue3 = ((Integer)iblockstate.getValue(BlockLiquid.LEVEL)).intValue();
+                            double doubleValue = (double)(outerIndex + 1);
 
-                        if (doubleValue >= bb.minY)
-                        {
-                            return true;
+                            if (intValue3 < 8)
+                            {
+                                doubleValue = (double)(outerIndex + 1) - (double)intValue3 / 8.0D;
+                            }
+
+                            if (doubleValue >= bb.minY)
+                            {
+                                return true;
+                            }
                         }
                     }
                 }
             }
+        }
+        finally
+        {
+            blockpos$mutableblockpos.release();
         }
 
         return false;

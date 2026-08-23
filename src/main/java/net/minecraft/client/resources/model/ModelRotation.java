@@ -5,8 +5,8 @@ import java.util.Map;
 import net.minecraft.client.renderer.block.model.ITransformation;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.MathHelper;
-import org.lwjgl.util.vector.Matrix4f;
-import org.lwjgl.util.vector.Vector3f;
+import net.minecraft.util.vector.Matrix4f;
+import net.minecraft.util.vector.Vector3f;
 
 public enum ModelRotation implements ITransformation
 {

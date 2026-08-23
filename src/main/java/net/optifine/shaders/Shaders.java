@@ -107,16 +107,16 @@ import org.lwjgl.opengl.ARBFragmentShader;
 import org.lwjgl.opengl.ARBGeometryShader4;
 import org.lwjgl.opengl.ARBShaderObjects;
 import org.lwjgl.opengl.ARBVertexShader;
-import org.lwjgl.opengl.ContextCapabilities;
+import org.lwjgl.opengl.GLCapabilities;
 import org.lwjgl.opengl.EXTFramebufferObject;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL14;
 import org.lwjgl.opengl.GL12;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
-import org.lwjgl.opengl.GLContext;
-import org.lwjgl.util.glu.GLU;
-import org.lwjgl.util.vector.Vector4f;
+import org.lwjgl.opengl.GL;
+import net.minecraft.client.GlUtil;
+import net.minecraft.util.vector.Vector4f;
 
 public class Shaders
 {
@@ -124,7 +124,7 @@ public class Shaders
     static EntityRenderer entityRenderer;
     public static boolean isInitializedOnce = false;
     public static boolean isShaderPackInitialized = false;
-    public static ContextCapabilities capabilities;
+    public static org.lwjgl.opengl.GLCapabilities capabilities;
     public static String glVersionString;
     public static String glVendorString;
     public static String glRendererString;
@@ -2019,7 +2019,7 @@ public class Shaders
         checkShadersModInstalled();
         mc = mc;
         mc = Minecraft.getMinecraft();
-        capabilities = GLContext.getCapabilities();
+        capabilities = GL.getCapabilities();
         glVersionString = GL11.glGetString(GL11.GL_VERSION);
         glVendorString = GL11.glGetString(GL11.GL_VENDOR);
         glRendererString = GL11.glGetString(GL11.GL_RENDERER);
@@ -3211,7 +3211,7 @@ public class Shaders
     private static boolean printLogInfo(int obj, String name)
     {
         IntBuffer intbuffer = BufferUtils.createIntBuffer(1);
-        ARBShaderObjects.glGetObjectParameterARB(obj, ARBShaderObjects.GL_OBJECT_INFO_LOG_LENGTH_ARB, (IntBuffer)intbuffer);
+        ARBShaderObjects.glGetObjectParameterivARB(obj, ARBShaderObjects.GL_OBJECT_INFO_LOG_LENGTH_ARB, intbuffer);
         int i = intbuffer.get();
 
         if (i > 1)
@@ -4368,11 +4368,11 @@ public class Shaders
         cameraPositionX = cameraX - (double)cameraOffsetX;
         cameraPositionY = cameraY;
         cameraPositionZ = cameraZ - (double)cameraOffsetZ;
-        GL11.glGetFloat(GL11.GL_PROJECTION_MATRIX, (FloatBuffer)projection.position(0));
+        GL11.glGetFloatv(GL11.GL_PROJECTION_MATRIX, (FloatBuffer)projection.position(0));
         SMath.invertMat4FBFA((FloatBuffer)projectionInverse.position(0), (FloatBuffer)projection.position(0), faProjectionInverse, faProjection);
         projection.position(0);
         projectionInverse.position(0);
-        GL11.glGetFloat(GL11.GL_MODELVIEW_MATRIX, (FloatBuffer)modelView.position(0));
+        GL11.glGetFloatv(GL11.GL_MODELVIEW_MATRIX, (FloatBuffer)modelView.position(0));
         SMath.invertMat4FBFA((FloatBuffer)modelViewInverse.position(0), (FloatBuffer)modelView.position(0), faModelViewInverse, faModelView);
         modelView.position(0);
         modelViewInverse.position(0);
@@ -4416,11 +4416,11 @@ public class Shaders
         cameraPositionX = cameraX - (double)cameraOffsetX;
         cameraPositionY = cameraY;
         cameraPositionZ = cameraZ - (double)cameraOffsetZ;
-        GL11.glGetFloat(GL11.GL_PROJECTION_MATRIX, (FloatBuffer)projection.position(0));
+        GL11.glGetFloatv(GL11.GL_PROJECTION_MATRIX, (FloatBuffer)projection.position(0));
         SMath.invertMat4FBFA((FloatBuffer)projectionInverse.position(0), (FloatBuffer)projection.position(0), faProjectionInverse, faProjection);
         projection.position(0);
         projectionInverse.position(0);
-        GL11.glGetFloat(GL11.GL_MODELVIEW_MATRIX, (FloatBuffer)modelView.position(0));
+        GL11.glGetFloatv(GL11.GL_MODELVIEW_MATRIX, (FloatBuffer)modelView.position(0));
         SMath.invertMat4FBFA((FloatBuffer)modelViewInverse.position(0), (FloatBuffer)modelView.position(0), faModelViewInverse, faModelView);
         modelView.position(0);
         modelViewInverse.position(0);
@@ -4434,7 +4434,7 @@ public class Shaders
         }
         else
         {
-            GLU.gluPerspective(shadowMapFOV, (float)shadowMapWidth / (float)shadowMapHeight, 0.05F, 256.0F);
+            GlUtil.gluPerspective(shadowMapFOV, (float)shadowMapWidth / (float)shadowMapHeight, 0.05F, 256.0F);
         }
 
         GL11.glMatrixMode(GL11.GL_MODELVIEW);
@@ -4485,11 +4485,11 @@ public class Shaders
         shadowLightPositionVector[1] = lightVectorY;
         shadowLightPositionVector[2] = lightVectorZ;
         shadowLightPositionVector[3] = 0.0F;
-        GL11.glGetFloat(GL11.GL_PROJECTION_MATRIX, (FloatBuffer)shadowProjection.position(0));
+        GL11.glGetFloatv(GL11.GL_PROJECTION_MATRIX, (FloatBuffer)shadowProjection.position(0));
         SMath.invertMat4FBFA((FloatBuffer)shadowProjectionInverse.position(0), (FloatBuffer)shadowProjection.position(0), faShadowProjectionInverse, faShadowProjection);
         shadowProjection.position(0);
         shadowProjectionInverse.position(0);
-        GL11.glGetFloat(GL11.GL_MODELVIEW_MATRIX, (FloatBuffer)shadowModelView.position(0));
+        GL11.glGetFloatv(GL11.GL_MODELVIEW_MATRIX, (FloatBuffer)shadowModelView.position(0));
         SMath.invertMat4FBFA((FloatBuffer)shadowModelViewInverse.position(0), (FloatBuffer)shadowModelView.position(0), faShadowModelViewInverse, faShadowModelView);
         shadowModelView.position(0);
         shadowModelViewInverse.position(0);
@@ -4517,7 +4517,7 @@ public class Shaders
     {
         FloatBuffer floatBuffer = tempMatrixDirectBuffer;
         floatBuffer.clear();
-        GL11.glGetFloat(GL11.GL_MODELVIEW_MATRIX, floatBuffer);
+        GL11.glGetFloatv(GL11.GL_MODELVIEW_MATRIX, floatBuffer);
         floatBuffer.get(tempMat, 0, 16);
         SMath.multiplyMat4xVec4(sunPosition, tempMat, sunPosModelView);
         SMath.multiplyMat4xVec4(moonPosition, tempMat, moonPosModelView);
@@ -4538,7 +4538,7 @@ public class Shaders
     {
         FloatBuffer floatBuffer = tempMatrixDirectBuffer;
         floatBuffer.clear();
-        GL11.glGetFloat(GL11.GL_MODELVIEW_MATRIX, floatBuffer);
+        GL11.glGetFloatv(GL11.GL_MODELVIEW_MATRIX, floatBuffer);
         floatBuffer.get(tempMat, 0, 16);
         SMath.multiplyMat4xVec4(upPosition, tempMat, upPosModelView);
         setProgramUniform3f(uniform_upPosition, upPosition[0], upPosition[1], upPosition[2]);
@@ -4587,32 +4587,27 @@ public class Shaders
 
     private static void drawCompositeQuad()
     {
+        Tessellator tessellator = Tessellator.getInstance();
+        WorldRenderer worldRenderer = tessellator.getWorldRenderer();
+
         if (!canRenderQuads())
         {
-            GL11.glBegin(GL11.GL_TRIANGLE_STRIP);
-            GL11.glTexCoord2f(0.0F, 0.0F);
-            GL11.glVertex3f(0.0F, 0.0F, 0.0F);
-            GL11.glTexCoord2f(1.0F, 0.0F);
-            GL11.glVertex3f(1.0F, 0.0F, 0.0F);
-            GL11.glTexCoord2f(0.0F, 1.0F);
-            GL11.glVertex3f(0.0F, 1.0F, 0.0F);
-            GL11.glTexCoord2f(1.0F, 1.0F);
-            GL11.glVertex3f(1.0F, 1.0F, 0.0F);
-            GL11.glEnd();
+            worldRenderer.begin(5, DefaultVertexFormats.POSITION_TEX);
+            worldRenderer.pos(0.0D, 0.0D, 0.0D).tex(0.0D, 0.0D).endVertex();
+            worldRenderer.pos(1.0D, 0.0D, 0.0D).tex(1.0D, 0.0D).endVertex();
+            worldRenderer.pos(0.0D, 1.0D, 0.0D).tex(0.0D, 1.0D).endVertex();
+            worldRenderer.pos(1.0D, 1.0D, 0.0D).tex(1.0D, 1.0D).endVertex();
         }
         else
         {
-            GL11.glBegin(GL11.GL_QUADS);
-            GL11.glTexCoord2f(0.0F, 0.0F);
-            GL11.glVertex3f(0.0F, 0.0F, 0.0F);
-            GL11.glTexCoord2f(1.0F, 0.0F);
-            GL11.glVertex3f(1.0F, 0.0F, 0.0F);
-            GL11.glTexCoord2f(1.0F, 1.0F);
-            GL11.glVertex3f(1.0F, 1.0F, 0.0F);
-            GL11.glTexCoord2f(0.0F, 1.0F);
-            GL11.glVertex3f(0.0F, 1.0F, 0.0F);
-            GL11.glEnd();
+            worldRenderer.begin(7, DefaultVertexFormats.POSITION_TEX);
+            worldRenderer.pos(0.0D, 0.0D, 0.0D).tex(0.0D, 0.0D).endVertex();
+            worldRenderer.pos(1.0D, 0.0D, 0.0D).tex(1.0D, 0.0D).endVertex();
+            worldRenderer.pos(1.0D, 1.0D, 0.0D).tex(1.0D, 1.0D).endVertex();
+            worldRenderer.pos(0.0D, 1.0D, 0.0D).tex(0.0D, 1.0D).endVertex();
         }
+
+        tessellator.draw();
     }
 
     public static void renderDeferred()

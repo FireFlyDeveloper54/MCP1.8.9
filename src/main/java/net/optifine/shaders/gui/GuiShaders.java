@@ -16,7 +16,7 @@ import net.optifine.gui.TooltipProviderEnumShaderOptions;
 import net.optifine.shaders.Shaders;
 import net.optifine.shaders.ShadersTex;
 import net.optifine.shaders.config.EnumShaderOption;
-import org.lwjgl.Sys;
+import net.minecraft.client.GlUtil;
 
 public class GuiShaders extends GuiScreenOF
 {
@@ -163,7 +163,7 @@ public class GuiShaders extends GuiScreenOF
                             if (fallbackToSystemOpen)
                             {
                                 Config.dbg("Opening via system class!");
-                                Sys.openURL("file://" + Shaders.shaderPacksDir.getAbsolutePath());
+                                GlUtil.openURL("file://" + Shaders.shaderPacksDir.getAbsolutePath());
                             }
 
                             break;

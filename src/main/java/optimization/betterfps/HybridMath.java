@@ -132,6 +132,7 @@ public final class HybridMath
 
     private static int fastFloor(double value)
     {
-        return (int)value;
+        int truncated = (int)value;
+        return value < (double)truncated ? truncated - 1 : truncated;
     }
 }

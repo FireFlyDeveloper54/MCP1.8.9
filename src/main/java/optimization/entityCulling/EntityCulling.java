@@ -53,22 +53,59 @@ public class EntityCulling {
         return mc.gameSettings.ofCullArmorStands;
     }
 
+    public boolean isInterpolateCamera() {
+        Minecraft mc = Minecraft.getMinecraft();
+        if (mc == null || mc.gameSettings == null) return true;
+        return mc.gameSettings.ofCullInterpolateCamera;
+    }
+
+    public boolean useTileEntityBounds() {
+        Minecraft mc = Minecraft.getMinecraft();
+        if (mc == null || mc.gameSettings == null) return true;
+        return mc.gameSettings.ofCullTileBounds;
+    }
+
+    public boolean isLoadedChunksOnly() {
+        Minecraft mc = Minecraft.getMinecraft();
+        if (mc == null || mc.gameSettings == null) return true;
+        return mc.gameSettings.ofCullLoadedChunks;
+    }
+
 	public void onInitialize() {
 		instance = this;
-        int td = getTracingDistance();
-        culling = new OcclusionCullingInstance(td, new Provider());
-        cullTask = new CullTask(culling, new HashSet<>(java.util.Collections.singletonList("tile.beacon")));
+        this.rebuildCulling();
+        cullTask = new CullTask(culling, new HashSet<String>(java.util.Collections.singletonList("tile.beacon")));
 
 		cullThread = new Thread(cullTask, "CullThread");
-		cullThread.setUncaughtExceptionHandler((thread, ex) -> {
-			System.out.println("The CullingThread has crashed! Please report the following stacktrace!");
-			ex.printStackTrace();
-		});
+        cullThread.setDaemon(true);
+		cullThread.setUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
+            public void uncaughtException(Thread thread, Throwable ex) {
+                System.out.println("The CullingThread has crashed! Please report the following stacktrace!");
+                ex.printStackTrace();
+            }
+        });
 		cullThread.start();
 	}
+
+    private void rebuildCulling() {
+        int tracing = getTracingDistance();
+        if (tracing < 1) {
+            tracing = 1;
+        }
+        if (this.culling == null || this.culling.getReach() != tracing) {
+            this.culling = new OcclusionCullingInstance(tracing, new Provider());
+            if (this.cullTask != null) {
+                this.cullTask.setCulling(this.culling);
+            }
+        }
+    }
     
     public void worldTick() {
-        cullTask.requestCull = true;
+        this.rebuildCulling();
+        if (cullTask != null) {
+            cullTask.captureSnapshot();
+            cullTask.requestCull = true;
+        }
     }
 
 }

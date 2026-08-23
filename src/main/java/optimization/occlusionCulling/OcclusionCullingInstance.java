@@ -47,6 +47,10 @@ public class OcclusionCullingInstance {
         }
     }
 
+    public int getReach() {
+        return this.reach;
+    }
+
     public boolean isAABBVisible(Vec3d aabbMin, Vec3d aabbMax, Vec3d viewerPosition) {
         try {
             int maxX = MathUtilities.fastFloor(aabbMax.x

@@ -30,8 +30,8 @@ import org.apache.commons.io.Charsets;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GLContext;
-import org.lwjgl.util.glu.Project;
+import org.lwjgl.opengl.GL;
+import net.minecraft.client.GlUtil;
 
 public class GuiMainMenu extends GuiScreen implements GuiYesNoCallback
 {
@@ -117,7 +117,7 @@ public class GuiMainMenu extends GuiScreen implements GuiYesNoCallback
         this.updateCounter = RANDOM.nextFloat();
         this.openGLWarning1 = "";
 
-        if (!GLContext.getCapabilities().OpenGL20 && !OpenGlHelper.areShadersSupported())
+        if (!GL.getCapabilities().OpenGL20 && !OpenGlHelper.areShadersSupported())
         {
             this.openGLWarning1 = I18n.format("title.oldgl1", new Object[0]);
             this.openGLWarning2 = I18n.format("title.oldgl2", new Object[0]);
@@ -288,7 +288,7 @@ public class GuiMainMenu extends GuiScreen implements GuiYesNoCallback
         GlStateManager.matrixMode(5889);
         GlStateManager.pushMatrix();
         GlStateManager.loadIdentity();
-        Project.gluPerspective(120.0F, 1.0F, 0.05F, 10.0F);
+        GlUtil.gluPerspective(120.0F, 1.0F, 0.05F, 10.0F);
         GlStateManager.matrixMode(5888);
         GlStateManager.pushMatrix();
         GlStateManager.loadIdentity();

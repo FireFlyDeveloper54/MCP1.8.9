@@ -417,22 +417,6 @@ public class GuiTextField extends Gui
 
             return true;
         }
-        else if (typedChar == 8 || typedChar == 127)
-        {
-            if (this.isEnabled)
-            {
-                if (GuiScreen.isCtrlKeyDown())
-                {
-                    this.deleteWords(typedChar == 8 ? -1 : 1);
-                }
-                else
-                {
-                    this.deleteFromCursor(typedChar == 8 ? -1 : 1);
-                }
-            }
-
-            return true;
-        }
         else
         {
             switch (keyCode)

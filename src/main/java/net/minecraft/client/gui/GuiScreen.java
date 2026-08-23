@@ -3,11 +3,6 @@ package net.minecraft.client.gui;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
-import java.awt.Toolkit;
-import java.awt.datatransfer.ClipboardOwner;
-import java.awt.datatransfer.DataFlavor;
-import java.awt.datatransfer.StringSelection;
-import java.awt.datatransfer.Transferable;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
@@ -40,8 +35,7 @@ import net.minecraft.util.IChatComponent;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.lwjgl.input.Keyboard;
-import org.lwjgl.input.Mouse;
+import net.minecraft.client.GameWindow;
 
 public abstract class GuiScreen extends Gui implements GuiYesNoCallback
 {
@@ -92,19 +86,13 @@ public abstract class GuiScreen extends Gui implements GuiYesNoCallback
     {
         try
         {
-            Transferable transferable = Toolkit.getDefaultToolkit().getSystemClipboard().getContents((Object)null);
-
-            if (transferable != null && transferable.isDataFlavorSupported(DataFlavor.stringFlavor))
-            {
-                return (String)transferable.getTransferData(DataFlavor.stringFlavor);
-            }
+            String text = GameWindow.getClipboard();
+            return text != null ? text : "";
         }
         catch (Exception caughtException)
         {
-            ;
+            return "";
         }
-
-        return "";
     }
 
     public static void setClipboardString(String copyText)
@@ -113,8 +101,7 @@ public abstract class GuiScreen extends Gui implements GuiYesNoCallback
         {
             try
             {
-                StringSelection stringSelection = new StringSelection(copyText);
-                Toolkit.getDefaultToolkit().getSystemClipboard().setContents(stringSelection, (ClipboardOwner)null);
+                GameWindow.setClipboard(copyText);
             }
             catch (Exception caughtException)
             {
@@ -483,17 +470,17 @@ public abstract class GuiScreen extends Gui implements GuiYesNoCallback
 
     public void handleInput() throws IOException
     {
-        if (Mouse.isCreated())
+        if (GameWindow.isCreated())
         {
-            while (Mouse.next())
+            while (GameWindow.nextMouseEvent())
             {
                 this.handleMouseInput();
             }
         }
 
-        if (Keyboard.isCreated())
+        if (GameWindow.isCreated())
         {
-            while (Keyboard.next())
+            while (GameWindow.nextKeyEvent())
             {
                 this.handleKeyboardInput();
             }
@@ -502,11 +489,11 @@ public abstract class GuiScreen extends Gui implements GuiYesNoCallback
 
     public void handleMouseInput() throws IOException
     {
-        int i = Mouse.getEventX() * this.width / this.mc.displayWidth;
-        int j = this.height - Mouse.getEventY() * this.height / this.mc.displayHeight - 1;
-        int k = Mouse.getEventButton();
+        int i = GameWindow.getEventX() * this.width / this.mc.displayWidth;
+        int j = this.height - GameWindow.getEventY() * this.height / this.mc.displayHeight - 1;
+        int k = GameWindow.getEventButton();
 
-        if (Mouse.getEventButtonState())
+        if (GameWindow.getEventButtonState())
         {
             if (this.mc.gameSettings.touchscreen && this.touchValue++ > 0)
             {
@@ -536,11 +523,12 @@ public abstract class GuiScreen extends Gui implements GuiYesNoCallback
 
     public void handleKeyboardInput() throws IOException
     {
-        char character = Keyboard.getEventCharacter();
+        char character = GameWindow.getEventCharacter();
+        int key = GameWindow.getEventKey();
 
-        if ((Keyboard.getEventKey() == 0 && character >= ' ') || Keyboard.getEventKeyState())
+        if (GameWindow.getEventKeyState() || key == 0 && character != 0)
         {
-            this.keyTyped(character, Keyboard.getEventKey());
+            this.keyTyped(character, key);
         }
 
         this.mc.dispatchKeypresses();
@@ -623,17 +611,17 @@ public abstract class GuiScreen extends Gui implements GuiYesNoCallback
 
     public static boolean isCtrlKeyDown()
     {
-        return Minecraft.isRunningOnMac ? Keyboard.isKeyDown(219) || Keyboard.isKeyDown(220) : Keyboard.isKeyDown(29) || Keyboard.isKeyDown(157);
+        return Minecraft.isRunningOnMac ? GameWindow.isKeyDown(219) || GameWindow.isKeyDown(220) : GameWindow.isKeyDown(29) || GameWindow.isKeyDown(157);
     }
 
     public static boolean isShiftKeyDown()
     {
-        return Keyboard.isKeyDown(42) || Keyboard.isKeyDown(54);
+        return GameWindow.isKeyDown(42) || GameWindow.isKeyDown(54);
     }
 
     public static boolean isAltKeyDown()
     {
-        return Keyboard.isKeyDown(56) || Keyboard.isKeyDown(184);
+        return GameWindow.isKeyDown(56) || GameWindow.isKeyDown(184);
     }
 
     public static boolean isKeyComboCtrlX(int keyID)

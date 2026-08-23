@@ -5,7 +5,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.ByteBufInputStream;
 import io.netty.buffer.ByteBufOutputStream;
-import io.netty.buffer.ByteBufProcessor;
+import io.netty.util.ByteProcessor;
 import io.netty.handler.codec.DecoderException;
 import io.netty.handler.codec.EncoderException;
 import java.io.IOException;
@@ -13,6 +13,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.channels.FileChannel;
 import java.nio.channels.GatheringByteChannel;
 import java.nio.channels.ScatteringByteChannel;
 import java.nio.charset.Charset;
@@ -327,6 +328,16 @@ public class PacketBuffer extends ByteBuf
         return this.buf.isDirect();
     }
 
+    public boolean isReadOnly()
+    {
+        return this.buf.isReadOnly();
+    }
+
+    public ByteBuf asReadOnly()
+    {
+        return this.buf.asReadOnly();
+    }
+
     public int readerIndex()
     {
         return this.buf.readerIndex();
@@ -452,9 +463,19 @@ public class PacketBuffer extends ByteBuf
         return this.buf.getShort(index);
     }
 
+    public short getShortLE(int index)
+    {
+        return this.buf.getShortLE(index);
+    }
+
     public int getUnsignedShort(int index)
     {
         return this.buf.getUnsignedShort(index);
+    }
+
+    public int getUnsignedShortLE(int index)
+    {
+        return this.buf.getUnsignedShortLE(index);
     }
 
     public int getMedium(int index)
@@ -462,9 +483,19 @@ public class PacketBuffer extends ByteBuf
         return this.buf.getMedium(index);
     }
 
+    public int getMediumLE(int index)
+    {
+        return this.buf.getMediumLE(index);
+    }
+
     public int getUnsignedMedium(int index)
     {
         return this.buf.getUnsignedMedium(index);
+    }
+
+    public int getUnsignedMediumLE(int index)
+    {
+        return this.buf.getUnsignedMediumLE(index);
     }
 
     public int getInt(int index)
@@ -472,14 +503,29 @@ public class PacketBuffer extends ByteBuf
         return this.buf.getInt(index);
     }
 
+    public int getIntLE(int index)
+    {
+        return this.buf.getIntLE(index);
+    }
+
     public long getUnsignedInt(int index)
     {
         return this.buf.getUnsignedInt(index);
     }
 
+    public long getUnsignedIntLE(int index)
+    {
+        return this.buf.getUnsignedIntLE(index);
+    }
+
     public long getLong(int index)
     {
         return this.buf.getLong(index);
+    }
+
+    public long getLongLE(int index)
+    {
+        return this.buf.getLongLE(index);
     }
 
     public char getChar(int index)
@@ -537,6 +583,16 @@ public class PacketBuffer extends ByteBuf
         return this.buf.getBytes(index, out, length);
     }
 
+    public int getBytes(int index, FileChannel out, long position, int length) throws IOException
+    {
+        return this.buf.getBytes(index, out, position, length);
+    }
+
+    public CharSequence getCharSequence(int index, int length, Charset charset)
+    {
+        return this.buf.getCharSequence(index, length, charset);
+    }
+
     public ByteBuf setBoolean(int index, boolean value)
     {
         return this.buf.setBoolean(index, value);
@@ -552,9 +608,19 @@ public class PacketBuffer extends ByteBuf
         return this.buf.setShort(index, value);
     }
 
+    public ByteBuf setShortLE(int index, int value)
+    {
+        return this.buf.setShortLE(index, value);
+    }
+
     public ByteBuf setMedium(int index, int value)
     {
         return this.buf.setMedium(index, value);
+    }
+
+    public ByteBuf setMediumLE(int index, int value)
+    {
+        return this.buf.setMediumLE(index, value);
     }
 
     public ByteBuf setInt(int index, int value)
@@ -562,9 +628,19 @@ public class PacketBuffer extends ByteBuf
         return this.buf.setInt(index, value);
     }
 
+    public ByteBuf setIntLE(int index, int value)
+    {
+        return this.buf.setIntLE(index, value);
+    }
+
     public ByteBuf setLong(int index, long value)
     {
         return this.buf.setLong(index, value);
+    }
+
+    public ByteBuf setLongLE(int index, long value)
+    {
+        return this.buf.setLongLE(index, value);
     }
 
     public ByteBuf setChar(int index, int value)
@@ -622,9 +698,19 @@ public class PacketBuffer extends ByteBuf
         return this.buf.setBytes(index, in, length);
     }
 
+    public int setBytes(int index, FileChannel in, long position, int length) throws IOException
+    {
+        return this.buf.setBytes(index, in, position, length);
+    }
+
     public ByteBuf setZero(int index, int length)
     {
         return this.buf.setZero(index, length);
+    }
+
+    public int setCharSequence(int index, CharSequence sequence, Charset charset)
+    {
+        return this.buf.setCharSequence(index, sequence, charset);
     }
 
     public boolean readBoolean()
@@ -647,9 +733,19 @@ public class PacketBuffer extends ByteBuf
         return this.buf.readShort();
     }
 
+    public short readShortLE()
+    {
+        return this.buf.readShortLE();
+    }
+
     public int readUnsignedShort()
     {
         return this.buf.readUnsignedShort();
+    }
+
+    public int readUnsignedShortLE()
+    {
+        return this.buf.readUnsignedShortLE();
     }
 
     public int readMedium()
@@ -657,9 +753,19 @@ public class PacketBuffer extends ByteBuf
         return this.buf.readMedium();
     }
 
+    public int readMediumLE()
+    {
+        return this.buf.readMediumLE();
+    }
+
     public int readUnsignedMedium()
     {
         return this.buf.readUnsignedMedium();
+    }
+
+    public int readUnsignedMediumLE()
+    {
+        return this.buf.readUnsignedMediumLE();
     }
 
     public int readInt()
@@ -667,14 +773,29 @@ public class PacketBuffer extends ByteBuf
         return this.buf.readInt();
     }
 
+    public int readIntLE()
+    {
+        return this.buf.readIntLE();
+    }
+
     public long readUnsignedInt()
     {
         return this.buf.readUnsignedInt();
     }
 
+    public long readUnsignedIntLE()
+    {
+        return this.buf.readUnsignedIntLE();
+    }
+
     public long readLong()
     {
         return this.buf.readLong();
+    }
+
+    public long readLongLE()
+    {
+        return this.buf.readLongLE();
     }
 
     public char readChar()
@@ -700,6 +821,11 @@ public class PacketBuffer extends ByteBuf
     public ByteBuf readSlice(int length)
     {
         return this.buf.readSlice(length);
+    }
+
+    public ByteBuf readRetainedSlice(int length)
+    {
+        return this.buf.readRetainedSlice(length);
     }
 
     public ByteBuf readBytes(ByteBuf dst)
@@ -742,6 +868,16 @@ public class PacketBuffer extends ByteBuf
         return this.buf.readBytes(out, length);
     }
 
+    public int readBytes(FileChannel out, long position, int length) throws IOException
+    {
+        return this.buf.readBytes(out, position, length);
+    }
+
+    public CharSequence readCharSequence(int length, Charset charset)
+    {
+        return this.buf.readCharSequence(length, charset);
+    }
+
     public ByteBuf skipBytes(int length)
     {
         return this.buf.skipBytes(length);
@@ -762,9 +898,19 @@ public class PacketBuffer extends ByteBuf
         return this.buf.writeShort(value);
     }
 
+    public ByteBuf writeShortLE(int value)
+    {
+        return this.buf.writeShortLE(value);
+    }
+
     public ByteBuf writeMedium(int value)
     {
         return this.buf.writeMedium(value);
+    }
+
+    public ByteBuf writeMediumLE(int value)
+    {
+        return this.buf.writeMediumLE(value);
     }
 
     public ByteBuf writeInt(int value)
@@ -772,9 +918,19 @@ public class PacketBuffer extends ByteBuf
         return this.buf.writeInt(value);
     }
 
+    public ByteBuf writeIntLE(int value)
+    {
+        return this.buf.writeIntLE(value);
+    }
+
     public ByteBuf writeLong(long value)
     {
         return this.buf.writeLong(value);
+    }
+
+    public ByteBuf writeLongLE(long value)
+    {
+        return this.buf.writeLongLE(value);
     }
 
     public ByteBuf writeChar(int value)
@@ -832,9 +988,19 @@ public class PacketBuffer extends ByteBuf
         return this.buf.writeBytes(in, length);
     }
 
+    public int writeBytes(FileChannel in, long position, int length) throws IOException
+    {
+        return this.buf.writeBytes(in, position, length);
+    }
+
     public ByteBuf writeZero(int length)
     {
         return this.buf.writeZero(length);
+    }
+
+    public int writeCharSequence(CharSequence sequence, Charset charset)
+    {
+        return this.buf.writeCharSequence(sequence, charset);
     }
 
     public int indexOf(int fromIndex, int toIndex, byte value)
@@ -857,22 +1023,22 @@ public class PacketBuffer extends ByteBuf
         return this.buf.bytesBefore(index, length, value);
     }
 
-    public int forEachByte(ByteBufProcessor processor)
+    public int forEachByte(ByteProcessor processor)
     {
         return this.buf.forEachByte(processor);
     }
 
-    public int forEachByte(int index, int length, ByteBufProcessor processor)
+    public int forEachByte(int index, int length, ByteProcessor processor)
     {
         return this.buf.forEachByte(index, length, processor);
     }
 
-    public int forEachByteDesc(ByteBufProcessor processor)
+    public int forEachByteDesc(ByteProcessor processor)
     {
         return this.buf.forEachByteDesc(processor);
     }
 
-    public int forEachByteDesc(int index, int length, ByteBufProcessor processor)
+    public int forEachByteDesc(int index, int length, ByteProcessor processor)
     {
         return this.buf.forEachByteDesc(index, length, processor);
     }
@@ -892,14 +1058,29 @@ public class PacketBuffer extends ByteBuf
         return this.buf.slice();
     }
 
+    public ByteBuf retainedSlice()
+    {
+        return this.buf.retainedSlice();
+    }
+
     public ByteBuf slice(int index, int length)
     {
         return this.buf.slice(index, length);
     }
 
+    public ByteBuf retainedSlice(int index, int length)
+    {
+        return this.buf.retainedSlice(index, length);
+    }
+
     public ByteBuf duplicate()
     {
         return this.buf.duplicate();
+    }
+
+    public ByteBuf retainedDuplicate()
+    {
+        return this.buf.retainedDuplicate();
     }
 
     public int nioBufferCount()
@@ -995,6 +1176,16 @@ public class PacketBuffer extends ByteBuf
     public ByteBuf retain()
     {
         return this.buf.retain();
+    }
+
+    public ByteBuf touch()
+    {
+        return this.buf.touch();
+    }
+
+    public ByteBuf touch(Object hint)
+    {
+        return this.buf.touch(hint);
     }
 
     public int refCnt()

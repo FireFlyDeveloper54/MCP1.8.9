@@ -63,15 +63,12 @@ import net.optifine.util.TimedEvent;
 import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.lwjgl.LWJGLException;
-import org.lwjgl.Sys;
-import org.lwjgl.opengl.Display;
-import org.lwjgl.opengl.DisplayMode;
+import net.minecraft.client.GlUtil;
+import net.minecraft.client.GameWindow;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
-import org.lwjgl.opengl.GLContext;
-import org.lwjgl.opengl.PixelFormat;
+import org.lwjgl.opengl.GL;
 
 public class Config
 {
@@ -96,8 +93,8 @@ public class Config
     private static Minecraft minecraft = Minecraft.getMinecraft();
     private static boolean initialized = false;
     private static Thread minecraftThread = null;
-    private static DisplayMode desktopDisplayMode = null;
-    private static DisplayMode[] displayModes = null;
+    private static GameWindow.VideoMode desktopDisplayMode = null;
+    private static GameWindow.VideoMode[] displayModes = null;
     private static int antialiasingLevel = 0;
     private static int availableProcessors = 0;
     public static boolean zoomMode = false;
@@ -147,7 +144,7 @@ public class Config
         if (gameSettings == null)
         {
             gameSettings = settings;
-            desktopDisplayMode = Display.getDesktopDisplayMode();
+            desktopDisplayMode = GameWindow.getDesktopMode();
             updateAvailableProcessors();
         }
     }
@@ -167,7 +164,7 @@ public class Config
     {
         if (!initialized)
         {
-            if (Display.isCreated())
+            if (GameWindow.isCreated())
             {
                 initialized = true;
                 checkOpenGlCaps();
@@ -184,26 +181,26 @@ public class Config
         log("OS: " + System.getProperty("os.name") + " (" + System.getProperty("os.arch") + ") version " + System.getProperty("os.version"));
         log("Java: " + System.getProperty("java.version") + ", " + System.getProperty("java.vendor"));
         log("VM: " + System.getProperty("java.vm.name") + " (" + System.getProperty("java.vm.info") + "), " + System.getProperty("java.vm.vendor"));
-        log("LWJGL: " + Sys.getVersion());
+        log("LWJGL: " + GlUtil.getVersion());
         openGlVersion = GL11.glGetString(GL11.GL_VERSION);
         openGlRenderer = GL11.glGetString(GL11.GL_RENDERER);
         openGlVendor = GL11.glGetString(GL11.GL_VENDOR);
         log("OpenGL: " + openGlRenderer + ", version " + openGlVersion + ", " + openGlVendor);
         log("OpenGL Version: " + getOpenGlVersionString());
 
-        if (!GLContext.getCapabilities().OpenGL12)
+        if (!GL.getCapabilities().OpenGL12)
         {
             log("OpenGL Mipmap levels: Not available (GL12.GL_TEXTURE_MAX_LEVEL)");
         }
 
-        fancyFogAvailable = GLContext.getCapabilities().GL_NV_fog_distance;
+        fancyFogAvailable = GL.getCapabilities().GL_NV_fog_distance;
 
         if (!fancyFogAvailable)
         {
             log("OpenGL Fancy fog: Not available (GL_NV_fog_distance)");
         }
 
-        occlusionAvailable = GLContext.getCapabilities().GL_ARB_occlusion_query;
+        occlusionAvailable = GL.getCapabilities().GL_ARB_occlusion_query;
 
         if (!occlusionAvailable)
         {
@@ -286,7 +283,7 @@ public class Config
 
     private static GlVersion getGlVersionLwjgl()
     {
-        return GLContext.getCapabilities().OpenGL44 ? new GlVersion(4, 4) : (GLContext.getCapabilities().OpenGL43 ? new GlVersion(4, 3) : (GLContext.getCapabilities().OpenGL42 ? new GlVersion(4, 2) : (GLContext.getCapabilities().OpenGL41 ? new GlVersion(4, 1) : (GLContext.getCapabilities().OpenGL40 ? new GlVersion(4, 0) : (GLContext.getCapabilities().OpenGL33 ? new GlVersion(3, 3) : (GLContext.getCapabilities().OpenGL32 ? new GlVersion(3, 2) : (GLContext.getCapabilities().OpenGL31 ? new GlVersion(3, 1) : (GLContext.getCapabilities().OpenGL30 ? new GlVersion(3, 0) : (GLContext.getCapabilities().OpenGL21 ? new GlVersion(2, 1) : (GLContext.getCapabilities().OpenGL20 ? new GlVersion(2, 0) : (GLContext.getCapabilities().OpenGL15 ? new GlVersion(1, 5) : (GLContext.getCapabilities().OpenGL14 ? new GlVersion(1, 4) : (GLContext.getCapabilities().OpenGL13 ? new GlVersion(1, 3) : (GLContext.getCapabilities().OpenGL12 ? new GlVersion(1, 2) : (GLContext.getCapabilities().OpenGL11 ? new GlVersion(1, 1) : new GlVersion(1, 0))))))))))))))));
+        return GL.getCapabilities().OpenGL44 ? new GlVersion(4, 4) : (GL.getCapabilities().OpenGL43 ? new GlVersion(4, 3) : (GL.getCapabilities().OpenGL42 ? new GlVersion(4, 2) : (GL.getCapabilities().OpenGL41 ? new GlVersion(4, 1) : (GL.getCapabilities().OpenGL40 ? new GlVersion(4, 0) : (GL.getCapabilities().OpenGL33 ? new GlVersion(3, 3) : (GL.getCapabilities().OpenGL32 ? new GlVersion(3, 2) : (GL.getCapabilities().OpenGL31 ? new GlVersion(3, 1) : (GL.getCapabilities().OpenGL30 ? new GlVersion(3, 0) : (GL.getCapabilities().OpenGL21 ? new GlVersion(2, 1) : (GL.getCapabilities().OpenGL20 ? new GlVersion(2, 0) : (GL.getCapabilities().OpenGL15 ? new GlVersion(1, 5) : (GL.getCapabilities().OpenGL14 ? new GlVersion(1, 4) : (GL.getCapabilities().OpenGL13 ? new GlVersion(1, 3) : (GL.getCapabilities().OpenGL12 ? new GlVersion(1, 2) : (GL.getCapabilities().OpenGL11 ? new GlVersion(1, 1) : new GlVersion(1, 0))))))))))))))));
     }
 
     public static GlVersion getGlVersion()
@@ -1349,25 +1346,25 @@ public class Config
         return astring;
     }
 
-    public static DisplayMode getDesktopDisplayMode()
+    public static GameWindow.VideoMode getDesktopDisplayMode()
     {
         return desktopDisplayMode;
     }
 
-    public static DisplayMode[] getDisplayModes()
+    public static GameWindow.VideoMode[] getDisplayModes()
     {
         if (displayModes == null)
         {
             try
             {
-                DisplayMode[] adisplaymode = Display.getAvailableDisplayModes();
+                GameWindow.VideoMode[] adisplaymode = GameWindow.getAvailableModes();
                 Set<Dimension> set = getDisplayModeDimensions(adisplaymode);
                 List list = new ArrayList();
 
                 for (Dimension dimension : set)
                 {
-                    DisplayMode[] adisplaymode1 = getDisplayModes(adisplaymode, dimension);
-                    DisplayMode displayMode = getDisplayMode(adisplaymode1, desktopDisplayMode);
+                    GameWindow.VideoMode[] adisplaymode1 = getDisplayModes(adisplaymode, dimension);
+                    GameWindow.VideoMode displayMode = getDisplayMode(adisplaymode1, desktopDisplayMode);
 
                     if (displayMode != null)
                     {
@@ -1375,27 +1372,27 @@ public class Config
                     }
                 }
 
-                DisplayMode[] adisplaymode2 = (DisplayMode[])((DisplayMode[])list.toArray(new DisplayMode[list.size()]));
+                GameWindow.VideoMode[] adisplaymode2 = (GameWindow.VideoMode[])((GameWindow.VideoMode[])list.toArray(new GameWindow.VideoMode[list.size()]));
                 Arrays.sort(adisplaymode2, new DisplayModeComparator());
                 return adisplaymode2;
             }
             catch (Exception exception)
             {
                 net.minecraft.src.Config.warn(exception.getClass().getName() + ": " + exception.getMessage(), exception);
-                displayModes = new DisplayMode[] {desktopDisplayMode};
+                displayModes = new GameWindow.VideoMode[] {desktopDisplayMode};
             }
         }
 
         return displayModes;
     }
 
-    public static DisplayMode getLargestDisplayMode()
+    public static GameWindow.VideoMode getLargestDisplayMode()
     {
-        DisplayMode[] adisplaymode = getDisplayModes();
+        GameWindow.VideoMode[] adisplaymode = getDisplayModes();
 
         if (adisplaymode != null && adisplaymode.length >= 1)
         {
-            DisplayMode displayMode = adisplaymode[adisplaymode.length - 1];
+            GameWindow.VideoMode displayMode = adisplaymode[adisplaymode.length - 1];
             return desktopDisplayMode.getWidth() > displayMode.getWidth() ? desktopDisplayMode : (desktopDisplayMode.getWidth() == displayMode.getWidth() && desktopDisplayMode.getHeight() > displayMode.getHeight() ? desktopDisplayMode : displayMode);
         }
         else
@@ -1404,13 +1401,13 @@ public class Config
         }
     }
 
-    private static Set<Dimension> getDisplayModeDimensions(DisplayMode[] displayModes)
+    private static Set<Dimension> getDisplayModeDimensions(GameWindow.VideoMode[] displayModes)
     {
         Set<Dimension> set = new HashSet();
 
         for (int i = 0; i < displayModes.length; ++i)
         {
-            DisplayMode displayMode = displayModes[i];
+            GameWindow.VideoMode displayMode = displayModes[i];
             Dimension dimension = new Dimension(displayMode.getWidth(), displayMode.getHeight());
             set.add(dimension);
         }
@@ -1418,13 +1415,13 @@ public class Config
         return set;
     }
 
-    private static DisplayMode[] getDisplayModes(DisplayMode[] displayModes, Dimension dimension)
+    private static GameWindow.VideoMode[] getDisplayModes(GameWindow.VideoMode[] displayModes, Dimension dimension)
     {
         List list = new ArrayList();
 
         for (int i = 0; i < displayModes.length; ++i)
         {
-            DisplayMode displayMode = displayModes[i];
+            GameWindow.VideoMode displayMode = displayModes[i];
 
             if ((double)displayMode.getWidth() == dimension.getWidth() && (double)displayMode.getHeight() == dimension.getHeight())
             {
@@ -1432,17 +1429,17 @@ public class Config
             }
         }
 
-        DisplayMode[] adisplaymode = (DisplayMode[])((DisplayMode[])list.toArray(new DisplayMode[list.size()]));
+        GameWindow.VideoMode[] adisplaymode = (GameWindow.VideoMode[])((GameWindow.VideoMode[])list.toArray(new GameWindow.VideoMode[list.size()]));
         return adisplaymode;
     }
 
-    private static DisplayMode getDisplayMode(DisplayMode[] displayModes, DisplayMode defaultDisplayMode)
+    private static GameWindow.VideoMode getDisplayMode(GameWindow.VideoMode[] displayModes, GameWindow.VideoMode defaultDisplayMode)
     {
         if (defaultDisplayMode != null)
         {
             for (int i = 0; i < displayModes.length; ++i)
             {
-                DisplayMode displayMode = displayModes[i];
+                GameWindow.VideoMode displayMode = displayModes[i];
 
                 if (displayMode.getBitsPerPixel() == defaultDisplayMode.getBitsPerPixel() && displayMode.getFrequency() == defaultDisplayMode.getFrequency())
                 {
@@ -1464,12 +1461,12 @@ public class Config
 
     public static String[] getDisplayModeNames()
     {
-        DisplayMode[] adisplaymode = getDisplayModes();
+        GameWindow.VideoMode[] adisplaymode = getDisplayModes();
         String[] astring = new String[adisplaymode.length];
 
         for (int i = 0; i < adisplaymode.length; ++i)
         {
-            DisplayMode displayMode = adisplaymode[i];
+            GameWindow.VideoMode displayMode = adisplaymode[i];
             String s = "" + displayMode.getWidth() + "x" + displayMode.getHeight();
             astring[i] = s;
         }
@@ -1477,13 +1474,13 @@ public class Config
         return astring;
     }
 
-    public static DisplayMode getDisplayMode(Dimension dimension) throws LWJGLException
+    public static GameWindow.VideoMode getDisplayMode(Dimension dimension) 
     {
-        DisplayMode[] adisplaymode = getDisplayModes();
+        GameWindow.VideoMode[] adisplaymode = getDisplayModes();
 
         for (int i = 0; i < adisplaymode.length; ++i)
         {
-            DisplayMode displaymode = adisplaymode[i];
+            GameWindow.VideoMode displaymode = adisplaymode[i];
 
             if (displaymode.getWidth() == dimension.width && displaymode.getHeight() == dimension.height)
             {
@@ -1892,53 +1889,59 @@ public class Config
 
         if (i > 0)
         {
-            DisplayMode displayMode = Display.getDisplayMode();
+            if (minecraft != null && minecraft.getFramebuffer() != null)
+            {
+                dbg("FSAA Samples: " + i + " (window already initialized, restart to apply)");
+                return;
+            }
+
+            GameWindow.VideoMode displayMode = GameWindow.getVideoMode();
             dbg("FSAA Samples: " + i);
 
             try
             {
-                Display.destroy();
-                Display.setDisplayMode(displayMode);
-                Display.create((new PixelFormat()).withDepthBits(24).withSamples(i));
+                GameWindow.destroy();
+                GameWindow.setVideoMode(displayMode);
+                GameWindow.create(displayMode.getWidth(), displayMode.getHeight(), "Minecraft 1.8.9", 24, i);
 
                 if (Util.getOSType() == Util.EnumOS.WINDOWS)
                 {
-                    Display.setResizable(false);
-                    Display.setResizable(true);
+                    GameWindow.setResizable(false);
+                    GameWindow.setResizable(true);
                 }
             }
-            catch (LWJGLException lwjglexception2)
+            catch (RuntimeException lwjglexception2)
             {
                 warn("Error setting FSAA: " + i + "x");
                 net.minecraft.src.Config.warn(lwjglexception2.getClass().getName() + ": " + lwjglexception2.getMessage(), lwjglexception2);
 
                 try
                 {
-                    Display.setDisplayMode(displayMode);
-                    Display.create((new PixelFormat()).withDepthBits(24));
+                    GameWindow.setVideoMode(displayMode);
+                    GameWindow.create(displayMode.getWidth(), displayMode.getHeight(), "Minecraft 1.8.9", 24, 0);
 
                     if (Util.getOSType() == Util.EnumOS.WINDOWS)
                     {
-                        Display.setResizable(false);
-                        Display.setResizable(true);
+                        GameWindow.setResizable(false);
+                        GameWindow.setResizable(true);
                     }
                 }
-                catch (LWJGLException lwjglexception1)
+                catch (RuntimeException lwjglexception1)
                 {
                     net.minecraft.src.Config.warn(lwjglexception1.getClass().getName() + ": " + lwjglexception1.getMessage(), lwjglexception1);
 
                     try
                     {
-                        Display.setDisplayMode(displayMode);
-                        Display.create();
+                        GameWindow.setVideoMode(displayMode);
+                        GameWindow.create(displayMode.getWidth(), displayMode.getHeight(), "Minecraft 1.8.9", 0, 0);
 
                         if (Util.getOSType() == Util.EnumOS.WINDOWS)
                         {
-                            Display.setResizable(false);
-                            Display.setResizable(true);
+                            GameWindow.setResizable(false);
+                            GameWindow.setResizable(true);
                         }
                     }
-                    catch (LWJGLException lwjglexception)
+                    catch (RuntimeException lwjglexception)
                     {
                         net.minecraft.src.Config.warn(lwjglexception.getClass().getName() + ": " + lwjglexception.getMessage(), lwjglexception);
                     }
@@ -1957,7 +1960,7 @@ public class Config
 
                     if (inputStream != null && inputstream1 != null)
                     {
-                        Display.setIcon(new ByteBuffer[] {readIconImage(inputStream), readIconImage(inputstream1)});
+                        GameWindow.setIcon(new ByteBuffer[] {readIconImage(inputStream), readIconImage(inputstream1)});
                     }
                 }
                 catch (IOException iOException)
@@ -2001,7 +2004,7 @@ public class Config
 
                 fullscreenModeChecked = true;
                 desktopModeChecked = false;
-                DisplayMode displayMode = Display.getDisplayMode();
+                GameWindow.VideoMode displayMode = GameWindow.getVideoMode();
                 Dimension dimension = getFullscreenDimension();
 
                 if (dimension == null)
@@ -2014,16 +2017,16 @@ public class Config
                     return;
                 }
 
-                DisplayMode displaymode1 = getDisplayMode(dimension);
+                GameWindow.VideoMode displaymode1 = getDisplayMode(dimension);
 
                 if (displaymode1 == null)
                 {
                     return;
                 }
 
-                Display.setDisplayMode(displaymode1);
-                minecraft.displayWidth = Display.getDisplayMode().getWidth();
-                minecraft.displayHeight = Display.getDisplayMode().getHeight();
+                GameWindow.setVideoMode(displaymode1);
+                minecraft.displayWidth = GameWindow.getVideoMode().getWidth();
+                minecraft.displayHeight = GameWindow.getVideoMode().getHeight();
 
                 if (minecraft.displayWidth <= 0)
                 {
@@ -2044,7 +2047,7 @@ public class Config
                 }
 
                 updateFramebufferSize();
-                Display.setFullscreen(true);
+                GameWindow.setFullscreen(true);
                 minecraft.gameSettings.updateVSync();
                 GlStateManager.enableTexture2D();
             }
@@ -2058,14 +2061,8 @@ public class Config
                 desktopModeChecked = true;
                 fullscreenModeChecked = false;
                 minecraft.gameSettings.updateVSync();
-                Display.update();
+                GameWindow.update();
                 GlStateManager.enableTexture2D();
-
-                if (Util.getOSType() == Util.EnumOS.WINDOWS)
-                {
-                    Display.setResizable(false);
-                    Display.setResizable(true);
-                }
             }
         }
         catch (Exception exception)
@@ -2222,8 +2219,26 @@ public class Config
                     longValue3 += longValue4;
                 }
 
+                if (longValue2 <= 0L)
+                {
+                    fpsMinLast = k;
+                    return fpsMinLast;
+                }
+
                 double doubleValue = (double)longValue2 / 1.0E9D;
-                fpsMinLast = (int)(1.0D / doubleValue);
+                int minFps = (int)(1.0D / doubleValue);
+
+                if (minFps < 1)
+                {
+                    minFps = 1;
+                }
+
+                if (minFps > k)
+                {
+                    minFps = k;
+                }
+
+                fpsMinLast = minFps;
                 return fpsMinLast;
             }
         }

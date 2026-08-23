@@ -9,6 +9,7 @@ import java.io.PrintStream;
 import java.util.List;
 import java.util.Set;
 import net.minecraft.client.resources.data.IMetadataSerializer;
+import net.minecraft.util.ResourceCleaner;
 import net.minecraft.util.ResourceLocation;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -110,6 +111,7 @@ public class FallbackResourceManager implements IResourceManager
             ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
             (new Exception()).printStackTrace(new PrintStream(byteArrayOutputStream));
             this.leakState = new FallbackResourceManager.InputStreamLeakedResourceLogger.LeakState("Leaked resource: \'" + location + "\' loaded from pack: \'" + resourcePack + "\'\n" + byteArrayOutputStream.toString());
+            ResourceCleaner.register(this, this.leakState);
         }
 
         public void close() throws IOException
@@ -133,9 +135,9 @@ public class FallbackResourceManager implements IResourceManager
         {
             try
             {
-                if (!this.leakState.closed)
+                if (!ResourceCleaner.hasCleaner())
                 {
-                    FallbackResourceManager.logger.warn(this.leakState.message);
+                    this.leakState.run();
                 }
             }
             finally

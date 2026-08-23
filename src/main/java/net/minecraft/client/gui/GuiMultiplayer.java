@@ -12,7 +12,7 @@ import net.minecraft.client.network.OldServerPinger;
 import net.minecraft.client.resources.I18n;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.lwjgl.input.Keyboard;
+import net.minecraft.client.GameWindow;
 
 public class GuiMultiplayer extends GuiScreen implements GuiYesNoCallback
 {
@@ -41,7 +41,7 @@ public class GuiMultiplayer extends GuiScreen implements GuiYesNoCallback
 
     public void initGui()
     {
-        Keyboard.enableRepeatEvents(true);
+        GameWindow.setRepeatEvents(true);
         this.buttonList.clear();
 
         if (!this.initialized)
@@ -106,7 +106,7 @@ public class GuiMultiplayer extends GuiScreen implements GuiYesNoCallback
 
     public void onGuiClosed()
     {
-        Keyboard.enableRepeatEvents(false);
+        GameWindow.setRepeatEvents(false);
 
         if (this.lanServerDetector != null)
         {

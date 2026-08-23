@@ -56,22 +56,29 @@ public class SwimNodeProcessor extends NodeProcessor
 
     private int checkWaterCollision(Entity entityIn, int x, int y, int z)
     {
-        BlockPos.MutableBlockPos blockpos$mutableblockpos = new BlockPos.MutableBlockPos();
+        BlockPos.PooledMutableBlockPos blockpos$mutableblockpos = BlockPos.PooledMutableBlockPos.retain();
 
-        for (int i = x; i < x + this.entitySizeX; ++i)
+        try
         {
-            for (int j = y; j < y + this.entitySizeY; ++j)
+            for (int i = x; i < x + this.entitySizeX; ++i)
             {
-                for (int k = z; k < z + this.entitySizeZ; ++k)
+                for (int j = y; j < y + this.entitySizeY; ++j)
                 {
-                    Block block = this.blockaccess.getBlockState(blockpos$mutableblockpos.set(i, j, k)).getBlock();
-
-                    if (block.getMaterial() != Material.water)
+                    for (int k = z; k < z + this.entitySizeZ; ++k)
                     {
-                        return 0;
+                        Block block = this.blockaccess.getBlockState(blockpos$mutableblockpos.set(i, j, k)).getBlock();
+
+                        if (block.getMaterial() != Material.water)
+                        {
+                            return 0;
+                        }
                     }
                 }
             }
+        }
+        finally
+        {
+            blockpos$mutableblockpos.release();
         }
 
         return -1;

@@ -26,7 +26,7 @@ import net.minecraft.stats.StatCrafting;
 import net.minecraft.stats.StatFileWriter;
 import net.minecraft.stats.StatList;
 import net.minecraft.util.ResourceLocation;
-import org.lwjgl.input.Mouse;
+import net.minecraft.client.GameWindow;
 
 public class GuiStats extends GuiScreen implements IProgressMeter
 {
@@ -229,7 +229,7 @@ public class GuiStats extends GuiScreen implements IProgressMeter
 
         protected void drawListHeader(int x, int y, Tessellator tessellator)
         {
-            if (!Mouse.isButtonDown(0))
+            if (!GameWindow.isButtonDown(0))
             {
                 this.hoveredColumnIndex = -1;
             }

@@ -298,7 +298,7 @@ public class GlStateManager
 
     public static void glFog(int pname, FloatBuffer params)
     {
-        GL11.glFog(pname, params);
+        GL11.glFogfv(pname, params);
     }
 
     public static void glFogi(int pname, int param)
@@ -387,7 +387,7 @@ public class GlStateManager
 
     public static void texGen(GlStateManager.TexGen texGen, int pname, FloatBuffer params)
     {
-        GL11.glTexGen(texGenCoord(texGen).coord, pname, params);
+        GL11.glTexGenfv(texGenCoord(texGen).coord, pname, params);
     }
 
     private static GlStateManager.TexGenCoord texGenCoord(GlStateManager.TexGen texGen)
@@ -562,7 +562,7 @@ public class GlStateManager
 
     public static void getFloat(int pname, FloatBuffer params)
     {
-        GL11.glGetFloat(pname, params);
+        GL11.glGetFloatv(pname, params);
     }
 
     public static void ortho(double left, double right, double bottom, double top, double zNear, double zFar)
@@ -597,7 +597,7 @@ public class GlStateManager
 
     public static void multMatrix(FloatBuffer matrix)
     {
-        GL11.glMultMatrix(matrix);
+        GL11.glMultMatrixf(matrix);
     }
 
     public static void color(float colorRed, float colorGreen, float colorBlue, float colorAlpha)

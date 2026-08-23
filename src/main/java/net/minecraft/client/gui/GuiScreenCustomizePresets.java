@@ -10,7 +10,7 @@ import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.world.gen.ChunkProviderSettings;
-import org.lwjgl.input.Keyboard;
+import net.minecraft.client.GameWindow;
 
 public class GuiScreenCustomizePresets extends GuiScreen
 {
@@ -31,7 +31,7 @@ public class GuiScreenCustomizePresets extends GuiScreen
     public void initGui()
     {
         this.buttonList.clear();
-        Keyboard.enableRepeatEvents(true);
+        GameWindow.setRepeatEvents(true);
         this.title = I18n.format("createWorld.customize.custom.presets.title", new Object[0]);
         this.shareText = I18n.format("createWorld.customize.presets.share", new Object[0]);
         this.listText = I18n.format("createWorld.customize.presets.list", new Object[0]);
@@ -52,7 +52,7 @@ public class GuiScreenCustomizePresets extends GuiScreen
 
     public void onGuiClosed()
     {
-        Keyboard.enableRepeatEvents(false);
+        GameWindow.setRepeatEvents(false);
     }
 
     protected void mouseClicked(int mouseX, int mouseY, int mouseButton) throws IOException

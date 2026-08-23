@@ -9,7 +9,7 @@ import net.minecraft.world.WorldType;
 import net.minecraft.world.storage.ISaveFormat;
 import net.minecraft.world.storage.WorldInfo;
 import org.apache.commons.lang3.StringUtils;
-import org.lwjgl.input.Keyboard;
+import net.minecraft.client.GameWindow;
 
 public class GuiCreateWorld extends GuiScreen
 {
@@ -56,7 +56,7 @@ public class GuiCreateWorld extends GuiScreen
 
     public void initGui()
     {
-        Keyboard.enableRepeatEvents(true);
+        GameWindow.setRepeatEvents(true);
         this.buttonList.clear();
         this.buttonList.add(new GuiButton(0, this.width / 2 - 155, this.height - 28, 150, 20, I18n.format("selectWorld.create", new Object[0])));
         this.buttonList.add(new GuiButton(1, this.width / 2 + 5, this.height - 28, 150, 20, I18n.format("gui.cancel", new Object[0])));
@@ -161,7 +161,7 @@ public class GuiCreateWorld extends GuiScreen
 
     public void onGuiClosed()
     {
-        Keyboard.enableRepeatEvents(false);
+        GameWindow.setRepeatEvents(false);
     }
 
     protected void actionPerformed(GuiButton button) throws IOException

@@ -1,7 +1,9 @@
 package net.minecraft.util;
 
 import com.google.common.collect.AbstractIterator;
+import com.google.common.collect.Lists;
 import java.util.Iterator;
+import java.util.List;
 import net.minecraft.entity.Entity;
 
 public class BlockPos extends Vec3i
@@ -262,7 +264,7 @@ public class BlockPos extends Vec3i
         };
     }
 
-    public static final class MutableBlockPos extends BlockPos
+    public static class MutableBlockPos extends BlockPos
     {
         private int x;
         private int y;
@@ -304,10 +306,134 @@ public class BlockPos extends Vec3i
             return this;
         }
 
+        public BlockPos.MutableBlockPos set(double xIn, double yIn, double zIn)
+        {
+            return this.set(MathHelper.floor_double(xIn), MathHelper.floor_double(yIn), MathHelper.floor_double(zIn));
+        }
+
+        public BlockPos.MutableBlockPos set(Entity entityIn)
+        {
+            return this.set(entityIn.posX, entityIn.posY, entityIn.posZ);
+        }
+
+        public BlockPos.MutableBlockPos set(Vec3i vec)
+        {
+            return this.set(vec.getX(), vec.getY(), vec.getZ());
+        }
+
+        public BlockPos.MutableBlockPos move(EnumFacing facing)
+        {
+            return this.move(facing, 1);
+        }
+
+        public BlockPos.MutableBlockPos move(EnumFacing facing, int n)
+        {
+            return this.set(this.x + facing.getFrontOffsetX() * n, this.y + facing.getFrontOffsetY() * n, this.z + facing.getFrontOffsetZ() * n);
+        }
+
         @Override
         public BlockPos toImmutable()
         {
             return new BlockPos(this.x, this.y, this.z);
+        }
+    }
+
+    public static final class PooledMutableBlockPos extends MutableBlockPos
+    {
+        private boolean released;
+        private static final List<BlockPos.PooledMutableBlockPos> POOL = Lists.<BlockPos.PooledMutableBlockPos>newArrayList();
+
+        private PooledMutableBlockPos(int xIn, int yIn, int zIn)
+        {
+            super(xIn, yIn, zIn);
+        }
+
+        public static BlockPos.PooledMutableBlockPos retain()
+        {
+            return retain(0, 0, 0);
+        }
+
+        public static BlockPos.PooledMutableBlockPos retain(double xIn, double yIn, double zIn)
+        {
+            return retain(MathHelper.floor_double(xIn), MathHelper.floor_double(yIn), MathHelper.floor_double(zIn));
+        }
+
+        public static BlockPos.PooledMutableBlockPos retain(Entity entityIn)
+        {
+            return retain(entityIn.posX, entityIn.posY, entityIn.posZ);
+        }
+
+        public static BlockPos.PooledMutableBlockPos retain(Vec3i vec)
+        {
+            return retain(vec.getX(), vec.getY(), vec.getZ());
+        }
+
+        public static BlockPos.PooledMutableBlockPos retain(int xIn, int yIn, int zIn)
+        {
+            synchronized (POOL)
+            {
+                if (!POOL.isEmpty())
+                {
+                    BlockPos.PooledMutableBlockPos pooled = POOL.remove(POOL.size() - 1);
+
+                    if (pooled != null && pooled.released)
+                    {
+                        pooled.released = false;
+                        pooled.set(xIn, yIn, zIn);
+                        return pooled;
+                    }
+                }
+            }
+
+            return new BlockPos.PooledMutableBlockPos(xIn, yIn, zIn);
+        }
+
+        public void release()
+        {
+            synchronized (POOL)
+            {
+                if (POOL.size() < 100)
+                {
+                    POOL.add(this);
+                }
+
+                this.released = true;
+            }
+        }
+
+        public BlockPos.PooledMutableBlockPos set(int xIn, int yIn, int zIn)
+        {
+            if (this.released)
+            {
+                this.released = false;
+            }
+
+            return (BlockPos.PooledMutableBlockPos)super.set(xIn, yIn, zIn);
+        }
+
+        public BlockPos.PooledMutableBlockPos set(double xIn, double yIn, double zIn)
+        {
+            return (BlockPos.PooledMutableBlockPos)super.set(xIn, yIn, zIn);
+        }
+
+        public BlockPos.PooledMutableBlockPos set(Entity entityIn)
+        {
+            return (BlockPos.PooledMutableBlockPos)super.set(entityIn);
+        }
+
+        public BlockPos.PooledMutableBlockPos set(Vec3i vec)
+        {
+            return (BlockPos.PooledMutableBlockPos)super.set(vec);
+        }
+
+        public BlockPos.PooledMutableBlockPos move(EnumFacing facing)
+        {
+            return (BlockPos.PooledMutableBlockPos)super.move(facing);
+        }
+
+        public BlockPos.PooledMutableBlockPos move(EnumFacing facing, int n)
+        {
+            return (BlockPos.PooledMutableBlockPos)super.move(facing, n);
         }
     }
 }

@@ -78,7 +78,7 @@ public abstract class Render<T extends Entity> implements IEntityRenderer, Entit
     @Override
     public void shadowRenderNameTag(T entity, double x, double y, double z)
     {
-        this.renderLivingLabel(entity, entity.getDisplayName().getFormattedText(), x, y, z, 64);
+        this.renderName(entity, x, y, z);
     }
 
 

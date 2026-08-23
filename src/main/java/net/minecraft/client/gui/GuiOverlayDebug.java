@@ -29,14 +29,15 @@ import net.optifine.SmartAnimations;
 import net.optifine.TextureAnimations;
 import net.optifine.util.MemoryMonitor;
 import net.optifine.util.NativeMemory;
-import org.lwjgl.opengl.Display;
+import net.minecraft.client.GameWindow;
 import org.lwjgl.opengl.GL11;
 
 public class GuiOverlayDebug extends Gui
 {
     private final Minecraft mc;
     private final FontRenderer fontRenderer;
-    private String debugOF = null;
+    private String lastRawDebug = "";
+    private String enhancedDebug = "";
     private List<String> debugInfoLeft = null;
     private List<String> debugInfoRight = null;
     private long updateInfoLeftTimeMs = 0L;
@@ -127,50 +128,7 @@ public class GuiOverlayDebug extends Gui
     {
         BlockPos cameraBlockPos = new BlockPos(this.mc.getRenderViewEntity().posX, this.mc.getRenderViewEntity().getEntityBoundingBox().minY, this.mc.getRenderViewEntity().posZ);
 
-        if (this.mc.debug != this.debugOF)
-        {
-            StringBuffer debugText = new StringBuffer(this.mc.debug);
-            int minFps = Config.getFpsMin();
-            int fpsTextIndex = this.mc.debug.indexOf(" fps ");
-
-            if (fpsTextIndex >= 0)
-            {
-                debugText.insert(fpsTextIndex, "/" + minFps);
-            }
-
-            if (Config.isSmoothFps())
-            {
-                debugText.append(" sf");
-            }
-
-            if (Config.isFastRender())
-            {
-                debugText.append(" fr");
-            }
-
-            if (Config.isAnisotropicFiltering())
-            {
-                debugText.append(" af");
-            }
-
-            if (Config.isAntialiasing())
-            {
-                debugText.append(" aa");
-            }
-
-            if (Config.isRenderRegions())
-            {
-                debugText.append(" reg");
-            }
-
-            if (Config.isShaders())
-            {
-                debugText.append(" sh");
-            }
-
-            this.mc.debug = debugText.toString();
-            this.debugOF = this.mc.debug;
-        }
+        String debugLine = this.getEnhancedDebugLine();
 
         StringBuilder animationStats = new StringBuilder();
         TextureMap textureMap = Config.getTextureMap();
@@ -187,7 +145,7 @@ public class GuiOverlayDebug extends Gui
 
         if (this.isReducedDebug())
         {
-            return Lists.newArrayList(new String[] {"Minecraft 1.8.9 (" + this.mc.getVersion() + "/" + ClientBrandRetriever.getClientModName() + ")", this.mc.debug, this.mc.renderGlobal.getDebugInfoRenders(), this.mc.renderGlobal.getDebugInfoEntities(), "P: " + this.mc.effectRenderer.getStatistics() + ". T: " + this.mc.theWorld.getDebugLoadedEntities() + animationText, this.mc.theWorld.getProviderName(), "", "Chunk-relative: " + (cameraBlockPos.getX() & 15) + " " + (cameraBlockPos.getY() & 15) + " " + (cameraBlockPos.getZ() & 15)});
+            return Lists.newArrayList(new String[] {"Minecraft 1.8.9 (" + this.mc.getVersion() + "/" + ClientBrandRetriever.getClientModName() + ")", debugLine, this.mc.renderGlobal.getDebugInfoRenders(), this.mc.renderGlobal.getDebugInfoEntities(), "P: " + this.mc.effectRenderer.getStatistics() + ". T: " + this.mc.theWorld.getDebugLoadedEntities() + animationText, this.mc.theWorld.getProviderName(), "", "Chunk-relative: " + (cameraBlockPos.getX() & 15) + " " + (cameraBlockPos.getY() & 15) + " " + (cameraBlockPos.getZ() & 15)});
         }
         else
         {
@@ -213,7 +171,7 @@ public class GuiOverlayDebug extends Gui
                     facingDescription = "Towards positive X";
             }
 
-            List<String> debugLines = Lists.newArrayList(new String[] {"Minecraft 1.8.9 (" + this.mc.getVersion() + "/" + ClientBrandRetriever.getClientModName() + ")", this.mc.debug, this.mc.renderGlobal.getDebugInfoRenders(), this.mc.renderGlobal.getDebugInfoEntities(), "P: " + this.mc.effectRenderer.getStatistics() + ". T: " + this.mc.theWorld.getDebugLoadedEntities() + animationText, this.mc.theWorld.getProviderName(), "", String.format(Locale.ROOT, "XYZ: %.3f / %.5f / %.3f", this.mc.getRenderViewEntity().posX, this.mc.getRenderViewEntity().getEntityBoundingBox().minY, this.mc.getRenderViewEntity().posZ), "Block: " + cameraBlockPos.getX() + " " + cameraBlockPos.getY() + " " + cameraBlockPos.getZ(), "Chunk: " + (cameraBlockPos.getX() & 15) + " " + (cameraBlockPos.getY() & 15) + " " + (cameraBlockPos.getZ() & 15) + " in " + (cameraBlockPos.getX() >> 4) + " " + (cameraBlockPos.getY() >> 4) + " " + (cameraBlockPos.getZ() >> 4), String.format(Locale.ROOT, "Facing: %s (%s) (%.1f / %.1f)", facing, facingDescription, MathHelper.wrapAngleTo180_float(entity.rotationYaw), MathHelper.wrapAngleTo180_float(entity.rotationPitch))});
+            List<String> debugLines = Lists.newArrayList(new String[] {"Minecraft 1.8.9 (" + this.mc.getVersion() + "/" + ClientBrandRetriever.getClientModName() + ")", debugLine, this.mc.renderGlobal.getDebugInfoRenders(), this.mc.renderGlobal.getDebugInfoEntities(), "P: " + this.mc.effectRenderer.getStatistics() + ". T: " + this.mc.theWorld.getDebugLoadedEntities() + animationText, this.mc.theWorld.getProviderName(), "", String.format(Locale.ROOT, "XYZ: %.3f / %.5f / %.3f", this.mc.getRenderViewEntity().posX, this.mc.getRenderViewEntity().getEntityBoundingBox().minY, this.mc.getRenderViewEntity().posZ), "Block: " + cameraBlockPos.getX() + " " + cameraBlockPos.getY() + " " + cameraBlockPos.getZ(), "Chunk: " + (cameraBlockPos.getX() & 15) + " " + (cameraBlockPos.getY() & 15) + " " + (cameraBlockPos.getZ() & 15) + " in " + (cameraBlockPos.getX() >> 4) + " " + (cameraBlockPos.getY() >> 4) + " " + (cameraBlockPos.getZ() >> 4), String.format(Locale.ROOT, "Facing: %s (%s) (%.1f / %.1f)", facing, facingDescription, MathHelper.wrapAngleTo180_float(entity.rotationYaw), MathHelper.wrapAngleTo180_float(entity.rotationPitch))});
 
             if (this.mc.theWorld != null && this.mc.theWorld.isBlockLoaded(cameraBlockPos))
             {
@@ -255,13 +213,65 @@ public class GuiOverlayDebug extends Gui
         }
     }
 
+    private String getEnhancedDebugLine()
+    {
+        String rawDebug = this.mc.debug;
+
+        if (rawDebug.equals(this.lastRawDebug))
+        {
+            return this.enhancedDebug;
+        }
+
+        this.lastRawDebug = rawDebug;
+        StringBuffer debugText = new StringBuffer(rawDebug);
+        int fpsTextIndex = rawDebug.indexOf(" fps ");
+
+        if (fpsTextIndex >= 0 && rawDebug.lastIndexOf('/', fpsTextIndex) < 0)
+        {
+            debugText.insert(fpsTextIndex, "/" + Config.getFpsMin());
+        }
+
+        if (Config.isSmoothFps())
+        {
+            debugText.append(" sf");
+        }
+
+        if (Config.isFastRender())
+        {
+            debugText.append(" fr");
+        }
+
+        if (Config.isAnisotropicFiltering())
+        {
+            debugText.append(" af");
+        }
+
+        if (Config.isAntialiasing())
+        {
+            debugText.append(" aa");
+        }
+
+        if (Config.isRenderRegions())
+        {
+            debugText.append(" reg");
+        }
+
+        if (Config.isShaders())
+        {
+            debugText.append(" sh");
+        }
+
+        this.enhancedDebug = debugText.toString();
+        return this.enhancedDebug;
+    }
+
     protected List<String> getDebugInfoRight()
     {
         long maxMemory = Runtime.getRuntime().maxMemory();
         long totalMemory = Runtime.getRuntime().totalMemory();
         long freeMemory = Runtime.getRuntime().freeMemory();
         long usedMemory = totalMemory - freeMemory;
-        List<String> debugLines = Lists.newArrayList(new String[] {"Java: " + System.getProperty("java.version") + " " + (this.mc.isJava64bit() ? 64 : 32) + "bit", String.format(Locale.ROOT, "Mem: % 2d%% %03d/%03dMB", usedMemory * 100L / maxMemory, bytesToMb(usedMemory), bytesToMb(maxMemory)), String.format(Locale.ROOT, "Allocated: % 2d%% %03dMB", totalMemory * 100L / maxMemory, bytesToMb(totalMemory)), "", "CPU: " + OpenGlHelper.getCpu(), "", "Display: " + Display.getWidth() + "x" + Display.getHeight() + " (" + GL11.glGetString(GL11.GL_VENDOR) + ")", GL11.glGetString(GL11.GL_RENDERER), GL11.glGetString(GL11.GL_VERSION)});
+        List<String> debugLines = Lists.newArrayList(new String[] {"Java: " + System.getProperty("java.version") + " " + (this.mc.isJava64bit() ? 64 : 32) + "bit", String.format(Locale.ROOT, "Mem: % 2d%% %03d/%03dMB", usedMemory * 100L / maxMemory, bytesToMb(usedMemory), bytesToMb(maxMemory)), String.format(Locale.ROOT, "Allocated: % 2d%% %03dMB", totalMemory * 100L / maxMemory, bytesToMb(totalMemory)), "", "CPU: " + OpenGlHelper.getCpu(), "", "Display: " + GameWindow.getWidth() + "x" + GameWindow.getHeight() + " (" + GL11.glGetString(GL11.GL_VENDOR) + ")", GL11.glGetString(GL11.GL_RENDERER), GL11.glGetString(GL11.GL_VERSION)});
         long nativeBufferAllocated = NativeMemory.getBufferAllocated();
         long nativeBufferMaximum = NativeMemory.getBufferMaximum();
         String gcText = "GC: " + MemoryMonitor.getAllocationRateMb() + "MB/s";

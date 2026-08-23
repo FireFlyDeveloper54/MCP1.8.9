@@ -3,7 +3,7 @@ package net.minecraft.client.gui;
 import java.io.IOException;
 import net.minecraft.client.multiplayer.ServerData;
 import net.minecraft.client.resources.I18n;
-import org.lwjgl.input.Keyboard;
+import net.minecraft.client.GameWindow;
 
 public class GuiScreenServerList extends GuiScreen
 {
@@ -24,7 +24,7 @@ public class GuiScreenServerList extends GuiScreen
 
     public void initGui()
     {
-        Keyboard.enableRepeatEvents(true);
+        GameWindow.setRepeatEvents(true);
         this.buttonList.clear();
         this.buttonList.add(new GuiButton(0, this.width / 2 - 100, this.height / 4 + 96 + 12, I18n.format("selectServer.select", new Object[0])));
         this.buttonList.add(new GuiButton(1, this.width / 2 - 100, this.height / 4 + 120 + 12, I18n.format("gui.cancel", new Object[0])));
@@ -37,7 +37,7 @@ public class GuiScreenServerList extends GuiScreen
 
     public void onGuiClosed()
     {
-        Keyboard.enableRepeatEvents(false);
+        GameWindow.setRepeatEvents(false);
         this.mc.gameSettings.lastServer = this.ipEdit.getText();
         this.mc.gameSettings.saveOptions();
     }

@@ -21,42 +21,9 @@ public class WorldVertexBufferUploader
             }
 
             VertexFormat vertexFormat = worldRenderer.getVertexFormat();
-            int vertexStride = vertexFormat.getNextOffset();
             ByteBuffer byteBuffer = worldRenderer.getByteBuffer();
-            List<VertexFormatElement> elements = vertexFormat.getElements();
-
-            for (int elementIndex = 0; elementIndex < elements.size(); ++elementIndex)
-            {
-                VertexFormatElement vertexFormatElement = elements.get(elementIndex);
-                VertexFormatElement.EnumUsage usage = vertexFormatElement.getUsage();
-                int glType = vertexFormatElement.getType().getGlConstant();
-                int textureIndex = vertexFormatElement.getIndex();
-                byteBuffer.position(vertexFormat.getOffset(elementIndex));
-
-                switch (usage)
-                {
-                    case POSITION:
-                        GL11.glVertexPointer(vertexFormatElement.getElementCount(), glType, vertexStride, byteBuffer);
-                        GL11.glEnableClientState(GL11.GL_VERTEX_ARRAY);
-                        break;
-
-                    case UV:
-                        OpenGlHelper.setClientActiveTexture(OpenGlHelper.defaultTexUnit + textureIndex);
-                        GL11.glTexCoordPointer(vertexFormatElement.getElementCount(), glType, vertexStride, byteBuffer);
-                        GL11.glEnableClientState(GL11.GL_TEXTURE_COORD_ARRAY);
-                        OpenGlHelper.setClientActiveTexture(OpenGlHelper.defaultTexUnit);
-                        break;
-
-                    case COLOR:
-                        GL11.glColorPointer(vertexFormatElement.getElementCount(), glType, vertexStride, byteBuffer);
-                        GL11.glEnableClientState(GL11.GL_COLOR_ARRAY);
-                        break;
-
-                    case NORMAL:
-                        GL11.glNormalPointer(glType, vertexStride, byteBuffer);
-                        GL11.glEnableClientState(GL11.GL_NORMAL_ARRAY);
-                }
-            }
+            OpenGlHelper.glBindBuffer(OpenGlHelper.GL_ARRAY_BUFFER, 0);
+            setupVertexFormat(vertexFormat, byteBuffer);
 
             if (worldRenderer.isMultiTexture())
             {
@@ -71,37 +38,132 @@ public class WorldVertexBufferUploader
                 GL11.glDrawArrays(worldRenderer.getDrawMode(), 0, worldRenderer.getVertexCount());
             }
 
-            int elementIndex = 0;
-
-            for (int elementCount = elements.size(); elementIndex < elementCount; ++elementIndex)
-            {
-                VertexFormatElement vertexFormatElement = elements.get(elementIndex);
-                VertexFormatElement.EnumUsage usage = vertexFormatElement.getUsage();
-                int textureIndex = vertexFormatElement.getIndex();
-
-                switch (usage)
-                {
-                    case POSITION:
-                        GL11.glDisableClientState(GL11.GL_VERTEX_ARRAY);
-                        break;
-
-                    case UV:
-                        OpenGlHelper.setClientActiveTexture(OpenGlHelper.defaultTexUnit + textureIndex);
-                        GL11.glDisableClientState(GL11.GL_TEXTURE_COORD_ARRAY);
-                        OpenGlHelper.setClientActiveTexture(OpenGlHelper.defaultTexUnit);
-                        break;
-
-                    case COLOR:
-                        GL11.glDisableClientState(GL11.GL_COLOR_ARRAY);
-                        GlStateManager.resetColor();
-                        break;
-
-                    case NORMAL:
-                        GL11.glDisableClientState(GL11.GL_NORMAL_ARRAY);
-                }
-            }
+            clearVertexFormat(vertexFormat);
         }
 
         worldRenderer.reset();
+    }
+
+    public static void setupVertexFormat(VertexFormat vertexFormat, ByteBuffer byteBuffer)
+    {
+        setupVertexFormat(vertexFormat, byteBuffer, -1L);
+    }
+
+    public static void setupVertexFormat(VertexFormat vertexFormat, long pointer)
+    {
+        setupVertexFormat(vertexFormat, null, pointer);
+    }
+
+    @SuppressWarnings("incomplete-switch")
+    private static void setupVertexFormat(VertexFormat vertexFormat, ByteBuffer byteBuffer, long pointer)
+    {
+        OpenGlHelper.bindDefaultVertexArray();
+        int vertexStride = vertexFormat.getNextOffset();
+        List<VertexFormatElement> elements = vertexFormat.getElements();
+
+        for (int elementIndex = 0; elementIndex < elements.size(); ++elementIndex)
+        {
+            VertexFormatElement vertexFormatElement = elements.get(elementIndex);
+            VertexFormatElement.EnumUsage usage = vertexFormatElement.getUsage();
+            int glType = vertexFormatElement.getType().getGlConstant();
+            int textureIndex = vertexFormatElement.getIndex();
+            int offset = vertexFormat.getOffset(elementIndex);
+
+            if (byteBuffer != null)
+            {
+                byteBuffer.position(offset);
+            }
+
+            switch (usage)
+            {
+                case POSITION:
+                    if (byteBuffer != null)
+                    {
+                        GL11.glVertexPointer(vertexFormatElement.getElementCount(), glType, vertexStride, byteBuffer);
+                    }
+                    else
+                    {
+                        GL11.glVertexPointer(vertexFormatElement.getElementCount(), glType, vertexStride, pointer + (long)offset);
+                    }
+
+                    GL11.glEnableClientState(GL11.GL_VERTEX_ARRAY);
+                    break;
+
+                case UV:
+                    OpenGlHelper.setClientActiveTexture(OpenGlHelper.defaultTexUnit + textureIndex);
+
+                    if (byteBuffer != null)
+                    {
+                        GL11.glTexCoordPointer(vertexFormatElement.getElementCount(), glType, vertexStride, byteBuffer);
+                    }
+                    else
+                    {
+                        GL11.glTexCoordPointer(vertexFormatElement.getElementCount(), glType, vertexStride, pointer + (long)offset);
+                    }
+
+                    GL11.glEnableClientState(GL11.GL_TEXTURE_COORD_ARRAY);
+                    OpenGlHelper.setClientActiveTexture(OpenGlHelper.defaultTexUnit);
+                    break;
+
+                case COLOR:
+                    if (byteBuffer != null)
+                    {
+                        GL11.glColorPointer(vertexFormatElement.getElementCount(), glType, vertexStride, byteBuffer);
+                    }
+                    else
+                    {
+                        GL11.glColorPointer(vertexFormatElement.getElementCount(), glType, vertexStride, pointer + (long)offset);
+                    }
+
+                    GL11.glEnableClientState(GL11.GL_COLOR_ARRAY);
+                    break;
+
+                case NORMAL:
+                    if (byteBuffer != null)
+                    {
+                        GL11.glNormalPointer(glType, vertexStride, byteBuffer);
+                    }
+                    else
+                    {
+                        GL11.glNormalPointer(glType, vertexStride, pointer + (long)offset);
+                    }
+
+                    GL11.glEnableClientState(GL11.GL_NORMAL_ARRAY);
+            }
+        }
+    }
+
+    @SuppressWarnings("incomplete-switch")
+    public static void clearVertexFormat(VertexFormat vertexFormat)
+    {
+        List<VertexFormatElement> elements = vertexFormat.getElements();
+
+        for (int elementIndex = 0; elementIndex < elements.size(); ++elementIndex)
+        {
+            VertexFormatElement vertexFormatElement = elements.get(elementIndex);
+            VertexFormatElement.EnumUsage usage = vertexFormatElement.getUsage();
+            int textureIndex = vertexFormatElement.getIndex();
+
+            switch (usage)
+            {
+                case POSITION:
+                    GL11.glDisableClientState(GL11.GL_VERTEX_ARRAY);
+                    break;
+
+                case UV:
+                    OpenGlHelper.setClientActiveTexture(OpenGlHelper.defaultTexUnit + textureIndex);
+                    GL11.glDisableClientState(GL11.GL_TEXTURE_COORD_ARRAY);
+                    OpenGlHelper.setClientActiveTexture(OpenGlHelper.defaultTexUnit);
+                    break;
+
+                case COLOR:
+                    GL11.glDisableClientState(GL11.GL_COLOR_ARRAY);
+                    GlStateManager.resetColor();
+                    break;
+
+                case NORMAL:
+                    GL11.glDisableClientState(GL11.GL_NORMAL_ARRAY);
+            }
+        }
     }
 }

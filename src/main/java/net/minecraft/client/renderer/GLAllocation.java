@@ -5,7 +5,7 @@ import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import org.lwjgl.opengl.GL11;
-import org.lwjgl.util.glu.GLU;
+import net.minecraft.client.GlUtil;
 
 public class GLAllocation
 {
@@ -21,7 +21,7 @@ public class GLAllocation
 
             if (glErrorCode != 0)
             {
-                glErrorMessage = GLU.gluErrorString(glErrorCode);
+                glErrorMessage = GlUtil.gluErrorString(glErrorCode);
             }
 
             throw new IllegalStateException("glGenLists returned an ID of 0 for a count of " + range + ", GL error (" + glErrorCode + "): " + glErrorMessage);

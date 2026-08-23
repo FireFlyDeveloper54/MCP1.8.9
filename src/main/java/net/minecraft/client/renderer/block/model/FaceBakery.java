@@ -2,9 +2,9 @@ package net.minecraft.client.renderer.block.model;
 
 import net.optifine.model.BlockModelUtils;
 import net.optifine.shaders.Shaders;
-import org.lwjgl.util.vector.Matrix4f;
-import org.lwjgl.util.vector.Vector3f;
-import org.lwjgl.util.vector.Vector4f;
+import net.minecraft.util.vector.Matrix4f;
+import net.minecraft.util.vector.Vector3f;
+import net.minecraft.util.vector.Vector4f;
 
 import net.minecraft.client.renderer.EnumFaceDirection;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
@@ -220,7 +220,10 @@ public class FaceBakery
         }
         else
         {
-            this.rotateScale(position, ROTATION_ORIGIN, ((ModelRotation)modelRotation).getMatrix4d(), UNIT_SCALE);
+            if (modelRotation instanceof ModelRotation)
+            {
+                this.rotateScale(position, ROTATION_ORIGIN, ((ModelRotation)modelRotation).getMatrix4d(), UNIT_SCALE);
+            }
             return modelRotation.rotate(facing, vertexIndex);
         }
     }

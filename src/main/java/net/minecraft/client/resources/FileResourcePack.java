@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
+import net.minecraft.util.ResourceCleaner;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -27,6 +28,7 @@ public class FileResourcePack extends AbstractResourcePack implements Closeable
     {
         super(resourcePackFileIn);
         this.closeAction = new FileResourcePack.ResourcePackCloseAction(resourcePackFileIn);
+        ResourceCleaner.register(this, this.closeAction);
     }
 
     private ZipFile getResourcePackZipFile() throws IOException
@@ -128,11 +130,10 @@ public class FileResourcePack extends AbstractResourcePack implements Closeable
     {
         try
         {
-            this.closeAction.close();
-        }
-        catch (IOException e)
-        {
-            logger.warn("Failed to close resource pack: " + this.resourcePackFile, e);
+            if (!ResourceCleaner.hasCleaner())
+            {
+                this.closeAction.run();
+            }
         }
         finally
         {

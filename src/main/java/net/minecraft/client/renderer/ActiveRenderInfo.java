@@ -12,7 +12,7 @@ import net.minecraft.util.MathHelper;
 import net.minecraft.util.Vec3;
 import net.minecraft.world.World;
 import org.lwjgl.opengl.GL11;
-import org.lwjgl.util.glu.GLU;
+import net.minecraft.client.GlUtil;
 
 public class ActiveRenderInfo
 {
@@ -32,10 +32,10 @@ public class ActiveRenderInfo
     {
         GlStateManager.getFloat(2982, MODELVIEW);
         GlStateManager.getFloat(2983, PROJECTION);
-        GL11.glGetInteger(GL11.GL_VIEWPORT, VIEWPORT);
+        GL11.glGetIntegerv(GL11.GL_VIEWPORT, VIEWPORT);
         float viewportCenterX = (float)((VIEWPORT.get(0) + VIEWPORT.get(2)) / 2);
         float viewportCenterY = (float)((VIEWPORT.get(1) + VIEWPORT.get(3)) / 2);
-        GLU.gluUnProject(viewportCenterX, viewportCenterY, 0.0F, MODELVIEW, PROJECTION, VIEWPORT, OBJECTCOORDS);
+        GlUtil.gluUnProject(viewportCenterX, viewportCenterY, 0.0F, MODELVIEW, PROJECTION, VIEWPORT, OBJECTCOORDS);
         position = new Vec3((double)OBJECTCOORDS.get(0), (double)OBJECTCOORDS.get(1), (double)OBJECTCOORDS.get(2));
         float directionMultiplier = thirdPerson ? -1.0F : 1.0F;
         float pitch = entityplayerIn.rotationPitch;

@@ -5,15 +5,20 @@ import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.client.renderer.GLAllocation;
 import net.minecraft.client.renderer.GlStateManager;
+import net.minecraft.client.renderer.OpenGlHelper;
 import net.minecraft.client.renderer.RenderGlobal;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.WorldRenderer;
+import net.minecraft.client.renderer.WorldVertexBufferUploader;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
+import net.minecraft.client.renderer.vertex.VertexBuffer;
+import net.minecraft.client.renderer.vertex.VertexFormat;
 import net.minecraft.src.Config;
 import net.minecraft.util.ResourceLocation;
 import net.optifine.entity.model.anim.ModelUpdater;
 import net.optifine.model.ModelSprite;
 import net.optifine.shaders.Shaders;
+import net.optifine.shaders.ShadersRender;
 import net.optifine.shaders.SVertexFormat;
 import org.lwjgl.opengl.GL11;
 
@@ -31,6 +36,10 @@ public class ModelRenderer
     public float rotateAngleZ;
     private boolean compiled;
     private int displayList;
+    private VertexBuffer vertexBuffer;
+    private VertexFormat compiledFormat;
+    private int compiledMode;
+    private int compiledVertexCount;
     public boolean mirror;
     public boolean showModel;
     public boolean isHidden;
@@ -174,7 +183,7 @@ public class ModelRenderer
                         GlStateManager.scale(this.scaleX, this.scaleY, this.scaleZ);
                     }
 
-                    GlStateManager.callList(this.displayList);
+                    this.drawCompiled();
 
                     if (this.childModels != null)
                     {
@@ -198,7 +207,7 @@ public class ModelRenderer
                         GlStateManager.scale(this.scaleX, this.scaleY, this.scaleZ);
                     }
 
-                    GlStateManager.callList(this.displayList);
+                    this.drawCompiled();
 
                     if (this.childModels != null)
                     {
@@ -241,7 +250,7 @@ public class ModelRenderer
                     GlStateManager.scale(this.scaleX, this.scaleY, this.scaleZ);
                 }
 
-                GlStateManager.callList(this.displayList);
+                this.drawCompiled();
 
                 if (this.childModels != null)
                 {
@@ -316,7 +325,7 @@ public class ModelRenderer
                 GlStateManager.scale(this.scaleX, this.scaleY, this.scaleZ);
             }
 
-            GlStateManager.callList(this.displayList);
+            this.drawCompiled();
 
             if (this.childModels != null)
             {
@@ -377,6 +386,36 @@ public class ModelRenderer
 
     private void compileDisplayList(float scale)
     {
+        this.deleteVertexBuffer();
+
+        if (OpenGlHelper.vboSupported && this.spriteList.isEmpty())
+        {
+            Tessellator tessellator = Tessellator.getInstance();
+            WorldRenderer worldRenderer = tessellator.getWorldRenderer();
+            VertexFormat format = Config.isShaders() ? SVertexFormat.defVertexFormatTextured : DefaultVertexFormats.OLDMODEL_POSITION_TEX_NORMAL;
+
+            if (!this.cubeList.isEmpty())
+            {
+                worldRenderer.begin(7, format);
+
+                for (int cubeIndex = 0; cubeIndex < this.cubeList.size(); ++cubeIndex)
+                {
+                    this.cubeList.get(cubeIndex).render(worldRenderer, scale);
+                }
+
+                worldRenderer.finishDrawing();
+                this.compiledVertexCount = worldRenderer.getVertexCount();
+                this.compiledMode = worldRenderer.getDrawMode();
+                this.compiledFormat = format;
+                this.vertexBuffer = new VertexBuffer(format);
+                this.vertexBuffer.bufferData(worldRenderer.getByteBuffer());
+                worldRenderer.reset();
+            }
+
+            this.compiled = true;
+            return;
+        }
+
         if (this.displayList == 0)
         {
             this.displayList = GLAllocation.generateDisplayLists(1);
@@ -384,7 +423,7 @@ public class ModelRenderer
 
         GL11.glNewList(this.displayList, GL11.GL_COMPILE);
         Tessellator tessellator = Tessellator.getInstance();
-        WorldRenderer worldRenderer = Tessellator.getInstance().getWorldRenderer();
+        WorldRenderer worldRenderer = tessellator.getWorldRenderer();
 
         if (!this.cubeList.isEmpty())
         {
@@ -406,6 +445,52 @@ public class ModelRenderer
 
         GL11.glEndList();
         this.compiled = true;
+    }
+
+    private void drawCompiled()
+    {
+        if (this.vertexBuffer != null && this.compiledVertexCount > 0)
+        {
+            VertexFormat format = this.compiledFormat != null ? this.compiledFormat : DefaultVertexFormats.OLDMODEL_POSITION_TEX_NORMAL;
+            this.vertexBuffer.bindBuffer();
+
+            if (Config.isShaders())
+            {
+                ShadersRender.setupArrayPointersVbo();
+            }
+            else
+            {
+                WorldVertexBufferUploader.setupVertexFormat(format, 0L);
+            }
+
+            GlStateManager.glDrawArrays(this.compiledMode, 0, this.compiledVertexCount);
+            WorldVertexBufferUploader.clearVertexFormat(format);
+
+            if (Config.isShaders())
+            {
+                org.lwjgl.opengl.GL20.glDisableVertexAttribArray(Shaders.midTexCoordAttrib);
+                org.lwjgl.opengl.GL20.glDisableVertexAttribArray(Shaders.tangentAttrib);
+                org.lwjgl.opengl.GL20.glDisableVertexAttribArray(Shaders.entityAttrib);
+            }
+
+            this.vertexBuffer.unbindBuffer();
+        }
+        else if (this.displayList != 0)
+        {
+            GlStateManager.callList(this.displayList);
+        }
+    }
+
+    private void deleteVertexBuffer()
+    {
+        if (this.vertexBuffer != null)
+        {
+            this.vertexBuffer.deleteGlBuffers();
+            this.vertexBuffer = null;
+        }
+
+        this.compiledVertexCount = 0;
+        this.compiledFormat = null;
     }
 
     public ModelRenderer setTextureSize(int textureWidthIn, int textureHeightIn)
@@ -435,6 +520,7 @@ public class ModelRenderer
         if (this.countResetDisplayList != Shaders.countResetDisplayLists)
         {
             this.compiled = false;
+            this.deleteVertexBuffer();
             this.countResetDisplayList = Shaders.countResetDisplayLists;
         }
     }

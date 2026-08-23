@@ -111,10 +111,10 @@ import net.optifine.util.ChunkUtils;
 import net.optifine.util.RenderChunkUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.lwjgl.input.Keyboard;
+import net.minecraft.client.GameWindow;
 import org.lwjgl.opengl.GL11;
-import org.lwjgl.util.vector.Vector3f;
-import org.lwjgl.util.vector.Vector4f;
+import net.minecraft.util.vector.Vector3f;
+import net.minecraft.util.vector.Vector4f;
 
 public class RenderGlobal implements IWorldAccess, IResourceManagerReloadListener
 {
@@ -324,8 +324,8 @@ public class RenderGlobal implements IWorldAccess, IResourceManagerReloadListene
             this.sky2VBO = new VertexBuffer(this.vertexBufferFormat);
             this.renderSky(worldRenderer, -16.0F, true);
             worldRenderer.finishDrawing();
-            worldRenderer.reset();
             this.sky2VBO.bufferData(worldRenderer.getByteBuffer());
+            worldRenderer.reset();
         }
         else
         {
@@ -358,8 +358,8 @@ public class RenderGlobal implements IWorldAccess, IResourceManagerReloadListene
             this.skyVBO = new VertexBuffer(this.vertexBufferFormat);
             this.renderSky(worldRenderer, 16.0F, false);
             worldRenderer.finishDrawing();
-            worldRenderer.reset();
             this.skyVBO.bufferData(worldRenderer.getByteBuffer());
+            worldRenderer.reset();
         }
         else
         {
@@ -369,6 +369,15 @@ public class RenderGlobal implements IWorldAccess, IResourceManagerReloadListene
             tessellator.draw();
             GL11.glEndList();
         }
+    }
+
+    private void drawPositionVbo(VertexBuffer buffer)
+    {
+        buffer.bindBuffer();
+        WorldVertexBufferUploader.setupVertexFormat(DefaultVertexFormats.POSITION, 0L);
+        buffer.drawArrays(7);
+        WorldVertexBufferUploader.clearVertexFormat(DefaultVertexFormats.POSITION);
+        buffer.unbindBuffer();
     }
 
     private void renderSky(WorldRenderer worldRendererIn, float posY, boolean reverseX)
@@ -420,8 +429,8 @@ public class RenderGlobal implements IWorldAccess, IResourceManagerReloadListene
             this.starVBO = new VertexBuffer(this.vertexBufferFormat);
             this.renderStars(worldRenderer);
             worldRenderer.finishDrawing();
-            worldRenderer.reset();
             this.starVBO.bufferData(worldRenderer.getByteBuffer());
+            worldRenderer.reset();
         }
         else
         {
@@ -1455,13 +1464,13 @@ public class RenderGlobal implements IWorldAccess, IResourceManagerReloadListene
     {
         if (Config.isShaders())
         {
-            if (Keyboard.isKeyDown(61) && Keyboard.isKeyDown(24))
+            if (GameWindow.isKeyDown(61) && GameWindow.isKeyDown(24))
             {
                 GuiShaderOptions guiShaderOptions = new GuiShaderOptions((GuiScreen)null, Config.getGameSettings());
                 Config.getMinecraft().displayGuiScreen(guiShaderOptions);
             }
 
-            if (Keyboard.isKeyDown(61) && Keyboard.isKeyDown(19))
+            if (GameWindow.isKeyDown(61) && GameWindow.isKeyDown(19))
             {
                 Shaders.uninit();
                 Shaders.loadShaderPack();
@@ -1609,12 +1618,7 @@ public class RenderGlobal implements IWorldAccess, IResourceManagerReloadListene
             {
                 if (this.vboEnabled)
                 {
-                    this.skyVBO.bindBuffer();
-                    GL11.glEnableClientState(GL11.GL_VERTEX_ARRAY);
-                    GL11.glVertexPointer(3, GL11.GL_FLOAT, 12, 0L);
-                    this.skyVBO.drawArrays(7);
-                    this.skyVBO.unbindBuffer();
-                    GL11.glDisableClientState(GL11.GL_VERTEX_ARRAY);
+                    this.drawPositionVbo(this.skyVBO);
                 }
                 else
                 {
@@ -1754,12 +1758,7 @@ public class RenderGlobal implements IWorldAccess, IResourceManagerReloadListene
 
                 if (this.vboEnabled)
                 {
-                    this.starVBO.bindBuffer();
-                    GL11.glEnableClientState(GL11.GL_VERTEX_ARRAY);
-                    GL11.glVertexPointer(3, GL11.GL_FLOAT, 12, 0L);
-                    this.starVBO.drawArrays(7);
-                    this.starVBO.unbindBuffer();
-                    GL11.glDisableClientState(GL11.GL_VERTEX_ARRAY);
+                    this.drawPositionVbo(this.starVBO);
                 }
                 else
                 {
@@ -1795,12 +1794,7 @@ public class RenderGlobal implements IWorldAccess, IResourceManagerReloadListene
 
                 if (this.vboEnabled)
                 {
-                    this.sky2VBO.bindBuffer();
-                    GL11.glEnableClientState(GL11.GL_VERTEX_ARRAY);
-                    GL11.glVertexPointer(3, GL11.GL_FLOAT, 12, 0L);
-                    this.sky2VBO.drawArrays(7);
-                    this.sky2VBO.unbindBuffer();
-                    GL11.glDisableClientState(GL11.GL_VERTEX_ARRAY);
+                    this.drawPositionVbo(this.sky2VBO);
                 }
                 else
                 {
@@ -1856,12 +1850,7 @@ public class RenderGlobal implements IWorldAccess, IResourceManagerReloadListene
             {
                 if (this.vboEnabled)
                 {
-                    this.sky2VBO.bindBuffer();
-                    GlStateManager.glEnableClientState(32884);
-                    GlStateManager.glVertexPointer(3, 5126, 12, 0);
-                    this.sky2VBO.drawArrays(7);
-                    this.sky2VBO.unbindBuffer();
-                    GlStateManager.glDisableClientState(32884);
+                    this.drawPositionVbo(this.sky2VBO);
                 }
                 else
                 {

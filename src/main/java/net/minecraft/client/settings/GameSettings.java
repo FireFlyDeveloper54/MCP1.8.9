@@ -49,10 +49,8 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.lwjgl.input.Keyboard;
-import org.lwjgl.input.Mouse;
-import org.lwjgl.opengl.Display;
-import org.lwjgl.opengl.DisplayMode;
+import net.minecraft.client.GameWindow;
+import net.minecraft.client.input.Keyboard;
 
 public class GameSettings
 {
@@ -97,7 +95,7 @@ public class GameSettings
     public boolean snooperEnabled = true;
     public boolean fullScreen;
     public boolean enableVsync = true;
-    public boolean useVbo = false;
+    public boolean useVbo = true;
     public boolean allowBlockAlternatives = true;
     public boolean reducedDebugInfo = false;
     public boolean hideServerAddress;
@@ -209,6 +207,9 @@ public class GameSettings
     public int ofCullTracingDistance = 128;
     public int ofCullSleepDelay = 10;
     public int ofCullHitboxLimit = 50;
+    public boolean ofCullInterpolateCamera = true;
+    public boolean ofCullTileBounds = true;
+    public boolean ofCullLoadedChunks = true;
     public int ofChunkUpdateLimit = 50;
     public int ofParticlesLimit = 400;
     public int ofTranslucentBlocks = 0;
@@ -290,6 +291,7 @@ public class GameSettings
         KeyUtils.fixKeyConflicts(this.keyBindings, new KeyBinding[] {this.ofKeyBindZoom});
         this.renderDistanceChunks = 8;
         this.loadOptions();
+        this.applyFastMathMode();
         Config.initGameSettings(this);
     }
 
@@ -303,14 +305,24 @@ public class GameSettings
         this.forceUnicodeFont = false;
     }
 
+    private static int migrateKeyCode(int code)
+    {
+        return code >= 256 ? Keyboard.toLwjglKey(code) : code;
+    }
+
     public static String getKeyDisplayString(int key)
     {
-        return key < 0 ? I18n.format("key.mouseButton", new Object[] {Integer.valueOf(key + 101)}): (key < 256 ? Keyboard.getKeyName(key) : String.valueOf((char)(key - 256)).toUpperCase(Locale.ROOT));
+        if (key < 0)
+        {
+            return I18n.format("key.mouseButton", new Object[] {Integer.valueOf(key + 101)});
+        }
+
+        return GameWindow.getKeyName(key);
     }
 
     public static boolean isKeyDown(KeyBinding key)
     {
-        return key.getKeyCode() == 0 ? false : (key.getKeyCode() < 0 ? Mouse.isButtonDown(key.getKeyCode() + 100) : Keyboard.isKeyDown(key.getKeyCode()));
+        return key.getKeyCode() == 0 ? false : (key.getKeyCode() < 0 ? GameWindow.isButtonDown(key.getKeyCode() + 100) : GameWindow.isKeyDown(key.getKeyCode()));
     }
 
     public void setOptionKeyBinding(KeyBinding key, int keyCode)
@@ -412,15 +424,37 @@ public class GameSettings
 
     public void applyFastMathMode()
     {
-        if ("none".equals(this.ofFastMath))
+        String mode = this.ofFastMath == null ? "none" : this.ofFastMath.trim();
+
+        if ("true".equalsIgnoreCase(mode))
+        {
+            mode = "hybrid";
+        }
+        else if ("false".equalsIgnoreCase(mode) || "off".equalsIgnoreCase(mode))
+        {
+            mode = "none";
+        }
+
+        this.ofFastMath = mode;
+
+        if ("none".equals(mode))
         {
             MathHelper.fastMath = false;
             BetterFps.setMode(BetterFps.Mode.JAVA);
+            return;
         }
-        else
+
+        MathHelper.fastMath = !"vanilla".equals(mode) && !"java".equals(mode);
+
+        try
         {
-            MathHelper.fastMath = true;
-            BetterFps.setMode(BetterFps.Mode.valueOf(this.ofFastMath.toUpperCase().replace("-", "_")));
+            BetterFps.setMode(BetterFps.Mode.valueOf(mode.toUpperCase().replace("-", "_")));
+        }
+        catch (IllegalArgumentException invalidMode)
+        {
+            this.ofFastMath = "none";
+            MathHelper.fastMath = false;
+            BetterFps.setMode(BetterFps.Mode.JAVA);
         }
     }
 
@@ -442,7 +476,7 @@ public class GameSettings
                 this.guiScale = 0;
             }
 
-            DisplayMode displaymode = Config.getLargestDisplayMode();
+            GameWindow.VideoMode displaymode = Config.getLargestDisplayMode();
             int i = displaymode.getWidth() / 320;
             int j = displaymode.getHeight() / 240;
             int k = Math.min(i, j);
@@ -557,7 +591,7 @@ public class GameSettings
         if (settingsOption == GameSettings.Options.ENABLE_VSYNC)
         {
             this.enableVsync = !this.enableVsync;
-            Display.setVSyncEnabled(this.enableVsync);
+            GameWindow.setVsync(this.enableVsync);
         }
 
         if (settingsOption == GameSettings.Options.USE_VBO)
@@ -1028,7 +1062,7 @@ public class GameSettings
                             {
                                 if (astring[0].equals("key_" + keybinding.getKeyDescription()))
                                 {
-                                    keybinding.setKeyCode(Integer.parseInt(astring[1]));
+                                    keybinding.setKeyCode(migrateKeyCode(Integer.parseInt(astring[1])));
                                 }
                             }
 
@@ -1321,6 +1355,31 @@ public class GameSettings
 
             this.ofFullscreenMode = astring[thirdIntValue];
         }
+
+        if (option == GameSettings.Options.CULL_TRACING_DISTANCE)
+        {
+            this.ofCullTracingDistance = (int)value;
+        }
+
+        if (option == GameSettings.Options.CULL_SLEEP_DELAY)
+        {
+            this.ofCullSleepDelay = (int)value;
+        }
+
+        if (option == GameSettings.Options.CULL_HITBOX_LIMIT)
+        {
+            this.ofCullHitboxLimit = (int)value;
+        }
+
+        if (option == GameSettings.Options.CHUNK_UPDATE_LIMIT)
+        {
+            this.ofChunkUpdateLimit = (int)value;
+        }
+
+        if (option == GameSettings.Options.PARTICLES_LIMIT)
+        {
+            this.ofParticlesLimit = (int)value;
+        }
     }
 
     private float getOptionFloatValueOF(GameSettings.Options option)
@@ -1361,6 +1420,26 @@ public class GameSettings
                 int i = list.indexOf(this.ofFullscreenMode);
                 return i < 0 ? 0.0F : (float)(i + 1);
             }
+        }
+        else if (option == GameSettings.Options.CULL_TRACING_DISTANCE)
+        {
+            return (float)this.ofCullTracingDistance;
+        }
+        else if (option == GameSettings.Options.CULL_SLEEP_DELAY)
+        {
+            return (float)this.ofCullSleepDelay;
+        }
+        else if (option == GameSettings.Options.CULL_HITBOX_LIMIT)
+        {
+            return (float)this.ofCullHitboxLimit;
+        }
+        else if (option == GameSettings.Options.CHUNK_UPDATE_LIMIT)
+        {
+            return (float)this.ofChunkUpdateLimit;
+        }
+        else if (option == GameSettings.Options.PARTICLES_LIMIT)
+        {
+            return (float)this.ofParticlesLimit;
         }
         else
         {
@@ -1786,6 +1865,21 @@ public class GameSettings
         if (option == GameSettings.Options.CULL_ARMOR_STANDS)
         {
             this.ofCullArmorStands = !this.ofCullArmorStands;
+        }
+
+        if (option == GameSettings.Options.CULL_INTERPOLATE_CAMERA)
+        {
+            this.ofCullInterpolateCamera = !this.ofCullInterpolateCamera;
+        }
+
+        if (option == GameSettings.Options.CULL_TILE_BOUNDS)
+        {
+            this.ofCullTileBounds = !this.ofCullTileBounds;
+        }
+
+        if (option == GameSettings.Options.CULL_LOADED_CHUNKS)
+        {
+            this.ofCullLoadedChunks = !this.ofCullLoadedChunks;
         }
 
         if (option == GameSettings.Options.LIMIT_CHUNK_UPDATES)
@@ -2320,6 +2414,18 @@ public class GameSettings
         {
             return this.ofCullArmorStands ? s + Lang.getOn() : s + Lang.getOff();
         }
+        else if (option == GameSettings.Options.CULL_INTERPOLATE_CAMERA)
+        {
+            return this.ofCullInterpolateCamera ? s + Lang.getOn() : s + Lang.getOff();
+        }
+        else if (option == GameSettings.Options.CULL_TILE_BOUNDS)
+        {
+            return this.ofCullTileBounds ? s + Lang.getOn() : s + Lang.getOff();
+        }
+        else if (option == GameSettings.Options.CULL_LOADED_CHUNKS)
+        {
+            return this.ofCullLoadedChunks ? s + Lang.getOn() : s + Lang.getOff();
+        }
         else if (option == GameSettings.Options.LIMIT_CHUNK_UPDATES)
         {
             return this.ofLimitChunkUpdates ? s + Lang.getOn() : s + Lang.getOff();
@@ -2829,6 +2935,21 @@ public class GameSettings
                         this.ofCullArmorStands = Boolean.valueOf(astring[1]).booleanValue();
                     }
 
+                    if (astring[0].equals("ofCullInterpolateCamera") && astring.length >= 2)
+                    {
+                        this.ofCullInterpolateCamera = Boolean.valueOf(astring[1]).booleanValue();
+                    }
+
+                    if (astring[0].equals("ofCullTileBounds") && astring.length >= 2)
+                    {
+                        this.ofCullTileBounds = Boolean.valueOf(astring[1]).booleanValue();
+                    }
+
+                    if (astring[0].equals("ofCullLoadedChunks") && astring.length >= 2)
+                    {
+                        this.ofCullLoadedChunks = Boolean.valueOf(astring[1]).booleanValue();
+                    }
+
                     if (astring[0].equals("ofLimitChunkUpdates") && astring.length >= 2)
                     {
                         this.ofLimitChunkUpdates = Boolean.valueOf(astring[1]).booleanValue();
@@ -2878,7 +2999,7 @@ public class GameSettings
 
                     if (astring[0].equals("key_" + this.ofKeyBindZoom.getKeyDescription()))
                     {
-                        this.ofKeyBindZoom.setKeyCode(Integer.parseInt(astring[1]));
+                        this.ofKeyBindZoom.setKeyCode(migrateKeyCode(Integer.parseInt(astring[1])));
                     }
                 }
                 catch (Exception exception)
@@ -2891,11 +3012,13 @@ public class GameSettings
             KeyUtils.fixKeyConflicts(this.keyBindings, new KeyBinding[] {this.ofKeyBindZoom});
             KeyBinding.resetKeyBindingArrayAndHash();
             bufferedreader.close();
+            this.applyFastMathMode();
         }
         catch (Exception exception1)
         {
             Config.warn("Failed to load options");
             net.minecraft.src.Config.warn(exception1.getClass().getName() + ": " + exception1.getMessage(), exception1);
+            this.applyFastMathMode();
         }
     }
 
@@ -2976,6 +3099,9 @@ public class GameSettings
             printWriter.println("ofFastRender:" + this.ofFastRender);
             printWriter.println("ofEntityCulling:" + this.ofEntityCulling);
             printWriter.println("ofCullArmorStands:" + this.ofCullArmorStands);
+            printWriter.println("ofCullInterpolateCamera:" + this.ofCullInterpolateCamera);
+            printWriter.println("ofCullTileBounds:" + this.ofCullTileBounds);
+            printWriter.println("ofCullLoadedChunks:" + this.ofCullLoadedChunks);
             printWriter.println("ofLimitChunkUpdates:" + this.ofLimitChunkUpdates);
             printWriter.println("ofCullTracingDistance:" + this.ofCullTracingDistance);
             printWriter.println("ofCullSleepDelay:" + this.ofCullSleepDelay);
@@ -3038,7 +3164,7 @@ public class GameSettings
         this.guiScale = 0;
         this.particleSetting = 0;
         this.heldItemTooltips = true;
-        this.useVbo = false;
+        this.useVbo = true;
         this.forceUnicodeFont = false;
         this.ofFogType = 1;
         this.ofFogStart = 0.8F;
@@ -3053,6 +3179,9 @@ public class GameSettings
         this.ofFastMath = "none";
         this.ofEntityCulling = true;
         this.ofCullArmorStands = true;
+        this.ofCullInterpolateCamera = true;
+        this.ofCullTileBounds = true;
+        this.ofCullLoadedChunks = true;
         this.ofLimitChunkUpdates = true;
         this.ofCullTracingDistance = 128;
         this.ofCullSleepDelay = 10;
@@ -3130,7 +3259,7 @@ public class GameSettings
 
     public void updateVSync()
     {
-        Display.setVSyncEnabled(this.enableVsync);
+        GameWindow.setVsync(this.enableVsync);
     }
 
     private void updateWaterOpacity()
@@ -3316,6 +3445,9 @@ public class GameSettings
         SMART_ANIMATIONS("of.options.SMART_ANIMATIONS", false, false),
         ENTITY_CULLING("Entity Culling", false, true),
         CULL_ARMOR_STANDS("Cull Armor Stands", false, true),
+        CULL_INTERPOLATE_CAMERA("Cull Interpolate Camera", false, true),
+        CULL_TILE_BOUNDS("Cull Tile Bounds", false, true),
+        CULL_LOADED_CHUNKS("Cull Loaded Chunks", false, true),
         LIMIT_CHUNK_UPDATES("Limit Chunk Updates", false, true),
         CULL_TRACING_DISTANCE("Cull Tracing Distance", true, false, 64.0F, 256.0F, 1.0F),
         CULL_SLEEP_DELAY("Cull Sleep Delay", true, false, 5.0F, 20.0F, 1.0F),

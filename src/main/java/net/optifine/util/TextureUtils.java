@@ -50,7 +50,7 @@ import net.optifine.shaders.Shaders;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL12;
-import org.lwjgl.opengl.GLContext;
+import org.lwjgl.opengl.GL;
 
 public class TextureUtils
 {
@@ -403,7 +403,7 @@ public class TextureUtils
 
     public static void applyAnisotropicLevel()
     {
-        if (GLContext.getCapabilities().GL_EXT_texture_filter_anisotropic)
+        if (GL.getCapabilities().GL_EXT_texture_filter_anisotropic)
         {
             float maxAnisotropicLevel = GL11.glGetFloat(34047);
             float anisotropicLevel = (float)Config.getAnisotropicFilterLevel();

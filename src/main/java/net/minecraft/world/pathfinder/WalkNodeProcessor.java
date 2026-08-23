@@ -41,12 +41,19 @@ public class WalkNodeProcessor extends NodeProcessor
         if (this.canSwim && entityIn.isInWater())
         {
             i = (int)entityIn.getEntityBoundingBox().minY;
-            BlockPos.MutableBlockPos blockpos$mutableblockpos = new BlockPos.MutableBlockPos(MathHelper.floor_double(entityIn.posX), i, MathHelper.floor_double(entityIn.posZ));
+            BlockPos.PooledMutableBlockPos blockpos$mutableblockpos = BlockPos.PooledMutableBlockPos.retain(MathHelper.floor_double(entityIn.posX), i, MathHelper.floor_double(entityIn.posZ));
 
-            for (Block block = this.blockaccess.getBlockState(blockpos$mutableblockpos).getBlock(); block == Blocks.flowing_water || block == Blocks.water; block = this.blockaccess.getBlockState(blockpos$mutableblockpos).getBlock())
+            try
             {
-                ++i;
-                blockpos$mutableblockpos.set(MathHelper.floor_double(entityIn.posX), i, MathHelper.floor_double(entityIn.posZ));
+                for (Block block = this.blockaccess.getBlockState(blockpos$mutableblockpos).getBlock(); block == Blocks.flowing_water || block == Blocks.water; block = this.blockaccess.getBlockState(blockpos$mutableblockpos).getBlock())
+                {
+                    ++i;
+                    blockpos$mutableblockpos.set(MathHelper.floor_double(entityIn.posX), i, MathHelper.floor_double(entityIn.posZ));
+                }
+            }
+            finally
+            {
+                blockpos$mutableblockpos.release();
             }
 
             this.avoidsWater = false;
@@ -174,81 +181,89 @@ public class WalkNodeProcessor extends NodeProcessor
     public static int getPathNodeType(IBlockAccess blockaccessIn, Entity entityIn, int x, int y, int z, int sizeX, int sizeY, int sizeZ, boolean avoidWater, boolean breakDoors, boolean enterDoors)
     {
         boolean flag = false;
-        BlockPos blockpos = new BlockPos(entityIn);
-        BlockPos.MutableBlockPos blockpos$mutableblockpos = new BlockPos.MutableBlockPos();
+        BlockPos.PooledMutableBlockPos entityPos = BlockPos.PooledMutableBlockPos.retain(entityIn);
+        BlockPos.PooledMutableBlockPos blockpos$mutableblockpos = BlockPos.PooledMutableBlockPos.retain();
 
-        for (int i = x; i < x + sizeX; ++i)
+        try
         {
-            for (int j = y; j < y + sizeY; ++j)
+            for (int i = x; i < x + sizeX; ++i)
             {
-                for (int k = z; k < z + sizeZ; ++k)
+                for (int j = y; j < y + sizeY; ++j)
                 {
-                    blockpos$mutableblockpos.set(i, j, k);
-                    Block block = blockaccessIn.getBlockState(blockpos$mutableblockpos).getBlock();
-
-                    if (block.getMaterial() != Material.air)
+                    for (int k = z; k < z + sizeZ; ++k)
                     {
-                        if (block != Blocks.trapdoor && block != Blocks.iron_trapdoor)
+                        blockpos$mutableblockpos.set(i, j, k);
+                        Block block = blockaccessIn.getBlockState(blockpos$mutableblockpos).getBlock();
+
+                        if (block.getMaterial() != Material.air)
                         {
-                            if (block != Blocks.flowing_water && block != Blocks.water)
+                            if (block != Blocks.trapdoor && block != Blocks.iron_trapdoor)
                             {
-                                if (!enterDoors && block instanceof BlockDoor && block.getMaterial() == Material.wood)
+                                if (block != Blocks.flowing_water && block != Blocks.water)
                                 {
-                                    return 0;
+                                    if (!enterDoors && block instanceof BlockDoor && block.getMaterial() == Material.wood)
+                                    {
+                                        return 0;
+                                    }
+                                }
+                                else
+                                {
+                                    if (avoidWater)
+                                    {
+                                        return -1;
+                                    }
+
+                                    flag = true;
                                 }
                             }
                             else
                             {
-                                if (avoidWater)
-                                {
-                                    return -1;
-                                }
-
                                 flag = true;
                             }
-                        }
-                        else
-                        {
-                            flag = true;
-                        }
 
-                        if (entityIn.worldObj.getBlockState(blockpos$mutableblockpos).getBlock() instanceof BlockRailBase)
-                        {
-                            if (!(entityIn.worldObj.getBlockState(blockpos).getBlock() instanceof BlockRailBase) && !(entityIn.worldObj.getBlockState(blockpos.down()).getBlock() instanceof BlockRailBase))
+                            if (entityIn.worldObj.getBlockState(blockpos$mutableblockpos).getBlock() instanceof BlockRailBase)
                             {
-                                return -3;
+                                if (!(entityIn.worldObj.getBlockState(entityPos).getBlock() instanceof BlockRailBase) && !(entityIn.worldObj.getBlockState(blockpos$mutableblockpos.set(entityPos.getX(), entityPos.getY() - 1, entityPos.getZ())).getBlock() instanceof BlockRailBase))
+                                {
+                                    return -3;
+                                }
                             }
-                        }
-                        else if (!block.isPassable(blockaccessIn, blockpos$mutableblockpos) && (!breakDoors || !(block instanceof BlockDoor) || block.getMaterial() != Material.wood))
-                        {
-                            if (block instanceof BlockFence || block instanceof BlockFenceGate || block instanceof BlockWall)
+                            else if (!block.isPassable(blockaccessIn, blockpos$mutableblockpos) && (!breakDoors || !(block instanceof BlockDoor) || block.getMaterial() != Material.wood))
                             {
-                                return -3;
-                            }
+                                if (block instanceof BlockFence || block instanceof BlockFenceGate || block instanceof BlockWall)
+                                {
+                                    return -3;
+                                }
 
-                            if (block == Blocks.trapdoor || block == Blocks.iron_trapdoor)
-                            {
-                                return -4;
-                            }
+                                if (block == Blocks.trapdoor || block == Blocks.iron_trapdoor)
+                                {
+                                    return -4;
+                                }
 
-                            Material material = block.getMaterial();
+                                Material material = block.getMaterial();
 
-                            if (material != Material.lava)
-                            {
-                                return 0;
-                            }
+                                if (material != Material.lava)
+                                {
+                                    return 0;
+                                }
 
-                            if (!entityIn.isInLava())
-                            {
-                                return -2;
+                                if (!entityIn.isInLava())
+                                {
+                                    return -2;
+                                }
                             }
                         }
                     }
                 }
             }
-        }
 
-        return flag ? 2 : 1;
+            return flag ? 2 : 1;
+        }
+        finally
+        {
+            entityPos.release();
+            blockpos$mutableblockpos.release();
+        }
     }
 
     public void setEnterDoors(boolean canEnterDoorsIn)

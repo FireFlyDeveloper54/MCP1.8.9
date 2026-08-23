@@ -14,7 +14,7 @@ import java.util.Map.Entry;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.JsonUtils;
 import net.minecraft.util.MathHelper;
-import org.lwjgl.util.vector.Vector3f;
+import net.minecraft.util.vector.Vector3f;
 
 public class BlockPart
 {

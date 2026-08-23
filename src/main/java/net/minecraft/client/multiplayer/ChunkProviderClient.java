@@ -39,15 +39,26 @@ public class ChunkProviderClient implements IChunkProvider
 
     public void unloadChunk(int x, int z)
     {
-        Chunk chunk = this.provideChunk(x, z);
+        Chunk chunk = this.getLoadedChunk(x, z);
 
-        if (!chunk.isEmpty())
+        if (chunk != null && !chunk.isEmpty())
         {
             chunk.onChunkUnload();
         }
 
         this.chunkMapping.remove(ChunkCoordIntPair.chunkXZ2Int(x, z));
-        this.chunkListing.remove(chunk);
+
+        if (chunk != null)
+        {
+            this.chunkListing.remove(chunk);
+        }
+
+        if (x == this.lastChunkX && z == this.lastChunkZ)
+        {
+            this.lastChunk = null;
+            this.lastChunkX = Integer.MIN_VALUE;
+            this.lastChunkZ = Integer.MIN_VALUE;
+        }
     }
 
     public Chunk loadChunk(int chunkX, int chunkZ)
@@ -56,6 +67,12 @@ public class ChunkProviderClient implements IChunkProvider
         this.chunkMapping.add(ChunkCoordIntPair.chunkXZ2Int(chunkX, chunkZ), chunk);
         this.chunkListing.add(chunk);
         chunk.setChunkLoaded(true);
+
+        if (chunkX == this.lastChunkX && chunkZ == this.lastChunkZ)
+        {
+            this.lastChunk = chunk;
+        }
+
         return chunk;
     }
 

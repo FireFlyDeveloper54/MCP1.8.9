@@ -50,10 +50,20 @@ public class FastTrig {
             add = 0.0f;
         }
 
-        double invDiv = 1.0f / ((Math.max(x, y)) * INV_ATAN2_DIM_MINUS_1);
+        double max = Math.max(x, y);
+        if (!(max > 0.0D))
+        {
+            return add * mul;
+        }
+
+        double invDiv = 1.0D / (max * (double)INV_ATAN2_DIM_MINUS_1);
 
         int xi = (int) (x * invDiv);
         int yi = (int) (y * invDiv);
+        if (xi < 0) xi = 0;
+        if (yi < 0) yi = 0;
+        if (xi >= ATAN2_DIM) xi = ATAN2_DIM - 1;
+        if (yi >= ATAN2_DIM) yi = ATAN2_DIM - 1;
 
         return (atan2[yi * ATAN2_DIM + xi] + add) * mul;
     }

@@ -11,7 +11,7 @@ public class GuiPerformanceSettingsOF extends GuiScreen
     private GuiScreen prevScreen;
     protected String title;
     private GameSettings settings;
-    private static GameSettings.Options[] enumOptions = new GameSettings.Options[] {GameSettings.Options.SMOOTH_FPS, GameSettings.Options.SMOOTH_WORLD, GameSettings.Options.FAST_RENDER, GameSettings.Options.FAST_MATH, GameSettings.Options.CHUNK_UPDATES, GameSettings.Options.CHUNK_UPDATES_DYNAMIC, GameSettings.Options.RENDER_REGIONS, GameSettings.Options.LAZY_CHUNK_LOADING, GameSettings.Options.SMART_ANIMATIONS, GameSettings.Options.ENTITY_CULLING, GameSettings.Options.CULL_ARMOR_STANDS, GameSettings.Options.LIMIT_CHUNK_UPDATES, GameSettings.Options.CULL_TRACING_DISTANCE, GameSettings.Options.CULL_SLEEP_DELAY, GameSettings.Options.CULL_HITBOX_LIMIT, GameSettings.Options.CHUNK_UPDATE_LIMIT, GameSettings.Options.PARTICLES_LIMIT};
+    private static GameSettings.Options[] enumOptions = new GameSettings.Options[] {GameSettings.Options.SMOOTH_FPS, GameSettings.Options.SMOOTH_WORLD, GameSettings.Options.FAST_RENDER, GameSettings.Options.FAST_MATH, GameSettings.Options.CHUNK_UPDATES, GameSettings.Options.CHUNK_UPDATES_DYNAMIC, GameSettings.Options.RENDER_REGIONS, GameSettings.Options.LAZY_CHUNK_LOADING, GameSettings.Options.SMART_ANIMATIONS, GameSettings.Options.ENTITY_CULLING, GameSettings.Options.CULL_ARMOR_STANDS, GameSettings.Options.CULL_INTERPOLATE_CAMERA, GameSettings.Options.CULL_TILE_BOUNDS, GameSettings.Options.CULL_LOADED_CHUNKS, GameSettings.Options.LIMIT_CHUNK_UPDATES, GameSettings.Options.CULL_TRACING_DISTANCE, GameSettings.Options.CULL_SLEEP_DELAY, GameSettings.Options.CULL_HITBOX_LIMIT, GameSettings.Options.CHUNK_UPDATE_LIMIT, GameSettings.Options.PARTICLES_LIMIT};
     private TooltipManager tooltipManager = new TooltipManager(this, new TooltipProviderOptions());
 
     public GuiPerformanceSettingsOF(GuiScreen guiScreen, GameSettings gameSettings)
@@ -29,7 +29,7 @@ public class GuiPerformanceSettingsOF extends GuiScreen
         {
             GameSettings.Options option = enumOptions[optionIndex];
             int buttonX = this.width / 2 - 155 + optionIndex % 2 * 160;
-            int buttonY = this.height / 6 + 21 * (optionIndex / 2) - 12;
+            int buttonY = this.height / 6 + 18 * (optionIndex / 2) - 12;
 
             if (!option.getEnumFloat())
             {
@@ -41,7 +41,7 @@ public class GuiPerformanceSettingsOF extends GuiScreen
             }
         }
 
-        this.buttonList.add(new GuiButton(200, this.width / 2 - 100, this.height / 6 + 168 + 11, I18n.format("gui.done", new Object[0])));
+        this.buttonList.add(new GuiButton(200, this.width / 2 - 100, this.height / 6 + 18 * ((enumOptions.length + 1) / 2) - 6, I18n.format("gui.done", new Object[0])));
     }
 
     protected void actionPerformed(GuiButton guiButton)

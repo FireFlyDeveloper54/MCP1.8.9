@@ -85,13 +85,11 @@ import net.optifine.util.TextureUtils;
 import net.optifine.util.TimedEvent;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.lwjgl.input.Keyboard;
-import org.lwjgl.input.Mouse;
-import org.lwjgl.opengl.Display;
+import net.minecraft.client.GameWindow;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL12;
-import org.lwjgl.opengl.GLContext;
-import org.lwjgl.util.glu.Project;
+import org.lwjgl.opengl.GL;
+import net.minecraft.client.GlUtil;
 
 public class EntityRenderer implements IResourceManagerReloadListener
 {
@@ -790,7 +788,7 @@ public class EntityRenderer implements IResourceManagerReloadListener
             GlStateManager.scale(this.cameraZoom, this.cameraZoom, 1.0D);
         }
 
-        Project.gluPerspective(this.getFOVModifier(partialTicks, true), (float)this.mc.displayWidth / (float)this.mc.displayHeight, 0.05F, this.clipDistance);
+        GlUtil.gluPerspective(this.getFOVModifier(partialTicks, true), (float)this.mc.displayWidth / (float)this.mc.displayHeight, 0.05F, this.clipDistance);
         GlStateManager.matrixMode(5888);
         GlStateManager.loadIdentity();
 
@@ -875,7 +873,7 @@ public class EntityRenderer implements IResourceManagerReloadListener
                 Shaders.applyHandDepth();
             }
 
-            Project.gluPerspective(this.getFOVModifier(partialTicks, false), (float)this.mc.displayWidth / (float)this.mc.displayHeight, 0.05F, this.farPlaneDistance * 2.0F);
+            GlUtil.gluPerspective(this.getFOVModifier(partialTicks, false), (float)this.mc.displayWidth / (float)this.mc.displayHeight, 0.05F, this.farPlaneDistance * 2.0F);
             GlStateManager.matrixMode(5888);
             GlStateManager.loadIdentity();
 
@@ -1140,9 +1138,9 @@ public class EntityRenderer implements IResourceManagerReloadListener
     {
         Config.renderPartialTicks = partialTicks;
         this.frameInit();
-        boolean flag = Display.isActive();
+        boolean flag = GameWindow.isFocused();
 
-        if (!flag && this.mc.gameSettings.pauseOnLostFocus && (!this.mc.gameSettings.touchscreen || !Mouse.isButtonDown(1)))
+        if (!flag && this.mc.gameSettings.pauseOnLostFocus && (!this.mc.gameSettings.touchscreen || !GameWindow.isButtonDown(1)))
         {
             if (Minecraft.getSystemTime() - this.prevFrameTime > 500L)
             {
@@ -1156,11 +1154,11 @@ public class EntityRenderer implements IResourceManagerReloadListener
 
         this.mc.mcProfiler.startSection("mouse");
 
-        if (flag && Minecraft.isRunningOnMac && this.mc.inGameHasFocus && !Mouse.isInsideWindow())
+        if (flag && Minecraft.isRunningOnMac && this.mc.inGameHasFocus && !GameWindow.isMouseInsideWindow())
         {
-            Mouse.setGrabbed(false);
-            Mouse.setCursorPosition(Display.getWidth() / 2, Display.getHeight() / 2);
-            Mouse.setGrabbed(true);
+            GameWindow.setGrabbed(false);
+            GameWindow.setCursorPosition(GameWindow.getWidth() / 2, GameWindow.getHeight() / 2);
+            GameWindow.setGrabbed(true);
         }
 
         if (this.mc.inGameHasFocus && flag)
@@ -1203,8 +1201,8 @@ public class EntityRenderer implements IResourceManagerReloadListener
             final ScaledResolution scaledresolution = new ScaledResolution(this.mc);
             int fourteenthIntValue = scaledresolution.getScaledWidth();
             int seventeenthIntValue = scaledresolution.getScaledHeight();
-            final int nineteenthIntValue = Mouse.getX() * fourteenthIntValue / this.mc.displayWidth;
-            final int twentiethIntValue = seventeenthIntValue - Mouse.getY() * seventeenthIntValue / this.mc.displayHeight - 1;
+            final int nineteenthIntValue = GameWindow.getMouseX() * fourteenthIntValue / this.mc.displayWidth;
+            final int twentiethIntValue = seventeenthIntValue - GameWindow.getMouseY() * seventeenthIntValue / this.mc.displayHeight - 1;
             int fifteenthIntValue = this.mc.gameSettings.limitFramerate;
 
             if (this.mc.theWorld != null)
@@ -1291,7 +1289,7 @@ public class EntityRenderer implements IResourceManagerReloadListener
                     {
                         public String call() throws Exception
                         {
-                            return "Scaled: (" + nineteenthIntValue + ", " + twentiethIntValue + "). Absolute: (" + Mouse.getX() + ", " + Mouse.getY() + ")";
+                            return "Scaled: (" + nineteenthIntValue + ", " + twentiethIntValue + "). Absolute: (" + GameWindow.getMouseX() + ", " + GameWindow.getMouseY() + ")";
                         }
                     });
                     crashreportcategory.addCrashSectionCallable("Screen size", new Callable<String>()
@@ -1490,7 +1488,7 @@ public class EntityRenderer implements IResourceManagerReloadListener
             this.mc.mcProfiler.endStartSection("sky");
             GlStateManager.matrixMode(5889);
             GlStateManager.loadIdentity();
-            Project.gluPerspective(this.getFOVModifier(partialTicks, true), (float)this.mc.displayWidth / (float)this.mc.displayHeight, 0.05F, this.clipDistance);
+            GlUtil.gluPerspective(this.getFOVModifier(partialTicks, true), (float)this.mc.displayWidth / (float)this.mc.displayHeight, 0.05F, this.clipDistance);
             GlStateManager.matrixMode(5888);
 
             if (flag)
@@ -1507,7 +1505,7 @@ public class EntityRenderer implements IResourceManagerReloadListener
 
             GlStateManager.matrixMode(5889);
             GlStateManager.loadIdentity();
-            Project.gluPerspective(this.getFOVModifier(partialTicks, true), (float)this.mc.displayWidth / (float)this.mc.displayHeight, 0.05F, this.clipDistance);
+            GlUtil.gluPerspective(this.getFOVModifier(partialTicks, true), (float)this.mc.displayWidth / (float)this.mc.displayHeight, 0.05F, this.clipDistance);
             GlStateManager.matrixMode(5888);
         }
         else
@@ -1789,7 +1787,7 @@ public class EntityRenderer implements IResourceManagerReloadListener
             this.mc.mcProfiler.endStartSection("clouds");
             GlStateManager.matrixMode(5889);
             GlStateManager.loadIdentity();
-            Project.gluPerspective(this.getFOVModifier(partialTicks, true), (float)this.mc.displayWidth / (float)this.mc.displayHeight, 0.05F, this.clipDistance * 4.0F);
+            GlUtil.gluPerspective(this.getFOVModifier(partialTicks, true), (float)this.mc.displayWidth / (float)this.mc.displayHeight, 0.05F, this.clipDistance * 4.0F);
             GlStateManager.matrixMode(5888);
             GlStateManager.pushMatrix();
             this.setupFog(0, partialTicks);
@@ -1798,7 +1796,7 @@ public class EntityRenderer implements IResourceManagerReloadListener
             GlStateManager.popMatrix();
             GlStateManager.matrixMode(5889);
             GlStateManager.loadIdentity();
-            Project.gluPerspective(this.getFOVModifier(partialTicks, true), (float)this.mc.displayWidth / (float)this.mc.displayHeight, 0.05F, this.clipDistance);
+            GlUtil.gluPerspective(this.getFOVModifier(partialTicks, true), (float)this.mc.displayWidth / (float)this.mc.displayHeight, 0.05F, this.clipDistance);
             GlStateManager.matrixMode(5888);
         }
     }
@@ -2256,7 +2254,7 @@ public class EntityRenderer implements IResourceManagerReloadListener
             flag = ((EntityPlayer)entity).capabilities.isCreativeMode;
         }
 
-        GL11.glFog(GL11.GL_FOG_COLOR, (FloatBuffer)this.setFogColorBuffer(this.fogColorRed, this.fogColorGreen, this.fogColorBlue, 1.0F));
+        GL11.glFogfv(GL11.GL_FOG_COLOR, (FloatBuffer)this.setFogColorBuffer(this.fogColorRed, this.fogColorGreen, this.fogColorBlue, 1.0F));
         GL11.glNormal3f(0.0F, -1.0F, 0.0F);
         GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
         Block block = ActiveRenderInfo.getBlockAtEntityViewpoint(this.mc.theWorld, entity, partialTicks);
@@ -2290,7 +2288,7 @@ public class EntityRenderer implements IResourceManagerReloadListener
                 GlStateManager.setFogEnd(floatValue);
             }
 
-            if (GLContext.getCapabilities().GL_NV_fog_distance && Config.isFogFancy())
+            if (GL.getCapabilities().GL_NV_fog_distance && Config.isFogFancy())
             {
                 GL11.glFogi(34138, 34139);
             }
@@ -2337,7 +2335,7 @@ public class EntityRenderer implements IResourceManagerReloadListener
                 GlStateManager.setFogEnd(fourthFloatValue);
             }
 
-            if (GLContext.getCapabilities().GL_NV_fog_distance)
+            if (GL.getCapabilities().GL_NV_fog_distance)
             {
                 if (Config.isFogFancy())
                 {
@@ -2631,7 +2629,7 @@ public class EntityRenderer implements IResourceManagerReloadListener
             this.mc.ingameGUI.getChatGUI().deleteChatLine(i);
         }
 
-        if (Keyboard.isKeyDown(61) && Keyboard.isKeyDown(38))
+        if (GameWindow.isKeyDown(61) && GameWindow.isKeyDown(38))
         {
             if (this.mc.currentScreen != null)
             {

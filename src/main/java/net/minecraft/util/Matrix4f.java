@@ -1,6 +1,6 @@
 package net.minecraft.util;
 
-public class Matrix4f extends org.lwjgl.util.vector.Matrix4f
+public class Matrix4f extends net.minecraft.util.vector.Matrix4f
 {
     public Matrix4f(float[] values)
     {

@@ -21,7 +21,7 @@ import net.minecraft.stats.StatFileWriter;
 import net.minecraft.util.ChatComponentTranslation;
 import net.minecraft.util.MathHelper;
 import net.minecraft.util.ResourceLocation;
-import org.lwjgl.input.Mouse;
+import net.minecraft.client.GameWindow;
 
 public class GuiAchievements extends GuiScreen implements IProgressMeter
 {
@@ -97,7 +97,7 @@ public class GuiAchievements extends GuiScreen implements IProgressMeter
         }
         else
         {
-            if (Mouse.isButtonDown(0))
+            if (GameWindow.isButtonDown(0))
             {
                 int i = (this.width - this.paneWidth) / 2;
                 int j = (this.height - this.paneHeight) / 2;
@@ -127,7 +127,7 @@ public class GuiAchievements extends GuiScreen implements IProgressMeter
                 this.dragState = 0;
             }
 
-            int secondIntValue = Mouse.getDWheel();
+            int secondIntValue = GameWindow.getDWheel();
             float floatValue = this.zoom;
 
             if (secondIntValue < 0)

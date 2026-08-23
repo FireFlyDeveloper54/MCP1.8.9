@@ -382,7 +382,7 @@ public class RenderManager
         if (EntityCulling.instance.isEnabled() && !entity.isForcedVisible() && entity.isCulled())
         {
             EntityRendererInter<Entity> entityRenderer = this.getEntityRenderObject(entity);
-            if (entityRenderer.shadowShouldShowName(entity))
+            if (entityRenderer != null && entityRenderer.shadowShouldShowName(entity))
             {
                 entityRenderer.shadowRenderNameTag(entity, x, y, z);
             }

@@ -43,6 +43,8 @@ public class SoundManager
     private SoundManager.SoundSystemStarterThread sndSystem;
     private boolean loaded;
     private int playTime = 0;
+    private int deviceCheckTimer;
+    private String lastAudioDevice;
     private final BiMap<String, ISound> playingSounds = HashBiMap.<String, ISound>create();
     private final BiMap<ISound, String> invPlayingSounds;
     private Map<ISound, SoundPoolEntry> playingSoundPoolEntries;
@@ -170,6 +172,7 @@ public class SoundManager
             this.stopAllSounds();
             this.sndSystem.cleanup();
             this.loaded = false;
+            this.lastAudioDevice = null;
         }
     }
 
@@ -274,6 +277,51 @@ public class SoundManager
                 this.playSound(delayedSound);
                 delayedSoundIterator.remove();
             }
+        }
+
+        this.checkAudioDevice();
+    }
+
+    private void checkAudioDevice()
+    {
+        if (!this.loaded)
+        {
+            return;
+        }
+
+        ++this.deviceCheckTimer;
+
+        if (this.deviceCheckTimer < 40)
+        {
+            return;
+        }
+
+        this.deviceCheckTimer = 0;
+        String currentDevice = LibraryLWJGLOpenAL.getPlaybackDeviceFingerprint();
+
+        if (currentDevice == null || currentDevice.length() == 0)
+        {
+            return;
+        }
+
+        if (this.lastAudioDevice == null)
+        {
+            this.lastAudioDevice = currentDevice;
+            return;
+        }
+
+        if (!currentDevice.equals(this.lastAudioDevice))
+        {
+            this.lastAudioDevice = currentDevice;
+            logger.info(LOG_MARKER, "Audio device changed to {}, reopening on sound thread", currentDevice);
+            LibraryLWJGLOpenAL.requestReopenDefaultDevice();
+            this.sndSystem.setMasterVolume(this.sndSystem.getMasterVolume());
+        }
+
+        if (LibraryLWJGLOpenAL.consumeReopenFailure())
+        {
+            logger.info(LOG_MARKER, "Audio reopen failed, reloading sound engine");
+            this.reloadSoundSystem();
         }
     }
 
@@ -498,6 +546,12 @@ public class SoundManager
                     return source == null ? false : source.playing() || source.paused() || source.preLoad;
                 }
             }
+        }
+
+        protected void ManageSources()
+        {
+            super.ManageSources();
+            LibraryLWJGLOpenAL.processPendingReopen();
         }
     }
 }

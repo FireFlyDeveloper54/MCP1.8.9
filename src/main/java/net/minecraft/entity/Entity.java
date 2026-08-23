@@ -861,17 +861,15 @@ public abstract class Entity implements ICommandSender
                                 continue;
                             }
 
-                            BlockPos blockpos2 = new BlockPos(i, j, k);
-
                             try
                             {
-                                iblockstate.getBlock().onEntityCollidedWithBlock(this.worldObj, blockpos2, iblockstate, this);
+                                iblockstate.getBlock().onEntityCollidedWithBlock(this.worldObj, checkPos, iblockstate, this);
                             }
                             catch (Throwable throwable)
                             {
                                 CrashReport crashReport = CrashReport.makeCrashReport(throwable, "Colliding entity with block");
                                 CrashReportCategory crashReportCategory = crashReport.makeCategory("Block being collided with");
-                                CrashReportCategory.addBlockInfo(crashReportCategory, blockpos2, iblockstate);
+                                CrashReportCategory.addBlockInfo(crashReportCategory, new BlockPos(i, j, k), iblockstate);
                                 throw new ReportedException(crashReport);
                             }
                         }

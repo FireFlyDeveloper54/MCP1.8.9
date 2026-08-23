@@ -6,7 +6,7 @@ import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.WorldRenderer;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.util.MathHelper;
-import org.lwjgl.input.Mouse;
+import net.minecraft.client.GameWindow;
 
 public abstract class GuiSlot
 {
@@ -254,7 +254,7 @@ public abstract class GuiSlot
     {
         if (this.isMouseYWithinSlotBounds(this.mouseY))
         {
-            if (Mouse.getEventButton() == 0 && Mouse.getEventButtonState() && this.mouseY >= this.top && this.mouseY <= this.bottom)
+            if (GameWindow.getEventButton() == 0 && GameWindow.getEventButtonState() && this.mouseY >= this.top && this.mouseY <= this.bottom)
             {
                 int i = (this.width - this.getListWidth()) / 2;
                 int j = (this.width + this.getListWidth()) / 2;
@@ -272,7 +272,7 @@ public abstract class GuiSlot
                 }
             }
 
-            if (Mouse.isButtonDown(0) && this.getEnabled())
+            if (GameWindow.isButtonDown(0) && this.getEnabled())
             {
                 if (this.initialClickY != -1)
                 {
@@ -348,7 +348,7 @@ public abstract class GuiSlot
                 this.initialClickY = -1;
             }
 
-            int seventhIntValue = Mouse.getEventDWheel();
+            int seventhIntValue = GameWindow.getEventDWheel();
 
             if (seventhIntValue != 0)
             {

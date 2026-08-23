@@ -19,7 +19,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.world.biome.BiomeGenBase;
 import net.minecraft.world.gen.FlatGeneratorInfo;
 import net.minecraft.world.gen.FlatLayerInfo;
-import org.lwjgl.input.Keyboard;
+import net.minecraft.client.GameWindow;
 
 public class GuiFlatPresets extends GuiScreen
 {
@@ -40,7 +40,7 @@ public class GuiFlatPresets extends GuiScreen
     public void initGui()
     {
         this.buttonList.clear();
-        Keyboard.enableRepeatEvents(true);
+        GameWindow.setRepeatEvents(true);
         this.presetsTitle = I18n.format("createWorld.customize.presets.title", new Object[0]);
         this.presetsShare = I18n.format("createWorld.customize.presets.share", new Object[0]);
         this.presetsListTitle = I18n.format("createWorld.customize.presets.list", new Object[0]);
@@ -61,7 +61,7 @@ public class GuiFlatPresets extends GuiScreen
 
     public void onGuiClosed()
     {
-        Keyboard.enableRepeatEvents(false);
+        GameWindow.setRepeatEvents(false);
     }
 
     protected void mouseClicked(int mouseX, int mouseY, int mouseButton) throws IOException

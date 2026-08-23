@@ -67,7 +67,7 @@ public abstract class EntityLiving extends EntityLivingBase
         super(worldIn);
         this.tasks = new EntityAITasks(worldIn != null && worldIn.theProfiler != null ? worldIn.theProfiler : null);
         this.targetTasks = new EntityAITasks(worldIn != null && worldIn.theProfiler != null ? worldIn.theProfiler : null);
-        this.lookHelper = new EntityLookHelper(this);
+        this.lookHelper = new optimization.FixedEntityLookHelper(this);
         this.moveHelper = new EntityMoveHelper(this);
         this.jumpHelper = new EntityJumpHelper(this);
         this.bodyHelper = new EntityBodyHelper(this);

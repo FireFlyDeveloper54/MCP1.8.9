@@ -9,7 +9,7 @@ import net.minecraft.network.play.client.C17PacketCustomPayload;
 import net.minecraft.util.IChatComponent;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.lwjgl.input.Keyboard;
+import net.minecraft.client.GameWindow;
 
 public class GuiCommandBlock extends GuiScreen
 {
@@ -34,7 +34,7 @@ public class GuiCommandBlock extends GuiScreen
 
     public void initGui()
     {
-        Keyboard.enableRepeatEvents(true);
+        GameWindow.setRepeatEvents(true);
         this.buttonList.clear();
         this.buttonList.add(this.doneBtn = new GuiButton(0, this.width / 2 - 4 - 150, this.height / 4 + 120 + 12, 150, 20, I18n.format("gui.done", new Object[0])));
         this.buttonList.add(this.cancelBtn = new GuiButton(1, this.width / 2 + 4, this.height / 4 + 120 + 12, 150, 20, I18n.format("gui.cancel", new Object[0])));
@@ -54,7 +54,7 @@ public class GuiCommandBlock extends GuiScreen
 
     public void onGuiClosed()
     {
-        Keyboard.enableRepeatEvents(false);
+        GameWindow.setRepeatEvents(false);
     }
 
     protected void actionPerformed(GuiButton button) throws IOException
