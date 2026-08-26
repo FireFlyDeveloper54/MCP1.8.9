@@ -86,6 +86,7 @@ public class MathHelper
 
     public static float sqrt_float(float value)
     {
+        if (Float.isNaN(value) || Float.isInfinite(value)) return (float)Math.sqrt((double)value);
         if (value <= 0.0F) return 0.0F;
         if (fastMath)
         {
@@ -96,6 +97,7 @@ public class MathHelper
 
     public static float sqrt_double(double value)
     {
+        if (!Double.isFinite(value)) return (float)Math.sqrt(value);
         if (value <= 0.0D) return 0.0F;
         if (fastMath)
         {
@@ -469,6 +471,7 @@ public class MathHelper
 
     public static double fastInvSqrt(double value)
     {
+        if (!Double.isFinite(value)) return 1.0D / Math.sqrt(value);
         double halfValue = 0.5D * value;
         long bits = Double.doubleToRawLongBits(value);
         bits = 6910469410427058090L - (bits >> 1);
@@ -479,6 +482,7 @@ public class MathHelper
 
     public static double fastSqrt_double(double value)
     {
+        if (!Double.isFinite(value)) return Math.sqrt(value);
         if (value <= 0.0D) return 0.0D;
         if (fastMath) return value * fastInvSqrt(value);
         return Math.sqrt(value);
@@ -486,6 +490,7 @@ public class MathHelper
 
     public static float fastSqrt_float(float value)
     {
+        if (!Float.isFinite(value)) return (float)Math.sqrt((double)value);
         if (value <= 0.0F) return 0.0F;
         if (fastMath) return value * (float)fastInvSqrt((double)value);
         return (float)Math.sqrt((double)value);
@@ -494,6 +499,7 @@ public class MathHelper
     public static double length_double(double x, double y, double z)
     {
         double lenSq = x * x + y * y + z * z;
+        if (!Double.isFinite(lenSq)) return Math.sqrt(lenSq);
         if (lenSq <= 0.0D) return 0.0D;
         if (fastMath) return lenSq * fastInvSqrt(lenSq);
         return Math.sqrt(lenSq);
@@ -502,6 +508,7 @@ public class MathHelper
     public static double length_double(double x, double z)
     {
         double lenSq = x * x + z * z;
+        if (!Double.isFinite(lenSq)) return Math.sqrt(lenSq);
         if (lenSq <= 0.0D) return 0.0D;
         if (fastMath) return lenSq * fastInvSqrt(lenSq);
         return Math.sqrt(lenSq);

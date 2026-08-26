@@ -25,6 +25,12 @@ public class FastTrig {
 
 
     public static float atan2(double y, double x) {
+        // The lookup table is only defined for finite coordinates. Preserve
+        // Java's well-defined NaN/infinity behavior for exceptional inputs.
+        if (!Double.isFinite(x) || !Double.isFinite(y)) {
+            return (float) Math.atan2(y, x);
+        }
+
         float add, mul;
 
         if (x < 0.0f) {
