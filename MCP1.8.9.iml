@@ -12,7 +12,6 @@
     <orderEntry type="library" name="minecraft" level="project" />
     <orderEntry type="library" name="log4j" level="project" />
     <orderEntry type="library" name="osh" level="project" />
-    <orderEntry type="library" name="sound" level="project" />
     <orderEntry type="library" name="google" level="project" />
     <orderEntry type="library" name="lwjgl" level="project" />
   </component>
