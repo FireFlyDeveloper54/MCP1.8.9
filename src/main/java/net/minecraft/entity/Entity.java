@@ -137,9 +137,9 @@ public abstract class Entity implements ICommandSender
     private IChatComponent displayNameCache;
     private long displayNameCacheExpiresAt;
 
-    private boolean culled = false;
-    private boolean outOfCamera = false;
-    private long cullingTimeout = 0;
+    private volatile boolean culled = false;
+    private volatile boolean outOfCamera = false;
+    private volatile long cullingTimeout = 0;
     public int getEntityId()
     {
         return this.entityId;
@@ -1128,7 +1128,7 @@ public abstract class Entity implements ICommandSender
             strafe = strafe * f;
             forward = forward * f;
             float[] yawSC = new float[2];
-            MathHelper.sinCosDeg(this.rotationYaw, yawSC);
+            MathHelper.sinCos(this.rotationYaw * (float)Math.PI / 180.0F, yawSC);
             float floatValue = yawSC[0];
             float secondFloatValue = yawSC[1];
             this.motionX += (double)(strafe * secondFloatValue - forward * floatValue);
@@ -1332,16 +1332,11 @@ public abstract class Entity implements ICommandSender
 
     protected final Vec3 getVectorForRotation(float pitch, float yaw)
     {
-
-        float[] yawSC = new float[2];
-        float[] pitchSC = new float[2];
-        MathHelper.sinCosDeg(-yaw, yawSC);
-        MathHelper.sinCosDeg(-pitch, pitchSC);
-        float f = -yawSC[1];
-        float floatValue2 = -yawSC[0];
-        float floatValue3 = -pitchSC[1];
-        float floatValue4 = pitchSC[0];
-        return new Vec3((double)(floatValue2 * floatValue3), (double)floatValue4, (double)(f * floatValue3));
+        float f = MathHelper.cos(-yaw * 0.017453292F - (float)Math.PI);
+        float f1 = MathHelper.sin(-yaw * 0.017453292F - (float)Math.PI);
+        float f2 = -MathHelper.cos(-pitch * 0.017453292F);
+        float f3 = MathHelper.sin(-pitch * 0.017453292F);
+        return new Vec3((double)(f1 * f2), (double)f3, (double)(f * f2));
     }
 
     public Vec3 getPositionEyes(float partialTicks)
@@ -1853,7 +1848,7 @@ public abstract class Entity implements ICommandSender
         {
             if (!this.worldObj.isRemote && !pos.equals(this.lastPortalPos))
             {
-                this.lastPortalPos = pos;
+                this.lastPortalPos = pos.toImmutable();
                 BlockPattern.PatternHelper blockpattern$patternhelper = Blocks.portal.createPatternHelper(this.worldObj, pos);
                 double twentySecondDoubleValue = blockpattern$patternhelper.getFinger().getAxis() == EnumFacing.Axis.X ? (double)blockpattern$patternhelper.getPos().getZ() : (double)blockpattern$patternhelper.getPos().getX();
                 double twentyFourthDoubleValue = blockpattern$patternhelper.getFinger().getAxis() == EnumFacing.Axis.X ? this.posZ : this.posX;

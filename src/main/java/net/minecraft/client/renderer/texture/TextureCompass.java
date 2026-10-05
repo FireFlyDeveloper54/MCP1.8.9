@@ -1,7 +1,6 @@
 package net.minecraft.client.renderer.texture;
 
 import net.minecraft.client.Minecraft;
-import optimization.FastTrig;
 import net.minecraft.util.BlockPos;
 import net.minecraft.util.MathHelper;
 import net.minecraft.world.World;
@@ -44,7 +43,7 @@ public class TextureCompass extends TextureAtlasSprite
                 double xCoordinate = (double)blockPos.getX() - x;
                 double zCoordinate = (double)blockPos.getZ() - z;
                 rotation = rotation % 360.0D;
-                targetAngle = -((rotation - 90.0D) * Math.PI / 180.0D - FastTrig.atan2(zCoordinate, xCoordinate));
+                targetAngle = -((rotation - 90.0D) * Math.PI / 180.0D - Math.atan2(zCoordinate, xCoordinate));
 
                 if (!worldIn.provider.isSurfaceWorld())
                 {

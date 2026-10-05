@@ -1,7 +1,6 @@
 package net.minecraft.client.renderer.entity;
 
 import net.minecraft.client.model.ModelDragon;
-import optimization.FastTrig;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.RenderHelper;
 import net.minecraft.client.renderer.Tessellator;
@@ -105,8 +104,8 @@ public class RenderDragon extends RenderLiving<EntityDragon>
         float beamLength = MathHelper.sqrt_float(beamX * beamX + beamY * beamY + beamZ * beamZ);
         GlStateManager.pushMatrix();
         GlStateManager.translate((float)x, (float)y + 2.0F, (float)z);
-        GlStateManager.rotate((float)(-FastTrig.atan2((double)beamZ, (double)beamX)) * 180.0F / (float)Math.PI - 90.0F, 0.0F, 1.0F, 0.0F);
-        GlStateManager.rotate((float)(-FastTrig.atan2((double)horizontalDistance, (double)beamY)) * 180.0F / (float)Math.PI - 90.0F, 1.0F, 0.0F, 0.0F);
+        GlStateManager.rotate((float)(-Math.atan2((double)beamZ, (double)beamX)) * 180.0F / (float)Math.PI - 90.0F, 0.0F, 1.0F, 0.0F);
+        GlStateManager.rotate((float)(-Math.atan2((double)horizontalDistance, (double)beamY)) * 180.0F / (float)Math.PI - 90.0F, 1.0F, 0.0F, 0.0F);
         Tessellator tessellator = Tessellator.getInstance();
         WorldRenderer worldRenderer = tessellator.getWorldRenderer();
         RenderHelper.disableStandardItemLighting();

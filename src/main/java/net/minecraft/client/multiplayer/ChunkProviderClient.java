@@ -20,9 +20,6 @@ public class ChunkProviderClient implements IChunkProvider
     private static final Logger logger = LogManager.getLogger();
     private Chunk blankChunk;
     private LongHashMap<Chunk> chunkMapping = new LongHashMap();
-    private Chunk lastChunk;
-    private int lastChunkX = Integer.MIN_VALUE;
-    private int lastChunkZ = Integer.MIN_VALUE;
     private List<Chunk> chunkListing = Lists.<Chunk>newArrayList();
     private World worldObj;
 
@@ -37,7 +34,7 @@ public class ChunkProviderClient implements IChunkProvider
         return true;
     }
 
-    public void unloadChunk(int x, int z)
+    public synchronized void unloadChunk(int x, int z)
     {
         Chunk chunk = this.getLoadedChunk(x, z);
 
@@ -52,60 +49,27 @@ public class ChunkProviderClient implements IChunkProvider
         {
             this.chunkListing.remove(chunk);
         }
-
-        if (x == this.lastChunkX && z == this.lastChunkZ)
-        {
-            this.lastChunk = null;
-            this.lastChunkX = Integer.MIN_VALUE;
-            this.lastChunkZ = Integer.MIN_VALUE;
-        }
     }
 
-    public Chunk loadChunk(int chunkX, int chunkZ)
+    public synchronized Chunk loadChunk(int chunkX, int chunkZ)
     {
         Chunk chunk = new Chunk(this.worldObj, chunkX, chunkZ);
         this.chunkMapping.add(ChunkCoordIntPair.chunkXZ2Int(chunkX, chunkZ), chunk);
         this.chunkListing.add(chunk);
         chunk.setChunkLoaded(true);
 
-        if (chunkX == this.lastChunkX && chunkZ == this.lastChunkZ)
-        {
-            this.lastChunk = chunk;
-        }
-
         return chunk;
     }
 
     public Chunk provideChunk(int x, int z)
     {
-        if (x == this.lastChunkX && z == this.lastChunkZ && this.lastChunk != null)
-        {
-            return this.lastChunk;
-        }
         Chunk chunk = this.getLoadedChunk(x, z);
-        if (chunk != null)
-        {
-            this.lastChunkX = x;
-            this.lastChunkZ = z;
-            this.lastChunk = chunk;
-        }
         return chunk == null ? this.blankChunk : chunk;
     }
 
-    public Chunk getLoadedChunk(int x, int z)
+    public synchronized Chunk getLoadedChunk(int x, int z)
     {
-        if (x == this.lastChunkX && z == this.lastChunkZ && this.lastChunk != null)
-        {
-            return this.lastChunk;
-        }
-        Chunk chunk = (Chunk)this.chunkMapping.getValueByKey(ChunkCoordIntPair.chunkXZ2Int(x, z));
-        if (chunk != null)
-        {
-            this.lastChunkX = x;
-            this.lastChunkZ = z;
-            this.lastChunk = chunk;
-        }
-        return chunk;
+        return (Chunk)this.chunkMapping.getValueByKey(ChunkCoordIntPair.chunkXZ2Int(x, z));
     }
 
     public boolean saveChunks(boolean saveAllChunks, IProgressUpdate progressCallback)

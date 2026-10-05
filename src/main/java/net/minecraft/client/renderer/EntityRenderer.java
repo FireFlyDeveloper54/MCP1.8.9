@@ -1243,7 +1243,7 @@ public class EntityRenderer implements IResourceManagerReloadListener
                         Config.drawFps();
                     }
 
-                    if (this.mc.gameSettings.showDebugInfo)
+                    if (this.mc.gameSettings.showDebugInfo && this.mc.gameSettings.ofLagometer)
                     {
                         Lagometer.showLagometer(scaledresolution);
                     }
@@ -2255,6 +2255,7 @@ public class EntityRenderer implements IResourceManagerReloadListener
         }
 
         GlStateManager.glFog(GL11.GL_FOG_COLOR, (FloatBuffer)this.setFogColorBuffer(this.fogColorRed, this.fogColorGreen, this.fogColorBlue, 1.0F));
+        GlStateManager.glFogi(34138, GL.getCapabilities().GL_NV_fog_distance && !Config.isFogFast() ? 34139 : 34140);
         GlStateManager.normal(0.0F, -1.0F, 0.0F);
         GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
         Block block = ActiveRenderInfo.getBlockAtEntityViewpoint(this.mc.theWorld, entity, partialTicks);
@@ -2335,7 +2336,7 @@ public class EntityRenderer implements IResourceManagerReloadListener
             if (this.mc.theWorld.provider.doesXZShowFog((int)entity.posX, (int)entity.posZ))
             {
                 GlStateManager.setFogStart(fourthFloatValue * 0.05F);
-                GlStateManager.setFogEnd(fourthFloatValue);
+                GlStateManager.setFogEnd(Math.min(fourthFloatValue, 192.0F) * 0.5F);
             }
         }
 
@@ -2699,5 +2700,10 @@ public class EntityRenderer implements IResourceManagerReloadListener
             this.mc.gameSettings.ofChunkUpdates = i;
             this.mc.gameSettings.ofLazyChunkLoading = flag;
         }
+    }
+    public void renderStreamIndicator(float partialTicks)
+    {
+        this.setupOverlayRendering();
+        this.mc.ingameGUI.renderStreamIndicator(new ScaledResolution(this.mc));
     }
 }

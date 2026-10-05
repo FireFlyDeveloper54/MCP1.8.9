@@ -459,6 +459,8 @@ public class OpenGlHelper
         {
             GL20.glDeleteProgram(program);
         }
+
+        CorePipeline.onProgramDeleted(program);
     }
 
     public static void glLinkProgram(int program)
@@ -471,6 +473,8 @@ public class OpenGlHelper
         {
             GL20.glLinkProgram(program);
         }
+
+        CorePipeline.onProgramLinked(program);
     }
 
     public static int glGetUniformLocation(int programObj, CharSequence name)
@@ -658,6 +662,8 @@ public class OpenGlHelper
 
     public static void glDeleteBuffers(int buffer)
     {
+        CorePipeline.invalidateVertexFormat();
+
         if (arbVbo)
         {
             ARBVertexBufferObject.glDeleteBuffersARB(buffer);
@@ -933,6 +939,8 @@ public class OpenGlHelper
 
     public static void setActiveTexture(int texture)
     {
+        GlMatrix.activeTexture(texture - GL13.GL_TEXTURE0);
+
         if (arbMultitexture)
         {
             ARBMultitexture.glActiveTextureARB(texture);

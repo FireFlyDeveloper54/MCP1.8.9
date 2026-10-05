@@ -275,7 +275,7 @@ public class CloudRenderer
         if (this.cloudBuffer != null && this.cloudVertexCount > 0 && this.cloudFormat != null)
         {
             this.cloudBuffer.bindDrawState();
-            net.minecraft.client.renderer.CorePipeline.prepareDraw(false, false);
+            net.minecraft.client.renderer.CorePipeline.prepareDraw(this.cloudFormat.hasColor(), this.cloudFormat.hasUvOffset(1));
             GlStateManager.glDrawArrays(this.cloudMode, 0, this.cloudVertexCount);
         }
 

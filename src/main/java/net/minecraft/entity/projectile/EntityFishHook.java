@@ -96,8 +96,8 @@ public class EntityFishHook extends Entity
         this.setLocationAndAngles(fishingPlayer.posX, fishingPlayer.posY + (double)fishingPlayer.getEyeHeight(), fishingPlayer.posZ, fishingPlayer.rotationYaw, fishingPlayer.rotationPitch);
         float[] yawSC = new float[2];
         float[] pitchSC = new float[2];
-        MathHelper.sinCosDeg(this.rotationYaw, yawSC);
-        MathHelper.sinCosDeg(this.rotationPitch, pitchSC);
+        MathHelper.sinCos(this.rotationYaw / 180.0F * (float)Math.PI, yawSC);
+        MathHelper.sinCos(this.rotationPitch / 180.0F * (float)Math.PI, pitchSC);
         this.posX -= (double)(yawSC[1] * 0.16F);
         this.posY -= 0.10000000149011612D;
         this.posZ -= (double)(yawSC[0] * 0.16F);

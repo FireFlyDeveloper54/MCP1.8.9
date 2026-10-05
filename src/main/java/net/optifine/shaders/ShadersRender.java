@@ -15,6 +15,7 @@ import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.client.renderer.culling.ICamera;
 import net.minecraft.client.renderer.texture.TextureMap;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
+import net.minecraft.client.renderer.vertex.VertexFormat;
 import net.minecraft.entity.Entity;
 import net.minecraft.src.Config;
 import net.minecraft.tileentity.TileEntityEndPortal;
@@ -404,6 +405,7 @@ public class ShadersRender
             GL20.glDisableVertexAttribArray(Shaders.midTexCoordAttrib);
             GL20.glDisableVertexAttribArray(Shaders.tangentAttrib);
             GL20.glDisableVertexAttribArray(Shaders.entityAttrib);
+            CorePipeline.invalidateVertexFormat();
         }
 
         if (Shaders.isRenderBackFace(blockLayerIn))
@@ -414,24 +416,13 @@ public class ShadersRender
 
     public static void setupArrayPointersVbo()
     {
-        OpenGlHelper.bindDefaultVertexArray();
-        GL20.glEnableVertexAttribArray(CorePipeline.ATTR_POSITION);
-        GL20.glVertexAttribPointer(CorePipeline.ATTR_POSITION, 3, GL11.GL_FLOAT, false, 56, 0L);
-        GL20.glEnableVertexAttribArray(CorePipeline.ATTR_COLOR);
-        GL20.glVertexAttribPointer(CorePipeline.ATTR_COLOR, 4, GL11.GL_UNSIGNED_BYTE, true, 56, 12L);
-        GL20.glEnableVertexAttribArray(CorePipeline.ATTR_UV0);
-        GL20.glVertexAttribPointer(CorePipeline.ATTR_UV0, 2, GL11.GL_FLOAT, false, 56, 16L);
-        GL20.glEnableVertexAttribArray(CorePipeline.ATTR_UV1);
-        GL20.glVertexAttribPointer(CorePipeline.ATTR_UV1, 2, GL11.GL_SHORT, false, 56, 24L);
-        GL20.glEnableVertexAttribArray(CorePipeline.ATTR_NORMAL);
-        GL20.glVertexAttribPointer(CorePipeline.ATTR_NORMAL, 3, GL11.GL_BYTE, true, 56, 28L);
-        GL20.glEnableVertexAttribArray(Shaders.midTexCoordAttrib);
-        GL20.glVertexAttribPointer(Shaders.midTexCoordAttrib, 2, GL11.GL_FLOAT, false, 56, 32L);
-        GL20.glEnableVertexAttribArray(Shaders.tangentAttrib);
-        GL20.glVertexAttribPointer(Shaders.tangentAttrib, 4, GL11.GL_SHORT, false, 56, 40L);
-        GL20.glEnableVertexAttribArray(Shaders.entityAttrib);
-        GL20.glVertexAttribPointer(Shaders.entityAttrib, 3, GL11.GL_SHORT, false, 56, 48L);
-        CorePipeline.prepareDraw(true, true);
+        setupArrayPointersVbo(DefaultVertexFormats.BLOCK);
+    }
+
+    public static void setupArrayPointersVbo(VertexFormat vertexFormat)
+    {
+        CorePipeline.setupVertexFormat(vertexFormat, 0L);
+        SVertexBuilder.setupArrayPointers(vertexFormat, 0L);
     }
 
     public static void beaconBeamBegin()

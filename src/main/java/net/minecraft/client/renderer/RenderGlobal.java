@@ -1,7 +1,6 @@
 package net.minecraft.client.renderer;
 
 import com.google.common.collect.Lists;
-import optimization.FastTrig;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.gson.JsonSyntaxException;
@@ -389,17 +388,17 @@ public class RenderGlobal implements IWorldAccess, IResourceManagerReloadListene
 
             if (distanceSq < 1.0D && distanceSq > 0.01D)
             {
-                double inverseDistance = MathHelper.fastInvSqrt(distanceSq);
+                double inverseDistance = 1.0D / Math.sqrt(distanceSq);
                 randomX = randomX * inverseDistance;
                 randomY = randomY * inverseDistance;
                 randomZ = randomZ * inverseDistance;
                 double starX = randomX * 100.0D;
                 double starY = randomY * 100.0D;
                 double starZ = randomZ * 100.0D;
-                double yaw = FastTrig.atan2(randomX, randomZ);
+                double yaw = Math.atan2(randomX, randomZ);
                 double sinYaw = Math.sin(yaw);
                 double cosYaw = Math.cos(yaw);
-                double pitch = FastTrig.atan2(MathHelper.fastSqrt_double(randomX * randomX + randomZ * randomZ), randomY);
+                double pitch = Math.atan2(MathHelper.fastSqrt_double(randomX * randomX + randomZ * randomZ), randomY);
                 double sinPitch = Math.sin(pitch);
                 double cosPitch = Math.cos(pitch);
                 double roll = random.nextDouble() * Math.PI * 2.0D;
@@ -1229,14 +1228,10 @@ public class RenderGlobal implements IWorldAccess, IResourceManagerReloadListene
             f += 180.0F;
         }
 
-        float[] yawSC = new float[2];
-        float[] pitchSC = new float[2];
-        MathHelper.sinCosDeg(-floatValue2, yawSC);
-        MathHelper.sinCosDeg(-f, pitchSC);
-        float thirtiethFloatValue = -yawSC[1];
-        float floatValue4 = -yawSC[0];
-        float floatValue5 = -pitchSC[1];
-        float floatValue6 = pitchSC[0];
+        float thirtiethFloatValue = MathHelper.cos(-floatValue2 * 0.017453292F - (float)Math.PI);
+        float floatValue4 = MathHelper.sin(-floatValue2 * 0.017453292F - (float)Math.PI);
+        float floatValue5 = -MathHelper.cos(-f * 0.017453292F);
+        float floatValue6 = MathHelper.sin(-f * 0.017453292F);
         return new Vector3f(floatValue4 * floatValue5, floatValue6, thirtiethFloatValue * floatValue5);
     }
 

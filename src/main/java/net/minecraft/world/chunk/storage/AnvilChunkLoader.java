@@ -99,6 +99,7 @@ public class AnvilChunkLoader implements IChunkLoader, IThreadedFileIO
     public void saveChunk(World worldIn, Chunk chunkIn) throws MinecraftException, IOException
     {
         worldIn.checkSessionLock();
+        worldIn.getLightingEngine().processLightUpdates();
 
         try
         {
@@ -189,12 +190,8 @@ public class AnvilChunkLoader implements IChunkLoader, IThreadedFileIO
         {
             this.savingExtraData = true;
 
-            while (true)
+            while (this.writeNextIO())
             {
-                if (this.writeNextIO())
-                {
-                    continue;
-                }
             }
         }
         finally

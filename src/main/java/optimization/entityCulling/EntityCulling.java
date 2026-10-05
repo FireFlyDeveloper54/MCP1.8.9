@@ -17,7 +17,7 @@ public class EntityCulling {
 	public int skippedEntities = 0;
 
 
-    public static boolean enabled = true;
+    public static boolean enabled = false;
     public static int tracingDistance = 128;
     public static int sleepDelay = 10;
     public static int hitboxLimit = 50;

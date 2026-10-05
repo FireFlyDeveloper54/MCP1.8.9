@@ -5,6 +5,7 @@ import net.minecraft.client.gui.achievement.GuiAchievements;
 import net.minecraft.client.gui.achievement.GuiStats;
 import net.minecraft.client.multiplayer.WorldClient;
 import net.minecraft.client.resources.I18n;
+import net.minecraft.realms.RealmsBridge;
 
 public class GuiIngameMenu extends GuiScreen
 {
@@ -39,6 +40,7 @@ public class GuiIngameMenu extends GuiScreen
 
             case 1:
                 boolean integratedServerRunning = this.mc.isIntegratedServerRunning();
+                boolean connectedToRealms = this.mc.isConnectedToRealms();
                 button.enabled = false;
                 this.mc.theWorld.sendQuittingDisconnectingPacket();
                 this.mc.loadWorld((WorldClient)null);
@@ -46,6 +48,10 @@ public class GuiIngameMenu extends GuiScreen
                 if (integratedServerRunning)
                 {
                     this.mc.displayGuiScreen(new GuiMainMenu());
+                }
+                else if (connectedToRealms)
+                {
+                    new RealmsBridge().switchToRealms(new GuiMainMenu());
                 }
                 else
                 {

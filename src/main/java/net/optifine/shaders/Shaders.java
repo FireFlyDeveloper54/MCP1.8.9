@@ -2495,7 +2495,7 @@ public class Shaders
 
             if (j == 0 && k == 0 && l == 0)
             {
-                ARBShaderObjects.glDeleteObjectARB(i);
+                OpenGlHelper.glDeleteProgram(i);
                 i = 0;
                 program.resetId();
             }
@@ -2548,7 +2548,7 @@ public class Shaders
                 }
 
                 CorePipeline.bindPackAttribs(i);
-                ARBShaderObjects.glLinkProgramARB(i);
+                OpenGlHelper.glLinkProgram(i);
 
                 if (GL20.glGetProgrami(i, 35714) != 1)
                 {
@@ -2587,7 +2587,7 @@ public class Shaders
                 {
                     String s = "\"";
                     printChatAndLogError("[Shaders] Error: Invalid program " + s + program.getName() + s);
-                    ARBShaderObjects.glDeleteObjectARB(i);
+                    OpenGlHelper.glDeleteProgram(i);
                     i = 0;
                     program.resetId();
                 }
@@ -3685,7 +3685,7 @@ public class Shaders
 
                 if (program.getRef() != 0)
                 {
-                    ARBShaderObjects.glDeleteObjectARB(program.getRef());
+                    OpenGlHelper.glDeleteProgram(program.getRef());
                     checkGLError("del programRef");
                 }
 

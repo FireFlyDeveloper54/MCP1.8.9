@@ -2,6 +2,8 @@ package net.minecraft.client.renderer;
 
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
 import net.minecraft.src.Config;
 import net.optifine.SmartAnimations;
 import net.optifine.render.GlAlphaState;
@@ -10,6 +12,8 @@ import net.optifine.shaders.Shaders;
 import net.optifine.util.LockCounter;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL13;
+import org.lwjgl.opengl.GL20;
+import org.lwjgl.opengl.GL30;
 
 public class GlStateManager
 {
@@ -23,7 +27,7 @@ public class GlStateManager
     private static GlStateManager.CullState cullState = new GlStateManager.CullState();
     private static GlStateManager.PolygonOffsetState polygonOffsetState = new GlStateManager.PolygonOffsetState();
     private static GlStateManager.ColorLogicState colorLogicState = new GlStateManager.ColorLogicState();
-    private static GlStateManager.TexGenState texGenState = new GlStateManager.TexGenState();
+    private static GlStateManager.TexGenState[] texGenState = new GlStateManager.TexGenState[32];
     private static GlStateManager.ClearState clearState = new GlStateManager.ClearState();
     private static GlStateManager.StencilState stencilState = new GlStateManager.StencilState();
     private static GlStateManager.BooleanState normalizeState = new GlStateManager.BooleanState(2977);
@@ -40,6 +44,7 @@ public class GlStateManager
     private static float overlayGreen;
     private static float overlayBlue;
     private static float overlayAlpha;
+    private static boolean overlayEnabled;
     private static final float[] light0Dir = new float[] {0.2F, 1.0F, -0.7F};
     private static final float[] light1Dir = new float[] {-0.2F, 1.0F, 0.7F};
     private static float lightAmbient = 0.4F;
@@ -49,12 +54,21 @@ public class GlStateManager
     private static GlAlphaState alphaLockState = new GlAlphaState();
     private static LockCounter blendLock = new LockCounter();
     private static GlBlendState blendLockState = new GlBlendState();
+    private static final ArrayDeque<GlStateManager.AttribState> attribStack = new ArrayDeque<GlStateManager.AttribState>();
     public static void pushAttrib()
     {
+        if (attribStack.size() < 16)
+        {
+            attribStack.push(new GlStateManager.AttribState());
+        }
     }
 
     public static void popAttrib()
     {
+        if (!attribStack.isEmpty())
+        {
+            attribStack.pop().restore();
+        }
     }
 
     public static void disableAlpha()
@@ -313,6 +327,10 @@ public class GlStateManager
         {
             fogState.mode = param;
         }
+        else if (pname == 34138)
+        {
+            fogState.distanceMode = param;
+        }
     }
 
     public static void enableCull()
@@ -392,27 +410,66 @@ public class GlStateManager
 
     public static void texGen(GlStateManager.TexGen texGen, int pname, FloatBuffer params)
     {
+        GlStateManager.TexGenCoord coord = texGenCoord(texGen);
+
+        if (pname == 9472)
+        {
+            coord.param = (int)params.get(params.position());
+        }
+        else if (pname == 9473 || pname == 9474)
+        {
+            float[] plane = pname == 9473 ? coord.objectPlane : coord.eyePlane;
+
+            for (int i = 0; i < 4; ++i)
+            {
+                plane[i] = params.get(params.position() + i);
+            }
+
+            if (pname == 9474)
+            {
+                GlMatrix.transformEyePlane(plane);
+            }
+        }
     }
 
     private static GlStateManager.TexGenCoord texGenCoord(GlStateManager.TexGen texGen)
     {
-        switch (texGen)
+        return texGenCoord(activeTextureUnit, texGen.ordinal());
+    }
+
+    private static GlStateManager.TexGenCoord texGenCoord(int textureUnit, int coordinate)
+    {
+        GlStateManager.TexGenState state = texGenState[textureUnit];
+
+        switch (coordinate)
         {
-            case S:
-                return texGenState.sCoord;
+            case 0:
+                return state.sCoord;
 
-            case T:
-                return texGenState.tCoord;
+            case 1:
+                return state.tCoord;
 
-            case R:
-                return texGenState.rCoord;
+            case 2:
+                return state.rCoord;
 
-            case Q:
-                return texGenState.qCoord;
+            case 3:
+                return state.qCoord;
 
             default:
-                return texGenState.sCoord;
+                return state.sCoord;
         }
+    }
+
+    public static int getTexGenMode(int textureUnit, int coordinate)
+    {
+        GlStateManager.TexGenCoord coord = texGenCoord(textureUnit, coordinate);
+        return coord.textureGen.isEnabled() ? coord.param : 0;
+    }
+
+    public static float[] getTexGenPlane(int textureUnit, int coordinate)
+    {
+        GlStateManager.TexGenCoord coord = texGenCoord(textureUnit, coordinate);
+        return coord.param == 9216 ? coord.eyePlane : coord.objectPlane;
     }
 
     public static void setActiveTexture(int texture)
@@ -909,10 +966,22 @@ public class GlStateManager
 
     public static void setOverlayColor(float red, float green, float blue, float alpha)
     {
+        overlayEnabled = true;
         overlayRed = red;
         overlayGreen = green;
         overlayBlue = blue;
         overlayAlpha = alpha;
+    }
+
+    public static void clearOverlayColor()
+    {
+        overlayEnabled = false;
+        overlayRed = overlayGreen = overlayBlue = overlayAlpha = 0.0F;
+    }
+
+    public static boolean isOverlayEnabled()
+    {
+        return overlayEnabled;
     }
 
     public static float getOverlayRed()
@@ -997,6 +1066,122 @@ public class GlStateManager
         for (int textureIndex = 0; textureIndex < textureState.length; ++textureIndex)
         {
             textureState[textureIndex] = new GlStateManager.TextureState();
+            texGenState[textureIndex] = new GlStateManager.TexGenState();
+        }
+    }
+
+    static class AttribState
+    {
+        private static final int[] CORE_CAPABILITIES = new int[] {2848, 2881, 3024, 2960, 3089, 10753, 32925, 32926, 32927, 32928, 36281, 34370, 35977, 36765, 34895, 36433, 12288, 12289, 12290, 12291, 12292, 12293, 12294, 12295};
+        private final GlStateManager.BooleanState[] states;
+        private final boolean[] enabled;
+        private final boolean[] coreEnabled = new boolean[CORE_CAPABILITIES.length];
+        private final boolean[] blendEnabled;
+        private final float[] light0 = light0Dir.clone();
+        private final float[] light1 = light1Dir.clone();
+        private final float ambient = lightAmbient;
+        private final float diffuse = lightDiffuse;
+        private final int shadeModel = activeShadeModel;
+        private final int materialFace = colorMaterialState.face;
+        private final int materialMode = colorMaterialState.mode;
+
+        private AttribState()
+        {
+            ArrayList<GlStateManager.BooleanState> savedStates = new ArrayList<GlStateManager.BooleanState>();
+            savedStates.add(alphaState.alphaTest);
+            savedStates.add(lightingState);
+            savedStates.add(colorMaterialState.colorMaterial);
+            savedStates.add(blendState.blend);
+            savedStates.add(depthState.depthTest);
+            savedStates.add(fogState.fog);
+            savedStates.add(cullState.cullFace);
+            savedStates.add(polygonOffsetState.polygonOffsetFill);
+            savedStates.add(polygonOffsetState.polygonOffsetLine);
+            savedStates.add(colorLogicState.colorLogicOp);
+            savedStates.add(normalizeState);
+            savedStates.add(rescaleNormalState);
+
+            for (GlStateManager.BooleanState light : lightState)
+            {
+                savedStates.add(light);
+            }
+
+            for (int i = 0; i < textureState.length; ++i)
+            {
+                savedStates.add(textureState[i].texture2DState);
+                savedStates.add(texGenState[i].sCoord.textureGen);
+                savedStates.add(texGenState[i].tCoord.textureGen);
+                savedStates.add(texGenState[i].rCoord.textureGen);
+                savedStates.add(texGenState[i].qCoord.textureGen);
+            }
+
+            this.states = savedStates.toArray(new GlStateManager.BooleanState[savedStates.size()]);
+            this.enabled = new boolean[this.states.length];
+
+            for (int i = 0; i < this.states.length; ++i)
+            {
+                GlStateManager.BooleanState state = this.states[i];
+                this.enabled[i] = isFixedFunctionCap(state.capability) ? state.currentState : GL11.glIsEnabled(state.capability);
+            }
+
+            for (int i = 0; i < CORE_CAPABILITIES.length; ++i)
+            {
+                this.coreEnabled[i] = GL11.glIsEnabled(CORE_CAPABILITIES[i]);
+            }
+
+            this.blendEnabled = new boolean[GL11.glGetInteger(GL20.GL_MAX_DRAW_BUFFERS)];
+
+            for (int i = 0; i < this.blendEnabled.length; ++i)
+            {
+                this.blendEnabled[i] = GL30.glIsEnabledi(GL11.GL_BLEND, i);
+            }
+        }
+
+        private void restore()
+        {
+            for (int i = 0; i < this.states.length; ++i)
+            {
+                GlStateManager.BooleanState state = this.states[i];
+                state.currentState = this.enabled[i];
+
+                if (!isFixedFunctionCap(state.capability))
+                {
+                    setCoreEnabled(state.capability, this.enabled[i]);
+                }
+            }
+
+            for (int i = 0; i < CORE_CAPABILITIES.length; ++i)
+            {
+                setCoreEnabled(CORE_CAPABILITIES[i], this.coreEnabled[i]);
+            }
+
+            for (int i = 0; i < this.blendEnabled.length; ++i)
+            {
+                if (this.blendEnabled[i])
+                {
+                    GL30.glEnablei(GL11.GL_BLEND, i);
+                }
+                else
+                {
+                    GL30.glDisablei(GL11.GL_BLEND, i);
+                }
+            }
+
+            setLights(this.light0, this.light1, this.ambient, this.diffuse);
+            shadeModel(this.shadeModel);
+            colorMaterial(this.materialFace, this.materialMode);
+        }
+
+        private static void setCoreEnabled(int capability, boolean enabled)
+        {
+            if (enabled)
+            {
+                GL11.glEnable(capability);
+            }
+            else
+            {
+                GL11.glDisable(capability);
+            }
         }
     }
 
@@ -1062,14 +1247,39 @@ public class GlStateManager
         return textureState[activeTextureUnit].texture2DState.isEnabled();
     }
 
+    public static boolean isTexture2DEnabled(int textureUnit)
+    {
+        return textureState[textureUnit].texture2DState.isEnabled();
+    }
+
     public static boolean isLightingEnabled()
     {
         return lightingState.isEnabled();
     }
 
+    public static boolean isLightEnabled(int light)
+    {
+        return lightState[light].isEnabled();
+    }
+
+    public static boolean isNormalizeEnabled()
+    {
+        return normalizeState.isEnabled();
+    }
+
+    public static boolean isRescaleNormalEnabled()
+    {
+        return rescaleNormalState.isEnabled();
+    }
+
     public static int getFogMode()
     {
         return fogState.mode;
+    }
+
+    public static int getFogDistanceMode()
+    {
+        return fogState.distanceMode;
     }
 
     public static float getFogStart()
@@ -1264,6 +1474,7 @@ public class GlStateManager
     {
         public GlStateManager.BooleanState fog;
         public int mode;
+        public int distanceMode;
         public float density;
         public float start;
         public float end;
@@ -1273,6 +1484,7 @@ public class GlStateManager
         {
             this.fog = new GlStateManager.BooleanState(2912);
             this.mode = 2048;
+            this.distanceMode = 34140;
             this.density = 1.0F;
             this.start = 0.0F;
             this.end = 1.0F;
@@ -1340,12 +1552,20 @@ public class GlStateManager
     {
         public GlStateManager.BooleanState textureGen;
         public int coord;
-        public int param = -1;
+        public int param = 9216;
+        public final float[] objectPlane = new float[4];
+        public final float[] eyePlane = new float[4];
 
         public TexGenCoord(int coord, int capability)
         {
             this.coord = coord;
             this.textureGen = new GlStateManager.BooleanState(capability);
+
+            if (coord == 8192 || coord == 8193)
+            {
+                this.objectPlane[coord - 8192] = 1.0F;
+                this.eyePlane[coord - 8192] = 1.0F;
+            }
         }
     }
 

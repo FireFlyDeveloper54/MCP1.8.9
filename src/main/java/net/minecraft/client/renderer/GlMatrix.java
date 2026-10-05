@@ -13,20 +13,27 @@ public final class GlMatrix
     public static final int TEXTURE_MATRIX = 2984;
 
     private static final int STACK_LIMIT = 32;
+    public static final int TEXTURE_UNITS = 32;
     private static int mode = MODELVIEW;
+    private static int activeTextureUnit;
     private static int modelViewRevision;
     private static int projectionRevision;
     private static int textureRevision;
     private static final ArrayList<float[]> modelView = new ArrayList<float[]>();
     private static final ArrayList<float[]> projection = new ArrayList<float[]>();
-    private static final ArrayList<float[]> texture = new ArrayList<float[]>();
+    private static final ArrayList<ArrayList<float[]>> texture = new ArrayList<ArrayList<float[]>>();
     private static final float[] multiplyTemp = new float[16];
 
     static
     {
         modelView.add(identity());
         projection.add(identity());
-        texture.add(identity());
+        for (int i = 0; i < TEXTURE_UNITS; ++i)
+        {
+            ArrayList<float[]> stack = new ArrayList<float[]>();
+            stack.add(identity());
+            texture.add(stack);
+        }
     }
 
     private GlMatrix()
@@ -38,6 +45,14 @@ public final class GlMatrix
         if (matrixMode == MODELVIEW || matrixMode == PROJECTION || matrixMode == TEXTURE)
         {
             mode = matrixMode;
+        }
+    }
+
+    public static void activeTexture(int textureUnit)
+    {
+        if (textureUnit >= 0 && textureUnit < TEXTURE_UNITS)
+        {
+            activeTextureUnit = textureUnit;
         }
     }
 
@@ -103,7 +118,7 @@ public final class GlMatrix
 
     public static void getFloat(int pname, FloatBuffer params)
     {
-        float[] matrix = pname == PROJECTION_MATRIX ? top(projection) : (pname == TEXTURE_MATRIX ? top(texture) : top(modelView));
+        float[] matrix = pname == PROJECTION_MATRIX ? top(projection) : (pname == TEXTURE_MATRIX ? getTexture() : top(modelView));
         params.mark();
 
         for (int i = 0; i < 16; ++i)
@@ -126,7 +141,85 @@ public final class GlMatrix
 
     public static float[] getTexture()
     {
-        return top(texture);
+        return getTexture(activeTextureUnit);
+    }
+
+    public static float[] getTexture(int textureUnit)
+    {
+        return top(texture.get(textureUnit));
+    }
+
+    public static void transformEyePlane(float[] plane)
+    {
+        float[] matrix = getModelView();
+        double[][] inverse = new double[4][8];
+
+        for (int row = 0; row < 4; ++row)
+        {
+            for (int column = 0; column < 4; ++column)
+            {
+                inverse[row][column] = matrix[column * 4 + row];
+            }
+
+            inverse[row][row + 4] = 1.0D;
+        }
+
+        for (int column = 0; column < 4; ++column)
+        {
+            int pivot = column;
+
+            for (int row = column + 1; row < 4; ++row)
+            {
+                if (Math.abs(inverse[row][column]) > Math.abs(inverse[pivot][column]))
+                {
+                    pivot = row;
+                }
+            }
+
+            if (inverse[pivot][column] == 0.0D)
+            {
+                return;
+            }
+
+            double[] swap = inverse[column];
+            inverse[column] = inverse[pivot];
+            inverse[pivot] = swap;
+            double scale = inverse[column][column];
+
+            for (int i = 0; i < 8; ++i)
+            {
+                inverse[column][i] /= scale;
+            }
+
+            for (int row = 0; row < 4; ++row)
+            {
+                if (row != column)
+                {
+                    double factor = inverse[row][column];
+
+                    for (int i = 0; i < 8; ++i)
+                    {
+                        inverse[row][i] -= factor * inverse[column][i];
+                    }
+                }
+            }
+        }
+
+        float[] transformed = new float[4];
+
+        for (int column = 0; column < 4; ++column)
+        {
+            double coefficient = 0.0D;
+
+            for (int row = 0; row < 4; ++row)
+            {
+                coefficient += (double)plane[row] * inverse[row][column + 4];
+            }
+
+            transformed[column] = (float)coefficient;
+        }
+
+        System.arraycopy(transformed, 0, plane, 0, 4);
     }
 
     public static void getNormalMatrix(float[] out)
@@ -281,7 +374,7 @@ public final class GlMatrix
 
     private static ArrayList<float[]> stack()
     {
-        return mode == PROJECTION ? projection : (mode == TEXTURE ? texture : modelView);
+        return mode == PROJECTION ? projection : (mode == TEXTURE ? texture.get(activeTextureUnit) : modelView);
     }
 
     private static float[] current()

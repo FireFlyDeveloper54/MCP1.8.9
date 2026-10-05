@@ -19,6 +19,7 @@ import net.minecraft.src.Config;
 import net.minecraft.util.BlockPos;
 import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.util.EnumFacing;
+import net.minecraft.util.FrameTimer;
 import net.minecraft.util.MathHelper;
 import net.minecraft.util.MovingObjectPosition;
 import net.minecraft.world.DifficultyInstance;
@@ -57,7 +58,7 @@ public class GuiOverlayDebug extends Gui
         this.renderDebugInfoRight(scaledResolutionIn);
         GlStateManager.popMatrix();
 
-        if (this.mc.gameSettings.showLagometer)
+        if (this.mc.gameSettings.showLagometer && !this.mc.gameSettings.ofLagometer)
         {
             this.renderLagometer();
         }
@@ -330,6 +331,41 @@ public class GuiOverlayDebug extends Gui
 
     private void renderLagometer()
     {
+        GlStateManager.disableDepth();
+        FrameTimer frametimer = this.mc.getFrameTimer();
+        int i = frametimer.getLastIndex();
+        int j = frametimer.getIndex();
+        long[] along = frametimer.getFrames();
+        ScaledResolution scaledresolution = new ScaledResolution(this.mc);
+        int k = i;
+        int l = 0;
+        drawRect(0, scaledresolution.getScaledHeight() - 60, 240, scaledresolution.getScaledHeight(), -1873784752);
+
+        while (k != j)
+        {
+            int i1 = frametimer.getLagometerValue(along[k], 30);
+            int j1 = this.getFrameColor(MathHelper.clamp_int(i1, 0, 60), 0, 30, 60);
+            this.drawVerticalLine(l, scaledresolution.getScaledHeight(), scaledresolution.getScaledHeight() - i1, j1);
+            ++l;
+            k = frametimer.parseIndex(k + 1);
+        }
+
+        drawRect(1, scaledresolution.getScaledHeight() - 30 + 1, 14, scaledresolution.getScaledHeight() - 30 + 10, -1873784752);
+        this.fontRenderer.drawString("60", 2, scaledresolution.getScaledHeight() - 30 + 2, 14737632);
+        this.drawHorizontalLine(0, 239, scaledresolution.getScaledHeight() - 30, -1);
+        drawRect(1, scaledresolution.getScaledHeight() - 60 + 1, 14, scaledresolution.getScaledHeight() - 60 + 10, -1873784752);
+        this.fontRenderer.drawString("30", 2, scaledresolution.getScaledHeight() - 60 + 2, 14737632);
+        this.drawHorizontalLine(0, 239, scaledresolution.getScaledHeight() - 60, -1);
+        this.drawHorizontalLine(0, 239, scaledresolution.getScaledHeight() - 1, -1);
+        this.drawVerticalLine(0, scaledresolution.getScaledHeight() - 60, scaledresolution.getScaledHeight(), -1);
+        this.drawVerticalLine(239, scaledresolution.getScaledHeight() - 60, scaledresolution.getScaledHeight(), -1);
+
+        if (this.mc.gameSettings.limitFramerate <= 120)
+        {
+            this.drawHorizontalLine(0, 239, scaledresolution.getScaledHeight() - 60 + this.mc.gameSettings.limitFramerate / 2, -16711681);
+        }
+
+        GlStateManager.enableDepth();
     }
 
     private int getFrameColor(int frameTime, int minFrameTime, int targetFrameTime, int maxFrameTime)

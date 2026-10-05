@@ -110,7 +110,7 @@ public class PathNavigateGround extends PathNavigate
         }
         else
         {
-            double inverseDistance = MathHelper.fastInvSqrt(distanceSquared);
+            double inverseDistance = 1.0D / Math.sqrt(distanceSquared);
             directionX = directionX * inverseDistance;
             directionZ = directionZ * inverseDistance;
             sizeX = sizeX + 2;

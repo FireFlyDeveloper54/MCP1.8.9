@@ -6,6 +6,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import net.minecraft.client.renderer.vertex.VertexFormat;
 import net.minecraft.client.renderer.vertex.VertexFormatElement;
 import net.minecraft.src.Config;
@@ -29,14 +31,23 @@ public final class CorePipeline
     private static int program;
     private static int uniformModelView;
     private static int uniformProj;
+    private static int uniformTextureMatrix0;
+    private static int uniformTextureMatrix1;
+    private static int uniformTexGenMode;
+    private static int uniformTexGenPlane;
     private static int uniformColor;
     private static int uniformUseVertexColor;
     private static int uniformTextureEnabled;
     private static int uniformUseLightmap;
     private static int uniformLighting;
+    private static int uniformLightMask;
+    private static int uniformNormalize;
+    private static int uniformRescaleNormal;
+    private static int uniformNormalScale;
     private static int uniformAlphaFunc;
     private static int uniformAlphaRef;
     private static int uniformFogMode;
+    private static int uniformFogDistanceMode;
     private static int uniformFogColor;
     private static int uniformFogStart;
     private static int uniformFogEnd;
@@ -44,6 +55,7 @@ public final class CorePipeline
     private static int uniformSampler0;
     private static int uniformSampler1;
     private static int uniformOverlay;
+    private static int uniformOverlayEnabled;
     private static int uniformLight0;
     private static int uniformLight1;
     private static int uniformLightAmbient;
@@ -60,6 +72,7 @@ public final class CorePipeline
     private static VertexFormat lastFormat;
     private static long lastPointer = -1L;
     private static int lastFormatVao = -1;
+    private static int lastFormatVbo = -1;
     private static boolean lastHasColor;
     private static boolean lastHasLightmap;
     private static int lastMvRev = Integer.MIN_VALUE;
@@ -67,9 +80,13 @@ public final class CorePipeline
     private static int lastTexRev = Integer.MIN_VALUE;
     private static int lastTextureEnabled = Integer.MIN_VALUE;
     private static int lastLighting = Integer.MIN_VALUE;
+    private static int lastLightMask = Integer.MIN_VALUE;
+    private static int lastNormalize = Integer.MIN_VALUE;
+    private static int lastRescaleNormal = Integer.MIN_VALUE;
     private static int lastAlphaFunc = Integer.MIN_VALUE;
     private static float lastAlphaRef = Float.NaN;
     private static int lastFogMode = Integer.MIN_VALUE;
+    private static int lastFogDistanceMode = Integer.MIN_VALUE;
     private static float lastFogStart = Float.NaN;
     private static float lastFogEnd = Float.NaN;
     private static float lastFogDensity = Float.NaN;
@@ -78,6 +95,7 @@ public final class CorePipeline
     private static float lastColorB = Float.NaN;
     private static float lastColorA = Float.NaN;
     private static float lastOverlayR = Float.NaN;
+    private static int lastOverlayEnabled = -1;
     private static float lastOverlayG = Float.NaN;
     private static float lastOverlayB = Float.NaN;
     private static float lastOverlayA = Float.NaN;
@@ -90,12 +108,13 @@ public final class CorePipeline
     private static float lastLightAmbient = Float.NaN;
     private static float lastLightDiffuse = Float.NaN;
     private static int lastFlat = Integer.MIN_VALUE;
-    private static boolean lastUseVertexColor;
+    private static int lastUseVertexColor = -1;
     private static boolean samplersBound;
     private static final float[] lastFogColor = new float[] {Float.NaN, Float.NaN, Float.NaN, Float.NaN};
     private static final Map<Integer, int[]> packUniforms = new HashMap<Integer, int[]>();
     private static final float[] fogColor = new float[] {0.0F, 0.0F, 0.0F, 1.0F};
     private static final float[] normalMatrix = new float[9];
+    private static final float[] texGenPlanes = new float[16];
     private static boolean ready;
 
     private CorePipeline()
@@ -120,6 +139,7 @@ public final class CorePipeline
         GL20.glBindAttribLocation(program, ATTR_UV1, "UV1");
         GL20.glBindAttribLocation(program, ATTR_NORMAL, "Normal");
         GL20.glLinkProgram(program);
+        onProgramLinked(program);
 
         if (GL20.glGetProgrami(program, GL20.GL_LINK_STATUS) == 0)
         {
@@ -130,14 +150,23 @@ public final class CorePipeline
         GL20.glDeleteShader(fragment);
         uniformModelView = GL20.glGetUniformLocation(program, "ModelViewMat");
         uniformProj = GL20.glGetUniformLocation(program, "ProjMat");
+        uniformTextureMatrix0 = GL20.glGetUniformLocation(program, "TextureMat0");
+        uniformTextureMatrix1 = GL20.glGetUniformLocation(program, "TextureMat1");
+        uniformTexGenMode = GL20.glGetUniformLocation(program, "TexGenMode");
+        uniformTexGenPlane = GL20.glGetUniformLocation(program, "TexGenPlane[0]");
         uniformColor = GL20.glGetUniformLocation(program, "ColorModulator");
         uniformUseVertexColor = GL20.glGetUniformLocation(program, "UseVertexColor");
         uniformTextureEnabled = GL20.glGetUniformLocation(program, "TextureEnabled");
         uniformUseLightmap = GL20.glGetUniformLocation(program, "UseLightmap");
         uniformLighting = GL20.glGetUniformLocation(program, "LightingEnabled");
+        uniformLightMask = GL20.glGetUniformLocation(program, "LightMask");
+        uniformNormalize = GL20.glGetUniformLocation(program, "NormalizeNormals");
+        uniformRescaleNormal = GL20.glGetUniformLocation(program, "RescaleNormals");
+        uniformNormalScale = GL20.glGetUniformLocation(program, "NormalScale");
         uniformAlphaFunc = GL20.glGetUniformLocation(program, "AlphaTestFunc");
         uniformAlphaRef = GL20.glGetUniformLocation(program, "AlphaTestRef");
         uniformFogMode = GL20.glGetUniformLocation(program, "FogMode");
+        uniformFogDistanceMode = GL20.glGetUniformLocation(program, "FogDistanceMode");
         uniformFogColor = GL20.glGetUniformLocation(program, "FogColor");
         uniformFogStart = GL20.glGetUniformLocation(program, "FogStart");
         uniformFogEnd = GL20.glGetUniformLocation(program, "FogEnd");
@@ -145,6 +174,7 @@ public final class CorePipeline
         uniformSampler0 = GL20.glGetUniformLocation(program, "Sampler0");
         uniformSampler1 = GL20.glGetUniformLocation(program, "Sampler1");
         uniformOverlay = GL20.glGetUniformLocation(program, "OverlayColor");
+        uniformOverlayEnabled = GL20.glGetUniformLocation(program, "OverlayEnabled");
         uniformLight0 = GL20.glGetUniformLocation(program, "Light0Dir");
         uniformLight1 = GL20.glGetUniformLocation(program, "Light1Dir");
         uniformLightAmbient = GL20.glGetUniformLocation(program, "LightAmbient");
@@ -231,9 +261,36 @@ public final class CorePipeline
         uniformsFor(programId);
     }
 
+    public static void onProgramLinked(int programId)
+    {
+        packUniforms.remove(Integer.valueOf(programId));
+
+        if (currentProgram == programId)
+        {
+            invalidateUniformCache();
+        }
+    }
+
+    public static void onProgramDeleted(int programId)
+    {
+        packUniforms.remove(Integer.valueOf(programId));
+
+        if (lastPackProgram == programId)
+        {
+            lastPackProgram = 0;
+        }
+
+        if (currentProgram == programId)
+        {
+            currentProgram = 0;
+            invalidateUniformCache();
+        }
+    }
+
     public static void prepareDraw(boolean hasColor, boolean hasLightmap)
     {
         init();
+        refreshConstantAttributes(hasColor, hasLightmap);
 
         if (currentProgram == 0 || currentProgram == program)
         {
@@ -307,8 +364,9 @@ public final class CorePipeline
     public static void bindFormat(VertexFormat vertexFormat, long pointer)
     {
         int vao = OpenGlHelper.getBoundVertexArray();
+        int vbo = GL11.glGetInteger(GL15.GL_ARRAY_BUFFER_BINDING);
 
-        if (vertexFormat == lastFormat && pointer == lastPointer && vao == lastFormatVao)
+        if (vertexFormat == lastFormat && pointer == lastPointer && vao == lastFormatVao && vbo == lastFormatVbo)
         {
             return;
         }
@@ -386,7 +444,7 @@ public final class CorePipeline
         if (!hasUv1)
         {
             GL20.glDisableVertexAttribArray(ATTR_UV1);
-            GL20.glVertexAttrib2f(ATTR_UV1, 0.0F, 0.0F);
+            GL20.glVertexAttrib2f(ATTR_UV1, OpenGlHelper.lastBrightnessX, OpenGlHelper.lastBrightnessY);
         }
 
         if (!hasNormal)
@@ -398,6 +456,7 @@ public final class CorePipeline
         lastFormat = vertexFormat;
         lastPointer = pointer;
         lastFormatVao = vao;
+        lastFormatVbo = vbo;
         lastHasColor = hasColor;
         lastHasLightmap = hasUv1;
     }
@@ -414,6 +473,32 @@ public final class CorePipeline
 
     public static void clearVertexFormat(VertexFormat vertexFormat)
     {
+    }
+
+    public static void invalidateVertexFormat()
+    {
+        lastFormat = null;
+        lastPointer = -1L;
+        lastFormatVao = -1;
+        lastFormatVbo = -1;
+    }
+
+    private static void refreshConstantAttributes(boolean hasColor, boolean hasLightmap)
+    {
+        if (!hasColor)
+        {
+            GL20.glVertexAttrib4f(ATTR_COLOR, GlStateManager.getColorRed(), GlStateManager.getColorGreen(), GlStateManager.getColorBlue(), GlStateManager.getColorAlpha());
+        }
+
+        if (!hasLightmap)
+        {
+            GL20.glVertexAttrib2f(ATTR_UV1, OpenGlHelper.lastBrightnessX, OpenGlHelper.lastBrightnessY);
+        }
+
+        if (GL20.glGetVertexAttribi(ATTR_NORMAL, GL20.GL_VERTEX_ATTRIB_ARRAY_ENABLED) == 0)
+        {
+            GL20.glVertexAttrib3f(ATTR_NORMAL, GlStateManager.getNormalX(), GlStateManager.getNormalY(), GlStateManager.getNormalZ());
+        }
     }
 
     private static void useProgram(int programId)
@@ -433,16 +518,21 @@ public final class CorePipeline
         lastTexRev = Integer.MIN_VALUE;
         lastTextureEnabled = Integer.MIN_VALUE;
         lastLighting = Integer.MIN_VALUE;
+        lastLightMask = Integer.MIN_VALUE;
+        lastNormalize = Integer.MIN_VALUE;
+        lastRescaleNormal = Integer.MIN_VALUE;
         lastAlphaFunc = Integer.MIN_VALUE;
         lastAlphaRef = Float.NaN;
         lastFogMode = Integer.MIN_VALUE;
+        lastFogDistanceMode = Integer.MIN_VALUE;
         lastFogStart = Float.NaN;
         lastColorR = Float.NaN;
         lastOverlayR = Float.NaN;
+        lastOverlayEnabled = -1;
         lastLight0X = Float.NaN;
         lastFlat = Integer.MIN_VALUE;
         samplersBound = false;
-        lastUseVertexColor = false;
+        lastUseVertexColor = -1;
         lastFogColor[0] = Float.NaN;
     }
 
@@ -478,7 +568,7 @@ public final class CorePipeline
             rewritten = rewritten.replaceAll("(?<![A-Za-z0-9_])attribute\\s+", "in ");
             rewritten = rewritten.replaceAll("(?<![A-Za-z0-9_])varying\\s+", "out ");
             rewritten = insertAfterVersion(rewritten, VERTEX_PRELUDE + "\n#define main iris_user_main\n");
-            rewritten = rewritten + "\n#undef main\nvoid main() {\n  iris_initTextureMatrices();\n  iris_v.FrontColor = iris_Color;\n  iris_v.FogFragCoord = length((iris_ModelViewMat * vec4(iris_Position, 1.0)).xyz);\n  iris_user_main();\n}\n";
+            rewritten = rewritten + "\n#undef main\nvoid main() {\n  iris_initTextureMatrices();\n  iris_v.FrontColor = iris_Color;\n  vec4 iris_eye = iris_ModelViewMat * vec4(iris_Position, 1.0);\n  iris_v.FogFragCoord = iris_FogDistanceMode == 34139 ? length(iris_eye.xyz) : (iris_FogDistanceMode == 9216 ? iris_eye.z : abs(iris_eye.z));\n  iris_user_main();\n}\n";
         }
         else if (shaderType == SHADER_FRAGMENT)
         {
@@ -525,6 +615,7 @@ public final class CorePipeline
     {
         int mvRev = GlMatrix.getModelViewRevision();
         int projRev = GlMatrix.getProjectionRevision();
+        int texRev = GlMatrix.getTextureRevision();
 
         if (mvRev != lastMvRev)
         {
@@ -535,6 +626,8 @@ public final class CorePipeline
             {
                 GlMatrix.getNormalMatrix(normalMatrix);
                 GL20.glUniformMatrix3fv(uniformNormalMat, false, normalMatrix);
+                float scaleLength = (float)Math.sqrt((double)(normalMatrix[6] * normalMatrix[6] + normalMatrix[7] * normalMatrix[7] + normalMatrix[8] * normalMatrix[8]));
+                GL20.glUniform1f(uniformNormalScale, scaleLength > 0.0F ? 1.0F / scaleLength : 1.0F);
             }
         }
 
@@ -543,6 +636,22 @@ public final class CorePipeline
             lastProjRev = projRev;
             GL20.glUniformMatrix4fv(uniformProj, false, GlMatrix.getProjection());
         }
+
+        if (texRev != lastTexRev)
+        {
+            lastTexRev = texRev;
+            GL20.glUniformMatrix4fv(uniformTextureMatrix0, false, GlMatrix.getTexture(0));
+            GL20.glUniformMatrix4fv(uniformTextureMatrix1, false, GlMatrix.getTexture(1));
+        }
+
+        GL20.glUniform4i(uniformTexGenMode, GlStateManager.getTexGenMode(0, 0), GlStateManager.getTexGenMode(0, 1), GlStateManager.getTexGenMode(0, 2), GlStateManager.getTexGenMode(0, 3));
+
+        for (int i = 0; i < 4; ++i)
+        {
+            System.arraycopy(GlStateManager.getTexGenPlane(0, i), 0, texGenPlanes, i * 4, 4);
+        }
+
+        GL20.glUniform4fv(uniformTexGenPlane, texGenPlanes);
 
         float colorR = GlStateManager.getColorRed();
         float colorG = GlStateManager.getColorGreen();
@@ -558,13 +667,15 @@ public final class CorePipeline
             GL20.glUniform4f(uniformColor, colorR, colorG, colorB, colorA);
         }
 
-        if (hasColor != lastUseVertexColor)
+        int useVertexColor = hasColor ? 1 : 0;
+
+        if (useVertexColor != lastUseVertexColor)
         {
-            lastUseVertexColor = hasColor;
-            GL20.glUniform1i(uniformUseVertexColor, hasColor ? 1 : 0);
+            lastUseVertexColor = useVertexColor;
+            GL20.glUniform1i(uniformUseVertexColor, useVertexColor);
         }
 
-        int textureEnabled = GlStateManager.isTexture2DEnabled() ? 1 : 0;
+        int textureEnabled = GlStateManager.isTexture2DEnabled(0) ? 1 : 0;
 
         if (textureEnabled != lastTextureEnabled)
         {
@@ -572,13 +683,35 @@ public final class CorePipeline
             GL20.glUniform1i(uniformTextureEnabled, textureEnabled);
         }
 
-        GL20.glUniform1i(uniformUseLightmap, hasLightmap ? 1 : 0);
+        GL20.glUniform1i(uniformUseLightmap, GlStateManager.isTexture2DEnabled(1) ? 1 : 0);
         int lighting = GlStateManager.isLightingEnabled() ? 1 : 0;
 
         if (lighting != lastLighting)
         {
             lastLighting = lighting;
             GL20.glUniform1i(uniformLighting, lighting);
+        }
+
+        int lightMask = (GlStateManager.isLightEnabled(0) ? 1 : 0) | (GlStateManager.isLightEnabled(1) ? 2 : 0);
+        int normalize = GlStateManager.isNormalizeEnabled() ? 1 : 0;
+        int rescaleNormal = GlStateManager.isRescaleNormalEnabled() ? 1 : 0;
+
+        if (lightMask != lastLightMask)
+        {
+            lastLightMask = lightMask;
+            GL20.glUniform1i(uniformLightMask, lightMask);
+        }
+
+        if (normalize != lastNormalize)
+        {
+            lastNormalize = normalize;
+            GL20.glUniform1i(uniformNormalize, normalize);
+        }
+
+        if (rescaleNormal != lastRescaleNormal)
+        {
+            lastRescaleNormal = rescaleNormal;
+            GL20.glUniform1i(uniformRescaleNormal, rescaleNormal);
         }
 
         int alphaFunc = GlStateManager.isAlphaTestEnabled() ? GlStateManager.getAlphaFunc() : 0;
@@ -593,14 +726,16 @@ public final class CorePipeline
         }
 
         int fogMode = GlStateManager.isFogEnabled() ? GlStateManager.getFogMode() : 0;
+        int fogDistanceMode = GlStateManager.getFogDistanceMode();
         float fogStart = GlStateManager.getFogStart();
         float fogEnd = GlStateManager.getFogEnd();
         float fogDensity = GlStateManager.getFogDensity();
         GlStateManager.getFogColor(fogColor);
 
-        if (fogMode != lastFogMode || fogStart != lastFogStart || fogEnd != lastFogEnd || fogDensity != lastFogDensity || fogColor[0] != lastFogColor[0] || fogColor[1] != lastFogColor[1] || fogColor[2] != lastFogColor[2] || fogColor[3] != lastFogColor[3])
+        if (fogMode != lastFogMode || fogDistanceMode != lastFogDistanceMode || fogStart != lastFogStart || fogEnd != lastFogEnd || fogDensity != lastFogDensity || fogColor[0] != lastFogColor[0] || fogColor[1] != lastFogColor[1] || fogColor[2] != lastFogColor[2] || fogColor[3] != lastFogColor[3])
         {
             lastFogMode = fogMode;
+            lastFogDistanceMode = fogDistanceMode;
             lastFogStart = fogStart;
             lastFogEnd = fogEnd;
             lastFogDensity = fogDensity;
@@ -609,6 +744,7 @@ public final class CorePipeline
             lastFogColor[2] = fogColor[2];
             lastFogColor[3] = fogColor[3];
             GL20.glUniform1i(uniformFogMode, fogMode);
+            GL20.glUniform1i(uniformFogDistanceMode, fogDistanceMode);
             GL20.glUniform4f(uniformFogColor, fogColor[0], fogColor[1], fogColor[2], fogColor[3]);
             GL20.glUniform1f(uniformFogStart, fogStart);
             GL20.glUniform1f(uniformFogEnd, fogEnd);
@@ -632,6 +768,14 @@ public final class CorePipeline
 
         if (uniformOverlay >= 0)
         {
+            int overlayEnabled = GlStateManager.isOverlayEnabled() ? 1 : 0;
+
+            if (overlayEnabled != lastOverlayEnabled)
+            {
+                lastOverlayEnabled = overlayEnabled;
+                GL20.glUniform1i(uniformOverlayEnabled, overlayEnabled);
+            }
+
             float overlayR = GlStateManager.getOverlayRed();
             float overlayG = GlStateManager.getOverlayGreen();
             float overlayB = GlStateManager.getOverlayBlue();
@@ -705,6 +849,13 @@ public final class CorePipeline
         int mvRev = GlMatrix.getModelViewRevision();
         int projRev = GlMatrix.getProjectionRevision();
         int texRev = GlMatrix.getTextureRevision();
+        int fogDistanceMode = GlStateManager.getFogDistanceMode();
+
+        if (fogDistanceMode != lastFogDistanceMode)
+        {
+            lastFogDistanceMode = fogDistanceMode;
+            GL20.glUniform1i(uniforms[16], fogDistanceMode);
+        }
 
         if (uniforms[0] >= 0 && mvRev != lastMvRev)
         {
@@ -765,9 +916,17 @@ public final class CorePipeline
             }
         }
 
-        if (uniforms[7] >= 0 && texRev != lastTexRev)
+        if (texRev != lastTexRev)
         {
-            GL20.glUniformMatrix4fv(uniforms[7], false, GlMatrix.getTexture());
+            for (int i = 0; i < 8; ++i)
+            {
+                int location = uniforms[i == 0 ? 7 : i + 8];
+
+                if (location >= 0)
+                {
+                    GL20.glUniformMatrix4fv(location, false, GlMatrix.getTexture(i));
+                }
+            }
         }
 
         lastMvRev = mvRev;
@@ -790,8 +949,16 @@ public final class CorePipeline
                 GL20.glGetUniformLocation(programId, "iris_Fog.density"),
                 GL20.glGetUniformLocation(programId, "iris_Fog.start"),
                 GL20.glGetUniformLocation(programId, "iris_Fog.end"),
-                GL20.glGetUniformLocation(programId, "iris_TextureMat"),
-                GL20.glGetUniformLocation(programId, "iris_Fog.scale")
+                GL20.glGetUniformLocation(programId, "iris_TextureMats[0]"),
+                GL20.glGetUniformLocation(programId, "iris_Fog.scale"),
+                GL20.glGetUniformLocation(programId, "iris_TextureMats[1]"),
+                GL20.glGetUniformLocation(programId, "iris_TextureMats[2]"),
+                GL20.glGetUniformLocation(programId, "iris_TextureMats[3]"),
+                GL20.glGetUniformLocation(programId, "iris_TextureMats[4]"),
+                GL20.glGetUniformLocation(programId, "iris_TextureMats[5]"),
+                GL20.glGetUniformLocation(programId, "iris_TextureMats[6]"),
+                GL20.glGetUniformLocation(programId, "iris_TextureMats[7]"),
+                GL20.glGetUniformLocation(programId, "iris_FogDistanceMode")
             };
             packUniforms.put(key, uniforms);
         }
@@ -849,21 +1016,14 @@ public final class CorePipeline
 
     private static String replaceVersion(String source)
     {
-        int version = source.indexOf("#version");
+        Matcher directive = Pattern.compile("(?m)^[ \\t]*#version[ \\t]+[0-9]+(?:[ \\t]+(?:core|compatibility|es))?").matcher(maskShaderComments(source));
 
-        if (version < 0)
+        if (!directive.find())
         {
             return "#version 330 core\n" + source;
         }
 
-        int end = source.indexOf('\n', version);
-
-        if (end < 0)
-        {
-            end = source.length();
-        }
-
-        return source.substring(0, version) + "#version 330 core" + source.substring(end);
+        return source.substring(0, directive.start()) + "#version 330 core" + source.substring(directive.end());
     }
 
     private static String geometryPrelude(String source)
@@ -1223,15 +1383,156 @@ public final class CorePipeline
 
     private static String insertAfterVersion(String source, String insert)
     {
-        int version = source.indexOf("#version");
-        int end = source.indexOf('\n', version);
+        String masked = maskShaderComments(source);
+        int version = masked.indexOf("#version");
+        int end = masked.indexOf('\n', version);
 
         if (end < 0)
         {
             return source + "\n" + insert;
         }
 
-        return source.substring(0, end + 1) + insert + source.substring(end + 1);
+        int offset = end + 1;
+        int insertion = offset;
+        int conditionalDepth = 0;
+        boolean continuation = false;
+        boolean blockComment = endsInBlockComment(source, version, offset, false);
+
+        if (blockComment)
+        {
+            insertion = source.indexOf("/*", version);
+        }
+
+        while (offset < masked.length())
+        {
+            int lineEnd = masked.indexOf('\n', offset);
+            int next = lineEnd < 0 ? masked.length() : lineEnd + 1;
+            String line = masked.substring(offset, lineEnd < 0 ? masked.length() : lineEnd).trim();
+
+            if (!line.isEmpty() && !continuation && !line.startsWith("#"))
+            {
+                break;
+            }
+
+            if (!continuation && line.startsWith("#"))
+            {
+                String directive = line.substring(1).trim();
+                int nameEnd = 0;
+
+                while (nameEnd < directive.length() && isIdentChar(directive.charAt(nameEnd)))
+                {
+                    ++nameEnd;
+                }
+
+                String name = directive.substring(0, nameEnd);
+
+                if (name.equals("if") || name.equals("ifdef") || name.equals("ifndef"))
+                {
+                    ++conditionalDepth;
+                }
+                else if (name.equals("endif"))
+                {
+                    --conditionalDepth;
+                }
+            }
+
+            continuation = line.endsWith("\\");
+            blockComment = endsInBlockComment(source, offset, next, blockComment);
+
+            if (conditionalDepth == 0 && !continuation && !blockComment)
+            {
+                insertion = next;
+            }
+
+            offset = next;
+        }
+
+        String prefix = source.substring(0, insertion);
+        return prefix + (prefix.endsWith("\n") ? "" : "\n") + insert + source.substring(insertion);
+    }
+
+    private static boolean endsInBlockComment(String source, int start, int end, boolean block)
+    {
+        boolean line = false;
+
+        for (int i = start; i < end; ++i)
+        {
+            char character = source.charAt(i);
+            char next = i + 1 < end ? source.charAt(i + 1) : '\0';
+
+            if (line)
+            {
+                line = character != '\n';
+            }
+            else if (block)
+            {
+                if (character == '*' && next == '/')
+                {
+                    block = false;
+                    ++i;
+                }
+            }
+            else if (character == '/' && (next == '/' || next == '*'))
+            {
+                line = next == '/';
+                block = next == '*';
+                ++i;
+            }
+        }
+
+        return block;
+    }
+
+    private static String maskShaderComments(String source)
+    {
+        StringBuilder masked = new StringBuilder(source.length());
+        boolean block = false;
+        boolean line = false;
+
+        for (int i = 0; i < source.length(); ++i)
+        {
+            char character = source.charAt(i);
+            char next = i + 1 < source.length() ? source.charAt(i + 1) : '\0';
+
+            if (line)
+            {
+                if (character == '\n')
+                {
+                    line = false;
+                    masked.append(character);
+                }
+                else
+                {
+                    masked.append(' ');
+                }
+            }
+            else if (block)
+            {
+                if (character == '*' && next == '/')
+                {
+                    block = false;
+                    masked.append("  ");
+                    ++i;
+                }
+                else
+                {
+                    masked.append(character == '\n' ? '\n' : ' ');
+                }
+            }
+            else if (character == '/' && (next == '/' || next == '*'))
+            {
+                line = next == '/';
+                block = next == '*';
+                masked.append("  ");
+                ++i;
+            }
+            else
+            {
+                masked.append(character);
+            }
+        }
+
+        return masked.toString();
     }
 
     private static final String COMMON_DEFINES =
@@ -1246,19 +1547,16 @@ public final class CorePipeline
         "uniform mat4 iris_ModelViewMat;\n" +
         "uniform mat4 iris_ProjMat;\n" +
         "uniform mat3 iris_NormalMat;\n" +
-        "uniform mat4 iris_TextureMat;\n" +
-        "mat4 iris_TexMats[8];\n" +
+        "uniform mat4 iris_TextureMats[8];\n" +
         "mat4 iris_TexMatInv[8];\n" +
         "void iris_initTextureMatrices() {\n" +
-        "  for (int iris_i = 0; iris_i < 8; ++iris_i) { iris_TexMats[iris_i] = mat4(1.0); iris_TexMatInv[iris_i] = mat4(1.0); }\n" +
-        "  iris_TexMats[0] = iris_TextureMat;\n" +
-        "  iris_TexMatInv[0] = inverse(iris_TextureMat);\n" +
+        "  for (int iris_i = 0; iris_i < 8; ++iris_i) iris_TexMatInv[iris_i] = inverse(iris_TextureMats[iris_i]);\n" +
         "}\n" +
         "#define gl_ModelViewMatrix iris_ModelViewMat\n" +
         "#define gl_ProjectionMatrix iris_ProjMat\n" +
         "#define gl_ModelViewProjectionMatrix (iris_ProjMat * iris_ModelViewMat)\n" +
         "#define gl_NormalMatrix iris_NormalMat\n" +
-        "#define gl_TextureMatrix iris_TexMats\n" +
+        "#define gl_TextureMatrix iris_TextureMats\n" +
         "#define gl_ModelViewMatrixInverse inverse(iris_ModelViewMat)\n" +
         "#define gl_ProjectionMatrixInverse inverse(iris_ProjMat)\n" +
         "#define gl_ModelViewProjectionMatrixInverse inverse(iris_ProjMat * iris_ModelViewMat)\n" +
@@ -1266,6 +1564,7 @@ public final class CorePipeline
         "#define ftransform() (gl_ModelViewProjectionMatrix * gl_Vertex)\n" +
         "struct iris_FogParameters { vec4 color; float density; float start; float end; float scale; };\n" +
         "uniform iris_FogParameters iris_Fog;\n" +
+        "uniform int iris_FogDistanceMode;\n" +
         "#define gl_Fog iris_Fog\n" +
         "#define gl_MultiTexCoord2 vec4(0.0, 0.0, 0.0, 1.0)\n" +
         "#define gl_MultiTexCoord3 vec4(0.0, 0.0, 0.0, 1.0)\n" +
@@ -1326,34 +1625,55 @@ public final class CorePipeline
         "layout(location=4) in vec3 Normal;\n" +
         "uniform mat4 ModelViewMat;\n" +
         "uniform mat4 ProjMat;\n" +
+        "uniform mat4 TextureMat0;\n" +
+        "uniform mat4 TextureMat1;\n" +
+        "uniform ivec4 TexGenMode;\n" +
+        "uniform vec4 TexGenPlane[4];\n" +
         "uniform vec4 ColorModulator;\n" +
         "uniform int UseVertexColor;\n" +
         "uniform int LightingEnabled;\n" +
+        "uniform int LightMask;\n" +
+        "uniform int NormalizeNormals;\n" +
+        "uniform int RescaleNormals;\n" +
+        "uniform float NormalScale;\n" +
         "uniform vec3 Light0Dir;\n" +
         "uniform vec3 Light1Dir;\n" +
         "uniform float LightAmbient;\n" +
         "uniform float LightDiffuse;\n" +
         "uniform mat3 NormalMat;\n" +
+        "uniform int FogDistanceMode;\n" +
         "out vec4 vertexColor;\n" +
         "flat out vec4 flatColor;\n" +
-        "out vec2 texCoord0;\n" +
-        "out vec2 texCoord1;\n" +
+        "out vec4 texCoord0;\n" +
+        "out vec4 texCoord1;\n" +
         "out float vertexFog;\n" +
         "void main() {\n" +
         "  vec4 view = ModelViewMat * vec4(Position, 1.0);\n" +
         "  gl_Position = ProjMat * view;\n" +
-        "  vec4 color = (UseVertexColor != 0 ? Color : vec4(1.0)) * ColorModulator;\n" +
+        "  vec4 color = UseVertexColor != 0 ? Color : ColorModulator;\n" +
+        "  vec3 normal = NormalMat * Normal;\n" +
+        "  if (NormalizeNormals != 0) normal = normalize(normal);\n" +
+        "  else if (RescaleNormals != 0) normal *= NormalScale;\n" +
         "  if (LightingEnabled != 0) {\n" +
-        "    vec3 n = normalize(NormalMat * Normal);\n" +
-        "    float d0 = max(dot(n, normalize(Light0Dir)), 0.0);\n" +
-        "    float d1 = max(dot(n, normalize(Light1Dir)), 0.0);\n" +
-        "    color.rgb *= LightAmbient + LightDiffuse * (d0 + d1);\n" +
+        "    float d0 = (LightMask & 1) != 0 ? max(dot(normal, normalize(Light0Dir)), 0.0) : 0.0;\n" +
+        "    float d1 = (LightMask & 2) != 0 ? max(dot(normal, normalize(Light1Dir)), 0.0) : 0.0;\n" +
+        "    color.rgb = clamp(color.rgb * (LightAmbient + LightDiffuse * (d0 + d1)), 0.0, 1.0);\n" +
         "  }\n" +
         "  vertexColor = color;\n" +
         "  flatColor = color;\n" +
-        "  texCoord0 = UV0;\n" +
-        "  texCoord1 = UV1;\n" +
-        "  vertexFog = length(view.xyz);\n" +
+        "  vec4 coord = vec4(UV0, 0.0, 1.0);\n" +
+        "  vec3 reflection = reflect(normalize(view.xyz), normal);\n" +
+        "  float sphereScale = 2.0 * length(vec3(reflection.xy, reflection.z + 1.0));\n" +
+        "  for (int i = 0; i < 4; ++i) {\n" +
+        "    if (TexGenMode[i] == 9217) coord[i] = dot(TexGenPlane[i], vec4(Position, 1.0));\n" +
+        "    else if (TexGenMode[i] == 9216) coord[i] = dot(TexGenPlane[i], view);\n" +
+        "    else if (TexGenMode[i] == 9218 && i < 2) coord[i] = reflection[i] / max(sphereScale, 0.00000001) + 0.5;\n" +
+        "    else if (TexGenMode[i] == 34065 && i < 3) coord[i] = normal[i];\n" +
+        "    else if (TexGenMode[i] == 34066 && i < 3) coord[i] = reflection[i];\n" +
+        "  }\n" +
+        "  texCoord0 = TextureMat0 * coord;\n" +
+        "  texCoord1 = TextureMat1 * vec4(UV1, 0.0, 1.0);\n" +
+        "  vertexFog = FogDistanceMode == 34139 ? length(view.xyz) : (FogDistanceMode == 9216 ? view.z : abs(view.z));\n" +
         "}\n";
 
     private static final String DEFAULT_FRAGMENT =
@@ -1370,22 +1690,31 @@ public final class CorePipeline
         "uniform float FogEnd;\n" +
         "uniform float FogDensity;\n" +
         "uniform vec4 OverlayColor;\n" +
+        "uniform int OverlayEnabled;\n" +
         "uniform int FlatShading;\n" +
         "in vec4 vertexColor;\n" +
         "flat in vec4 flatColor;\n" +
-        "in vec2 texCoord0;\n" +
-        "in vec2 texCoord1;\n" +
+        "in vec4 texCoord0;\n" +
+        "in vec4 texCoord1;\n" +
         "in float vertexFog;\n" +
         "out vec4 fragColor;\n" +
         "void main() {\n" +
         "  vec4 color = FlatShading != 0 ? flatColor : vertexColor;\n" +
-        "  if (TextureEnabled != 0) color *= texture(Sampler0, texCoord0);\n" +
-        "  if (UseLightmap != 0) color *= texture(Sampler1, texCoord1 / 256.0);\n" +
-        "  if (OverlayColor.a > 0.0) color.rgb = mix(color.rgb, OverlayColor.rgb, OverlayColor.a);\n" +
+        "  if (TextureEnabled != 0) {\n" +
+        "    vec4 base = textureProj(Sampler0, texCoord0);\n" +
+        "    color *= base;\n" +
+        "    if (OverlayEnabled != 0) color.a = base.a;\n" +
+        "  }\n" +
+        "  if (OverlayEnabled != 0) color.rgb = mix(color.rgb, OverlayColor.rgb, OverlayColor.a);\n" +
+        "  if (UseLightmap != 0) {\n" +
+        "    vec4 lightmap = textureProj(Sampler1, texCoord1);\n" +
+        "    color.rgb *= lightmap.rgb;\n" +
+        "    if (OverlayEnabled == 0) color.a *= lightmap.a;\n" +
+        "  }\n" +
         "  if (AlphaTestFunc == 516 && color.a <= AlphaTestRef) discard;\n" +
         "  else if (AlphaTestFunc == 518 && color.a < AlphaTestRef) discard;\n" +
-        "  else if (AlphaTestFunc == 514 && abs(color.a - AlphaTestRef) > 0.0001) discard;\n" +
-        "  else if (AlphaTestFunc == 517 && abs(color.a - AlphaTestRef) <= 0.0001) discard;\n" +
+        "  else if (AlphaTestFunc == 514 && color.a != AlphaTestRef) discard;\n" +
+        "  else if (AlphaTestFunc == 517 && color.a == AlphaTestRef) discard;\n" +
         "  else if (AlphaTestFunc == 513 && color.a >= AlphaTestRef) discard;\n" +
         "  else if (AlphaTestFunc == 515 && color.a > AlphaTestRef) discard;\n" +
         "  else if (AlphaTestFunc == 512) discard;\n" +

@@ -304,28 +304,42 @@ public class SVertexBuilder
 
     public static void drawArrays(int drawMode, int first, int count, WorldRenderer wrr)
     {
+        drawArrays(drawMode, first, count, wrr, 0L);
+    }
+
+    public static void drawArrays(int drawMode, int first, int count, WorldRenderer wrr, long pointer)
+    {
         if (count != 0)
         {
-            VertexFormat vertexFormat = wrr.getVertexFormat();
-            int vertexStride = vertexFormat.getNextOffset();
-
-            if (vertexStride == 56)
-            {
-                GL20.glVertexAttribPointer(Shaders.midTexCoordAttrib, 2, GL11.GL_FLOAT, false, vertexStride, 32L);
-                GL20.glVertexAttribPointer(Shaders.tangentAttrib, 4, GL11.GL_SHORT, false, vertexStride, 40L);
-                GL20.glVertexAttribPointer(Shaders.entityAttrib, 3, GL11.GL_SHORT, false, vertexStride, 48L);
-                GL20.glEnableVertexAttribArray(Shaders.midTexCoordAttrib);
-                GL20.glEnableVertexAttribArray(Shaders.tangentAttrib);
-                GL20.glEnableVertexAttribArray(Shaders.entityAttrib);
-                GlStateManager.glDrawArrays(drawMode, first, count);
-                GL20.glDisableVertexAttribArray(Shaders.midTexCoordAttrib);
-                GL20.glDisableVertexAttribArray(Shaders.tangentAttrib);
-                GL20.glDisableVertexAttribArray(Shaders.entityAttrib);
-            }
-            else
-            {
-                GlStateManager.glDrawArrays(drawMode, first, count);
-            }
+            setupArrayPointers(wrr.getVertexFormat(), pointer);
+            GlStateManager.glDrawArrays(drawMode, first, count);
+            clearArrayPointers();
         }
+    }
+
+    public static void setupArrayPointers(VertexFormat vertexFormat, long pointer)
+    {
+        int vertexStride = vertexFormat.getNextOffset();
+
+        if (vertexStride == 56)
+        {
+            GL20.glVertexAttribPointer(Shaders.midTexCoordAttrib, 2, GL11.GL_FLOAT, false, vertexStride, pointer + 32L);
+            GL20.glVertexAttribPointer(Shaders.tangentAttrib, 4, GL11.GL_SHORT, false, vertexStride, pointer + 40L);
+            GL20.glVertexAttribPointer(Shaders.entityAttrib, 3, GL11.GL_SHORT, false, vertexStride, pointer + 48L);
+            GL20.glEnableVertexAttribArray(Shaders.midTexCoordAttrib);
+            GL20.glEnableVertexAttribArray(Shaders.tangentAttrib);
+            GL20.glEnableVertexAttribArray(Shaders.entityAttrib);
+        }
+        else
+        {
+            clearArrayPointers();
+        }
+    }
+
+    public static void clearArrayPointers()
+    {
+        GL20.glDisableVertexAttribArray(Shaders.midTexCoordAttrib);
+        GL20.glDisableVertexAttribArray(Shaders.tangentAttrib);
+        GL20.glDisableVertexAttribArray(Shaders.entityAttrib);
     }
 }

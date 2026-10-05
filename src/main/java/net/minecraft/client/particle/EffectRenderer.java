@@ -198,17 +198,9 @@ public class EffectRenderer
 
     private void updateEffectAlphaLayer(List<EntityFX> entitiesFX)
     {
-        if (entitiesFX.isEmpty())
-        {
-            return;
-        }
-
         this.deadParticles.clear();
-        long updateDeadline = System.currentTimeMillis() + 20L;
-        int size = entitiesFX.size();
-        int remainingParticles = size;
 
-        for (int particleIndex = 0; particleIndex < size; ++particleIndex)
+        for (int particleIndex = 0; particleIndex < entitiesFX.size(); ++particleIndex)
         {
             EntityFX particle = entitiesFX.get(particleIndex);
             this.tickParticle(particle);
@@ -217,34 +209,9 @@ public class EffectRenderer
             {
                 this.deadParticles.add(particle);
             }
-
-            --remainingParticles;
-
-            if ((particleIndex & 31) == 31 && System.currentTimeMillis() > updateDeadline)
-            {
-                break;
-            }
         }
 
-        if (remainingParticles > 0)
-        {
-            int particlesToCull = remainingParticles;
-            List<EntityFX> list = entitiesFX;
-            for (int i = size - remainingParticles; i < list.size() && particlesToCull > 0; ++i)
-            {
-                EntityFX culledParticle = list.get(i);
-                culledParticle.setDead();
-                list.remove(i);
-                --i;
-                --particlesToCull;
-            }
-        }
-
-        if (!this.deadParticles.isEmpty())
-        {
-            entitiesFX.removeAll(this.deadParticles);
-            this.deadParticles.clear();
-        }
+        entitiesFX.removeAll(this.deadParticles);
     }
 
     private void tickParticle(final EntityFX particle)

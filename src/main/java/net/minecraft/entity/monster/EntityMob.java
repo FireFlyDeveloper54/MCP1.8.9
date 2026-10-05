@@ -105,7 +105,7 @@ public abstract class EntityMob extends EntityCreature implements IMob
             if (i > 0)
             {
                 float[] yawSC = new float[2];
-                MathHelper.sinCosDeg(this.rotationYaw, yawSC);
+                MathHelper.sinCos(this.rotationYaw * (float)Math.PI / 180.0F, yawSC);
                 entityIn.addVelocity((double)(-yawSC[0] * (float)i * 0.5F), 0.1D, (double)(yawSC[1] * (float)i * 0.5F));
                 this.motionX *= 0.6D;
                 this.motionZ *= 0.6D;

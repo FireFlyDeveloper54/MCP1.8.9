@@ -267,13 +267,7 @@ public class LightingEngine {
 
                 final IBlockState state = LightingEngineHelpers.posToState(this.curPos, this.curChunk);
                 final int luminosity = this.getCursorLuminosity(state, lightType);
-                final int opacity;
-
-                if (luminosity >= MAX_LIGHT - 1) {
-                    opacity = 1;
-                } else {
-                    opacity = this.getPosOpacity(this.curPos, state);
-                }
+                final int opacity = this.getPosOpacity(this.curPos, state);
 
 
                 if (this.calculateNewLightFromCursor(luminosity, opacity, lightType) < curLight) {
@@ -376,6 +370,9 @@ public class LightingEngine {
 
                 info.light = getCachedLightFor(nChunk, nSection, nPos, lightType);
                 info.section = nSection;
+            } else if (EnumFacing.VALUES[i].getAxis() != EnumFacing.Axis.Y) {
+                LightingHooks.flagSecBoundaryForUpdate(this.curChunk, this.curPos, lightType,
+                        EnumFacing.VALUES[i], LightingHooks.EnumBoundaryFacing.OUT);
             }
         }
     }
@@ -417,13 +414,7 @@ public class LightingEngine {
         final IBlockState state = LightingEngineHelpers.posToState(this.curPos, this.curChunk);
 
         final int luminosity = this.getCursorLuminosity(state, lightType);
-        final int opacity;
-
-        if (luminosity >= MAX_LIGHT - 1) {
-            opacity = 1;
-        } else {
-            opacity = this.getPosOpacity(this.curPos, state);
-        }
+        final int opacity = this.getPosOpacity(this.curPos, state);
 
         return this.calculateNewLightFromCursor(luminosity, opacity, lightType);
     }
@@ -543,7 +534,12 @@ public class LightingEngine {
     }
 
     private int getPosOpacity(final BlockPos pos, final IBlockState state) {
-        return MathHelper.clamp_int(state.getBlock().getLightOpacity(), 1, MAX_LIGHT);
+        int opacity = state.getBlock().getLightOpacity();
+        // Vanilla applies this exception to both block light and skylight.
+        if (opacity >= MAX_LIGHT && LightingEngineHelpers.getLightValueForState(state, this.world, pos) > 0) {
+            opacity = 1;
+        }
+        return MathHelper.clamp_int(opacity, 1, MAX_LIGHT);
     }
 
     private Chunk getChunk(final BlockPos pos) {

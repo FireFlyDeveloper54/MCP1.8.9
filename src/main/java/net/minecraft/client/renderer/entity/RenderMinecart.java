@@ -1,7 +1,6 @@
 package net.minecraft.client.renderer.entity;
 
 import net.minecraft.block.state.IBlockState;
-import optimization.FastTrig;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.ModelBase;
 import net.minecraft.client.model.ModelMinecart;
@@ -63,7 +62,7 @@ public class RenderMinecart<T extends EntityMinecart> extends Render<T>
             if (railDirection.lengthVector() != 0.0D)
             {
                 railDirection = railDirection.normalize();
-                entityYaw = (float)(FastTrig.atan2(railDirection.zCoord, railDirection.xCoord) * 180.0D / Math.PI);
+                entityYaw = (float)(Math.atan2(railDirection.zCoord, railDirection.xCoord) * 180.0D / Math.PI);
                 cartPitch = (float)(Math.atan(railDirection.yCoord) * 73.0D);
             }
         }

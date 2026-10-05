@@ -1,7 +1,6 @@
 package net.minecraft.client.renderer.entity.layers;
 
 import java.util.Random;
-import optimization.FastTrig;
 import net.minecraft.client.model.ModelBox;
 import net.minecraft.client.model.ModelRenderer;
 import net.minecraft.client.renderer.GlStateManager;
@@ -53,8 +52,8 @@ public class LayerArrow implements LayerRenderer<EntityLivingBase>
                 directionY = directionY * -1.0F;
                 directionZ = directionZ * -1.0F;
                 float horizontalLength = MathHelper.sqrt_float(directionX * directionX + directionZ * directionZ);
-                arrowEntity.prevRotationYaw = arrowEntity.rotationYaw = (float)(FastTrig.atan2((double)directionX, (double)directionZ) * 180.0D / Math.PI);
-                arrowEntity.prevRotationPitch = arrowEntity.rotationPitch = (float)(FastTrig.atan2((double)directionY, (double)horizontalLength) * 180.0D / Math.PI);
+                arrowEntity.prevRotationYaw = arrowEntity.rotationYaw = (float)(Math.atan2((double)directionX, (double)directionZ) * 180.0D / Math.PI);
+                arrowEntity.prevRotationPitch = arrowEntity.rotationPitch = (float)(Math.atan2((double)directionY, (double)horizontalLength) * 180.0D / Math.PI);
                 this.renderer.getRenderManager().renderEntityWithPosYaw(arrowEntity, 0.0D, 0.0D, 0.0D, 0.0F, partialTicks);
                 GlStateManager.popMatrix();
             }

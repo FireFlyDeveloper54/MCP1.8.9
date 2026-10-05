@@ -11,7 +11,6 @@ import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.resources.IResourceManager;
 import net.minecraft.src.Config;
 import net.minecraft.util.ResourceLocation;
-import net.optifine.Mipmaps;
 import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -100,7 +99,52 @@ public class TextureUtil
 
     private static int blendColors(int firstColor, int secondColor, int thirdColor, int fourthColor, boolean alpha)
     {
-        return Mipmaps.alphaBlend(firstColor, secondColor, thirdColor, fourthColor);
+        if (!alpha)
+        {
+            int i1 = blendColorComponent(firstColor, secondColor, thirdColor, fourthColor, 24);
+            int j1 = blendColorComponent(firstColor, secondColor, thirdColor, fourthColor, 16);
+            int k1 = blendColorComponent(firstColor, secondColor, thirdColor, fourthColor, 8);
+            int l1 = blendColorComponent(firstColor, secondColor, thirdColor, fourthColor, 0);
+            return i1 << 24 | j1 << 16 | k1 << 8 | l1;
+        }
+        else
+        {
+            mipmapBuffer[0] = firstColor;
+            mipmapBuffer[1] = secondColor;
+            mipmapBuffer[2] = thirdColor;
+            mipmapBuffer[3] = fourthColor;
+            float f = 0.0F;
+            float f1 = 0.0F;
+            float f2 = 0.0F;
+            float f3 = 0.0F;
+
+            for (int i = 0; i < 4; ++i)
+            {
+                if (mipmapBuffer[i] >> 24 != 0)
+                {
+                    f += (float)Math.pow((double)((float)(mipmapBuffer[i] >> 24 & 255) / 255.0F), 2.2D);
+                    f1 += (float)Math.pow((double)((float)(mipmapBuffer[i] >> 16 & 255) / 255.0F), 2.2D);
+                    f2 += (float)Math.pow((double)((float)(mipmapBuffer[i] >> 8 & 255) / 255.0F), 2.2D);
+                    f3 += (float)Math.pow((double)((float)(mipmapBuffer[i] >> 0 & 255) / 255.0F), 2.2D);
+                }
+            }
+
+            f = f / 4.0F;
+            f1 = f1 / 4.0F;
+            f2 = f2 / 4.0F;
+            f3 = f3 / 4.0F;
+            int i2 = (int)(Math.pow((double)f, 0.45454545454545453D) * 255.0D);
+            int j = (int)(Math.pow((double)f1, 0.45454545454545453D) * 255.0D);
+            int k = (int)(Math.pow((double)f2, 0.45454545454545453D) * 255.0D);
+            int l = (int)(Math.pow((double)f3, 0.45454545454545453D) * 255.0D);
+
+            if (i2 < 96)
+            {
+                i2 = 0;
+            }
+
+            return i2 << 24 | j << 16 | k << 8 | l;
+        }
     }
 
     private static int blendColorComponent(int firstColor, int secondColor, int thirdColor, int fourthColor, int componentShift)

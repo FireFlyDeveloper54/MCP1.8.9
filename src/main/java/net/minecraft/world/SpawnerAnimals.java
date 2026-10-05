@@ -2,9 +2,7 @@ package net.minecraft.world;
 
 import com.google.common.collect.Sets;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import net.minecraft.block.Block;
@@ -26,9 +24,6 @@ public final class SpawnerAnimals
 {
     private static final int MOB_COUNT_DIV = 289;
     private final Set<ChunkCoordIntPair> eligibleChunksForSpawning = Sets.<ChunkCoordIntPair>newHashSet();
-    private Map<Class, EntityLiving> mapSampleEntitiesByClass = new HashMap();
-    private int lastPlayerChunkX = Integer.MAX_VALUE;
-    private int lastPlayerChunkZ = Integer.MAX_VALUE;
     private int countChunkPos;
 
     public int findChunksForSpawning(WorldServer worldServerIn, boolean spawnHostileMobs, boolean spawnPeacefulMobs, boolean spawnAnimals)
@@ -39,61 +34,39 @@ public final class SpawnerAnimals
         }
         else
         {
-            boolean flag = true;
-            EntityPlayer entityplayer = null;
+            this.eligibleChunksForSpawning.clear();
+            int i = 0;
 
-            if (worldServerIn.playerEntities.size() == 1)
+            for (EntityPlayer entityplayer1 : worldServerIn.playerEntities)
             {
-                entityplayer = (EntityPlayer)worldServerIn.playerEntities.get(0);
-
-                if (this.eligibleChunksForSpawning.size() > 0 && entityplayer != null && entityplayer.chunkCoordX == this.lastPlayerChunkX && entityplayer.chunkCoordZ == this.lastPlayerChunkZ)
+                if (!entityplayer1.isSpectator())
                 {
-                    flag = false;
-                }
-            }
+                    int j = MathHelper.floor_double(entityplayer1.posX / 16.0D);
+                    int k = MathHelper.floor_double(entityplayer1.posZ / 16.0D);
+                    int l = 8;
 
-            if (flag)
-            {
-                this.eligibleChunksForSpawning.clear();
-                int i = 0;
-
-                for (EntityPlayer entityplayer1 : worldServerIn.playerEntities)
-                {
-                    if (!entityplayer1.isSpectator())
+                    for (int intValue = -l; intValue <= l; ++intValue)
                     {
-                        int j = MathHelper.floor_double(entityplayer1.posX / 16.0D);
-                        int k = MathHelper.floor_double(entityplayer1.posZ / 16.0D);
-                        int l = 8;
-
-                        for (int intValue = -l; intValue <= l; ++intValue)
+                        for (int secondIntValue = -l; secondIntValue <= l; ++secondIntValue)
                         {
-                            for (int secondIntValue = -l; secondIntValue <= l; ++secondIntValue)
+                            boolean flag1 = intValue == -l || intValue == l || secondIntValue == -l || secondIntValue == l;
+                            ChunkCoordIntPair chunkcoordintpair = new ChunkCoordIntPair(intValue + j, secondIntValue + k);
+
+                            if (!this.eligibleChunksForSpawning.contains(chunkcoordintpair))
                             {
-                                boolean flag1 = intValue == -l || intValue == l || secondIntValue == -l || secondIntValue == l;
-                                ChunkCoordIntPair chunkcoordintpair = new ChunkCoordIntPair(intValue + j, secondIntValue + k);
+                                ++i;
 
-                                if (!this.eligibleChunksForSpawning.contains(chunkcoordintpair))
+                                if (!flag1 && worldServerIn.getWorldBorder().contains(chunkcoordintpair))
                                 {
-                                    ++i;
-
-                                    if (!flag1 && worldServerIn.getWorldBorder().contains(chunkcoordintpair))
-                                    {
-                                        this.eligibleChunksForSpawning.add(chunkcoordintpair);
-                                    }
+                                    this.eligibleChunksForSpawning.add(chunkcoordintpair);
                                 }
                             }
                         }
                     }
                 }
-
-                this.countChunkPos = i;
-
-                if (entityplayer != null)
-                {
-                    this.lastPlayerChunkX = entityplayer.chunkCoordX;
-                    this.lastPlayerChunkZ = entityplayer.chunkCoordZ;
-                }
             }
+
+            this.countChunkPos = i;
 
             int sixteenthIntValue = 0;
             BlockPos blockpos2 = worldServerIn.getSpawnPoint();
@@ -162,13 +135,7 @@ public final class SpawnerAnimals
 
                                                 try
                                                 {
-                                                    entityliving = (EntityLiving)this.mapSampleEntitiesByClass.get(biomegenbase$spawnlistentry.entityClass);
-
-                                                    if (entityliving == null)
-                                                    {
-                                                        entityliving = (EntityLiving)biomegenbase$spawnlistentry.entityClass.getConstructor(new Class[] {World.class}).newInstance(new Object[] {worldServerIn});
-                                                        this.mapSampleEntitiesByClass.put(biomegenbase$spawnlistentry.entityClass, entityliving);
-                                                    }
+                                                    entityliving = (EntityLiving)biomegenbase$spawnlistentry.entityClass.getConstructor(new Class[] {World.class}).newInstance(new Object[] {worldServerIn});
                                                 }
                                                 catch (Exception exception1)
                                                 {
@@ -181,7 +148,6 @@ public final class SpawnerAnimals
 
                                                 if (flag2)
                                                 {
-                                                    this.mapSampleEntitiesByClass.remove(biomegenbase$spawnlistentry.entityClass);
                                                     ientitylivingdata = entityliving.onInitialSpawn(worldServerIn.getDifficultyForLocation(new BlockPos(entityliving)), ientitylivingdata);
 
                                                     if (entityliving.isNotColliding())

@@ -1,7 +1,6 @@
 package net.minecraft.client.renderer.entity;
 
 import net.minecraft.client.model.ModelGuardian;
-import optimization.FastTrig;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.OpenGlHelper;
 import net.minecraft.client.renderer.Tessellator;
@@ -101,7 +100,7 @@ public class RenderGuardian extends RenderLiving<EntityGuardian>
             double beamLength = beamVector.lengthVector() + 1.0D;
             beamVector = beamVector.normalize();
             float beamPitchRadians = (float)Math.acos(beamVector.yCoord);
-            float beamYawRadians = (float)FastTrig.atan2(beamVector.zCoord, beamVector.xCoord);
+            float beamYawRadians = (float)Math.atan2(beamVector.zCoord, beamVector.xCoord);
             GlStateManager.rotate((((float)Math.PI / 2F) + -beamYawRadians) * (180F / (float)Math.PI), 0.0F, 1.0F, 0.0F);
             GlStateManager.rotate(beamPitchRadians * (180F / (float)Math.PI), 1.0F, 0.0F, 0.0F);
             int beamPass = 1;

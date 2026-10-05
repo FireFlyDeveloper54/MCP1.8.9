@@ -22,8 +22,8 @@ public class CullTask implements Runnable {
     private volatile OcclusionCullingInstance culling;
     private final Minecraft client = Minecraft.getMinecraft();
     private final Set<String> unCullable;
-    public boolean requestCull = false;
-    public long lastTime = 0;
+    public volatile boolean requestCull = false;
+    public volatile long lastTime = 0;
 
     private final Vec3d lastPos = new Vec3d(0, 0, 0);
     private final Vec3d aabbMin = new Vec3d(0, 0, 0);
@@ -139,8 +139,6 @@ public class CullTask implements Runnable {
                                 } else {
                                     entry.setCulled(false);
                                 }
-                            } else {
-                                entry.setCulled(false);
                             }
                         }
                         for (int entityIndex = 0; entityIndex < currentSnapshot.entities.size(); ++entityIndex) {
@@ -171,8 +169,6 @@ public class CullTask implements Runnable {
                                 aabbMax.set(boundingBox.maxX, boundingBox.maxY, boundingBox.maxZ);
                                 boolean visible = currentCulling.isAABBVisible(aabbMin, aabbMax, camera);
                                 entity.setCulled(!visible);
-                            } else {
-                                entity.setCulled(false);
                             }
                         }
                         lastTime = (System.currentTimeMillis() - start);

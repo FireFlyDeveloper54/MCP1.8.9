@@ -100,8 +100,8 @@ public class EntityArrow extends Entity implements IProjectile
         this.setLocationAndAngles(shooter.posX, shooter.posY + (double)shooter.getEyeHeight(), shooter.posZ, shooter.rotationYaw, shooter.rotationPitch);
         float[] yawSC = new float[2];
         float[] pitchSC = new float[2];
-        MathHelper.sinCosDeg(this.rotationYaw, yawSC);
-        MathHelper.sinCosDeg(this.rotationPitch, pitchSC);
+        MathHelper.sinCos(this.rotationYaw / 180.0F * (float)Math.PI, yawSC);
+        MathHelper.sinCos(this.rotationPitch / 180.0F * (float)Math.PI, pitchSC);
         this.posX -= (double)(yawSC[1] * 0.16F);
         this.posY -= 0.10000000149011612D;
         this.posZ -= (double)(yawSC[0] * 0.16F);

@@ -60,8 +60,8 @@ public class EntityLookHelper
             double deltaY = this.posY - (this.entity.posY + (double)this.entity.getEyeHeight());
             double deltaZ = this.posZ - this.entity.posZ;
             double horizontalDistance = (double)MathHelper.sqrt_double(deltaX * deltaX + deltaZ * deltaZ);
-            float targetYaw = (float)(optimization.FastTrig.atan2(deltaZ, deltaX) * 180.0D / Math.PI) - 90.0F;
-            float targetPitch = (float)(-(optimization.FastTrig.atan2(deltaY, horizontalDistance) * 180.0D / Math.PI));
+            float targetYaw = (float)(MathHelper.atan2(deltaZ, deltaX) * 180.0D / Math.PI) - 90.0F;
+            float targetPitch = (float)(-(MathHelper.atan2(deltaY, horizontalDistance) * 180.0D / Math.PI));
             this.entity.rotationPitch = this.updateRotation(this.entity.rotationPitch, targetPitch, this.deltaLookPitch);
             this.entity.rotationYawHead = this.updateRotation(this.entity.rotationYawHead, targetYaw, this.deltaLookYaw);
         }

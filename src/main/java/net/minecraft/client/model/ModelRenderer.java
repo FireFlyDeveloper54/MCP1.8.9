@@ -422,12 +422,12 @@ public class ModelRenderer
             if (Config.isShaders())
             {
                 this.vertexBuffer.bindBuffer();
-                ShadersRender.setupArrayPointersVbo();
+                ShadersRender.setupArrayPointersVbo(format);
             }
             else
             {
                 this.vertexBuffer.bindDrawState();
-                net.minecraft.client.renderer.CorePipeline.prepareDraw(false, false);
+                net.minecraft.client.renderer.CorePipeline.prepareDraw(format.hasColor(), format.hasUvOffset(1));
             }
 
             GlStateManager.glDrawArrays(this.compiledMode, 0, this.compiledVertexCount);

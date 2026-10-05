@@ -42,8 +42,8 @@ public class ActiveRenderInfo
         float yaw = entityplayerIn.rotationYaw;
         float[] yawSC = new float[2];
         float[] pitchSC = new float[2];
-        MathHelper.sinCosDeg(yaw, yawSC);
-        MathHelper.sinCosDeg(pitch, pitchSC);
+        MathHelper.sinCos(yaw * (float)Math.PI / 180.0F, yawSC);
+        MathHelper.sinCos(pitch * (float)Math.PI / 180.0F, pitchSC);
         rotationX = yawSC[1] * directionMultiplier;
         rotationZ = yawSC[0] * directionMultiplier;
         rotationYZ = -rotationZ * pitchSC[0] * directionMultiplier;

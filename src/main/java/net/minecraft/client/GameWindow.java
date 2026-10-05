@@ -114,6 +114,7 @@ public final class GameWindow
     private static long handle;
     private static VideoMode currentMode = new VideoMode(854, 480);
     private static VideoMode desktopMode;
+    private static VideoMode fullscreenMode;
     private static String title = "Minecraft 1.8.9";
     private static boolean created;
     private static boolean resized;
@@ -133,12 +134,14 @@ public final class GameWindow
     private static final ArrayDeque<KeyEvent> keyEvents = new ArrayDeque<KeyEvent>();
     private static final ArrayDeque<MouseEvent> mouseEvents = new ArrayDeque<MouseEvent>();
     private static KeyEvent currentKey = new KeyEvent();
+    private static KeyEvent pendingCharacterKey;
     private static MouseEvent currentMouse = new MouseEvent();
     private static int mouseX;
     private static int mouseY;
     private static int mouseDx;
     private static int mouseDy;
     private static int mouseWheel;
+    private static double scrollRemainder;
     private static boolean grabbed;
     private static boolean mouseInside = true;
     private static boolean repeatEvents;
@@ -250,27 +253,28 @@ public final class GameWindow
 
     public static void setSize(int width, int height)
     {
-        currentMode = new VideoMode(width, height, currentMode.bpp, currentMode.freq);
-        fullscreen = false;
-
-        if (handle != NULL)
-        {
-            glfwSetWindowMonitor(handle, NULL, 0, 0, width, height, GLFW_DONT_CARE);
-            centerWindow();
-            refreshFramebufferSize();
-        }
+        setVideoMode(new VideoMode(width, height, currentMode.bpp, currentMode.freq));
     }
 
     public static void setVideoMode(VideoMode mode)
     {
         currentMode = mode;
-        fullscreen = false;
+
+        if (fullscreen)
+        {
+            fullscreenMode = mode;
+            setFullscreen(true);
+            return;
+        }
+
+        windowedWidth = Math.max(1, mode.width);
+        windowedHeight = Math.max(1, mode.height);
 
         if (handle != NULL)
         {
-            glfwSetWindowMonitor(handle, NULL, 0, 0, mode.width, mode.height, GLFW_DONT_CARE);
-            centerWindow();
+            glfwSetWindowSize(handle, windowedWidth, windowedHeight);
             refreshFramebufferSize();
+            saveWindowedBounds();
         }
     }
 
@@ -280,13 +284,19 @@ public final class GameWindow
 
         if (handle == NULL)
         {
-            fullscreen = fullscreenIn;
-
-            if (fullscreenIn && desktopMode != null)
+            if (fullscreenIn && !fullscreen)
             {
-                currentMode = desktopMode;
+                windowedWidth = Math.max(1, currentMode.width);
+                windowedHeight = Math.max(1, currentMode.height);
             }
 
+            fullscreen = fullscreenIn;
+            currentMode = fullscreenIn ? (fullscreenMode != null ? fullscreenMode : desktopMode) : new VideoMode(windowedWidth, windowedHeight, currentMode.bpp, currentMode.freq);
+            return;
+        }
+
+        if (!fullscreenIn && !fullscreen)
+        {
             return;
         }
 
@@ -300,14 +310,14 @@ public final class GameWindow
         if (fullscreenIn)
         {
             long monitor = glfwGetPrimaryMonitor();
-            GLFWVidMode vidMode = glfwGetVideoMode(monitor);
-            glfwSetWindowMonitor(handle, monitor, 0, 0, vidMode.width(), vidMode.height(), vidMode.refreshRate());
-            currentMode = new VideoMode(vidMode.width(), vidMode.height(), vidMode.redBits() + vidMode.greenBits() + vidMode.blueBits(), vidMode.refreshRate());
+            VideoMode mode = fullscreenMode != null ? fullscreenMode : desktopMode;
+            glfwSetWindowMonitor(handle, monitor, 0, 0, mode.width, mode.height, mode.freq > 0 ? mode.freq : GLFW_DONT_CARE);
+            currentMode = mode;
         }
         else
         {
-            int width = windowedBoundsValid ? windowedWidth : Math.max(1, currentMode.width);
-            int height = windowedBoundsValid ? windowedHeight : Math.max(1, currentMode.height);
+            int width = windowedWidth;
+            int height = windowedHeight;
             int x = windowedBoundsValid ? windowedX : 0;
             int y = windowedBoundsValid ? windowedY : 0;
             glfwSetWindowMonitor(handle, NULL, x, y, width, height, GLFW_DONT_CARE);
@@ -345,7 +355,7 @@ public final class GameWindow
     {
         ensureGlfw();
         title = windowTitle;
-        currentMode = new VideoMode(Math.max(1, width), Math.max(1, height), currentMode.bpp, currentMode.freq);
+        currentMode = fullscreen ? (fullscreenMode != null ? fullscreenMode : desktopMode) : new VideoMode(Math.max(1, width), Math.max(1, height), currentMode.bpp, currentMode.freq);
 
         if (handle != NULL)
         {
@@ -364,6 +374,11 @@ public final class GameWindow
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
         glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE);
+
+        if (fullscreen && currentMode.freq > 0)
+        {
+            glfwWindowHint(GLFW_REFRESH_RATE, currentMode.freq);
+        }
 
         if (depthBits > 0)
         {
@@ -422,6 +437,7 @@ public final class GameWindow
         {
             public void invoke(long window, boolean callbackFocused)
             {
+                pendingCharacterKey = null;
                 focused = callbackFocused;
 
                 if (!callbackFocused)
@@ -435,7 +451,10 @@ public final class GameWindow
         {
             public void invoke(long window, int key, int scancode, int action, int mods)
             {
-                if (ImeSupport.isComposing(window) && ImeSupport.shouldSuppressKey(key))
+                pendingCharacterKey = null;
+                boolean composing = ImeSupport.isComposing(window);
+
+                if (composing && ImeSupport.shouldSuppressKey(key))
                 {
                     return;
                 }
@@ -452,6 +471,11 @@ public final class GameWindow
                 event.pressed = action != GLFW_RELEASE;
                 event.repeat = action == GLFW_REPEAT;
                 keyEvents.addLast(event);
+
+                if (event.pressed && !composing && isCharacterKey(key))
+                {
+                    pendingCharacterKey = event;
+                }
             }
         };
         glfwSetKeyCallback(handle, keyCallback);
@@ -467,6 +491,7 @@ public final class GameWindow
         {
             public void invoke(long window, int button, int action, int mods)
             {
+                pendingCharacterKey = null;
                 if (button >= 0 && button < mouseDown.length)
                 {
                     mouseDown[button] = action == GLFW_PRESS;
@@ -485,6 +510,7 @@ public final class GameWindow
         {
             public void invoke(long window, double xpos, double ypos)
             {
+                pendingCharacterKey = null;
                 int x = mapMouseX(xpos);
                 int y = mapMouseY(ypos);
                 int dx = x - mouseX;
@@ -507,7 +533,16 @@ public final class GameWindow
         {
             public void invoke(long window, double xoffset, double yoffset)
             {
-                int wheel = (int)yoffset;
+                pendingCharacterKey = null;
+                scrollRemainder += yoffset;
+                int wheel = (int)scrollRemainder;
+                scrollRemainder -= wheel;
+
+                if (wheel == 0)
+                {
+                    return;
+                }
+
                 mouseWheel += wheel;
                 MouseEvent event = new MouseEvent();
                 event.x = mouseX;
@@ -521,6 +556,7 @@ public final class GameWindow
         {
             public void invoke(long window, boolean entered)
             {
+                pendingCharacterKey = null;
                 mouseInside = entered;
             }
         };
@@ -536,6 +572,8 @@ public final class GameWindow
         glfwShowWindow(handle);
         created = true;
         focused = true;
+        pendingCharacterKey = null;
+        scrollRemainder = 0.0D;
         keyEvents.clear();
         mouseEvents.clear();
     }
@@ -549,6 +587,8 @@ public final class GameWindow
         }
 
         created = false;
+        pendingCharacterKey = null;
+        scrollRemainder = 0.0D;
         keyEvents.clear();
         mouseEvents.clear();
     }
@@ -562,7 +602,16 @@ public final class GameWindow
 
         resized = false;
         glfwSwapBuffers(handle);
-        glfwPollEvents();
+        pendingCharacterKey = null;
+
+        try
+        {
+            glfwPollEvents();
+        }
+        finally
+        {
+            pendingCharacterKey = null;
+        }
     }
 
     public static void sync(int fps)
@@ -750,12 +799,21 @@ public final class GameWindow
 
     private static void queueCharEvent(int codepoint)
     {
-        if (codepoint < 32 || codepoint == 127)
+        KeyEvent physicalEvent = pendingCharacterKey;
+        pendingCharacterKey = null;
+
+        if (!Character.isValidCodePoint(codepoint) || codepoint < 32 || codepoint == 127)
         {
             return;
         }
 
         char[] characters = Character.toChars(codepoint);
+
+        if (characters.length == 1 && physicalEvent != null)
+        {
+            physicalEvent.character = characters[0];
+            return;
+        }
 
         for (int i = 0; i < characters.length; ++i)
         {
@@ -765,6 +823,11 @@ public final class GameWindow
             event.pressed = true;
             keyEvents.addLast(event);
         }
+    }
+
+    private static boolean isCharacterKey(int key)
+    {
+        return key == GLFW_KEY_UNKNOWN || key >= GLFW_KEY_SPACE && key <= GLFW_KEY_GRAVE_ACCENT || key == GLFW_KEY_WORLD_1 || key == GLFW_KEY_WORLD_2 || key >= GLFW_KEY_KP_0 && key <= GLFW_KEY_KP_9 || key >= GLFW_KEY_KP_DECIMAL && key <= GLFW_KEY_KP_ADD || key == GLFW_KEY_KP_EQUAL;
     }
 
     private static void saveWindowedBounds()
@@ -872,6 +935,7 @@ public final class GameWindow
 
     private static void releaseCapturedInput()
     {
+        pendingCharacterKey = null;
         for (int key = 0; key < keysDown.length; ++key)
         {
             if (keysDown[key])

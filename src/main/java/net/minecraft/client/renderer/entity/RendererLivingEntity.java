@@ -394,7 +394,7 @@ public abstract class RendererLivingEntity<T extends EntityLivingBase> extends R
 
     protected void unsetBrightness()
     {
-        GlStateManager.setOverlayColor(0.0F, 0.0F, 0.0F, 0.0F);
+        GlStateManager.clearOverlayColor();
         GlStateManager.setActiveTexture(OpenGlHelper.defaultTexUnit);
         GlStateManager.enableTexture2D();
         GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);

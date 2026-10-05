@@ -622,7 +622,7 @@ public abstract class EntityPlayer extends EntityLivingBase
         if (cause != null)
         {
             float[] knockSC = new float[2];
-            MathHelper.sinCosDeg(this.attackedAtYaw + this.rotationYaw, knockSC);
+            MathHelper.sinCos((this.attackedAtYaw + this.rotationYaw) * (float)Math.PI / 180.0F, knockSC);
             this.motionX = (double)(-knockSC[1] * 0.1F);
             this.motionZ = (double)(-knockSC[0] * 0.1F);
         }
@@ -745,8 +745,8 @@ public abstract class EntityPlayer extends EntityLivingBase
                 float thirdFloatValue = 0.3F;
                 float[] dropYawSC = new float[2];
                 float[] dropPitchSC = new float[2];
-                MathHelper.sinCosDeg(this.rotationYaw, dropYawSC);
-                MathHelper.sinCosDeg(this.rotationPitch, dropPitchSC);
+                MathHelper.sinCos(this.rotationYaw / 180.0F * (float)Math.PI, dropYawSC);
+                MathHelper.sinCos(this.rotationPitch / 180.0F * (float)Math.PI, dropPitchSC);
                 entityitem.motionX = (double)(-dropYawSC[0] * dropPitchSC[1] * thirdFloatValue);
                 entityitem.motionZ = (double)(dropYawSC[1] * dropPitchSC[1] * thirdFloatValue);
                 entityitem.motionY = (double)(-dropPitchSC[0] * thirdFloatValue + 0.1F);
@@ -1191,7 +1191,7 @@ public abstract class EntityPlayer extends EntityLivingBase
                         if (i > 0)
                         {
                             float[] yawSC = new float[2];
-                            MathHelper.sinCosDeg(this.rotationYaw, yawSC);
+                            MathHelper.sinCos(this.rotationYaw * (float)Math.PI / 180.0F, yawSC);
                             targetEntity.addVelocity((double)(-yawSC[0] * (float)i * 0.5F), 0.1D, (double)(yawSC[1] * (float)i * 0.5F));
                             this.motionX *= 0.6D;
                             this.motionZ *= 0.6D;

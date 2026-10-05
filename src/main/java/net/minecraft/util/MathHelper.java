@@ -3,16 +3,15 @@ package net.minecraft.util;
 import java.util.Random;
 import java.util.UUID;
 import net.optifine.util.MathUtils;
-import optimization.betterfps.BetterFps;
-import optimization.betterfps.HybridMath;
 
 public class MathHelper
 {
     public static final float SQRT_2 = sqrt_float(2.0F);
+    private static final float[] SIN_TABLE = new float[65536];
     public static final float PI = MathUtils.roundToFloat(Math.PI);
     public static final float TWO_PI = MathUtils.roundToFloat((Math.PI * 2D));
     public static final float HALF_PI = MathUtils.roundToFloat((Math.PI / 2D));
-    public static final float DEG_TO_RAD = MathUtils.roundToFloat(0.017453292519943295D);
+    public static final float DEG_TO_RAD = 0.017453292F;
     public static boolean fastMath = false;
     private static final int[] multiplyDeBruijnBitPosition;
     private static final double FRAC_BIAS;
@@ -21,88 +20,45 @@ public class MathHelper
 
     public static float sin(float value)
     {
-        if (BetterFps.isHybridFastPath())
-        {
-            return HybridMath.sin(value);
-        }
-
-        return BetterFps.sin(value);
+        return SIN_TABLE[(int)(value * 10430.378F) & 65535];
     }
 
     public static float cos(float value)
     {
-        if (BetterFps.isHybridFastPath())
-        {
-            return HybridMath.cos(value);
-        }
-
-        return BetterFps.cos(value);
+        return SIN_TABLE[(int)(value * 10430.378F + 16384.0F) & 65535];
     }
 
 
     public static void sinCos(float value, float[] out)
     {
-        if (BetterFps.isHybridFastPath())
-        {
-            HybridMath.sinCos(value, out);
-            return;
-        }
-
-        BetterFps.sinCos(value, out);
+        out[0] = sin(value);
+        out[1] = cos(value);
     }
 
 
     public static float sinDeg(float degrees)
     {
-        if (BetterFps.isHybridFastPath())
-        {
-            return HybridMath.sinDeg(degrees);
-        }
-
-        return BetterFps.sinDeg(degrees);
+        return sin(degrees * DEG_TO_RAD);
     }
 
     public static float cosDeg(float degrees)
     {
-        if (BetterFps.isHybridFastPath())
-        {
-            return HybridMath.cosDeg(degrees);
-        }
-
-        return BetterFps.cosDeg(degrees);
+        return cos(degrees * DEG_TO_RAD);
     }
 
 
     public static void sinCosDeg(float degrees, float[] out)
     {
-        if (BetterFps.isHybridFastPath())
-        {
-            HybridMath.sinCosDeg(degrees, out);
-            return;
-        }
-
-        BetterFps.sinCosDeg(degrees, out);
+        sinCos(degrees * DEG_TO_RAD, out);
     }
 
     public static float sqrt_float(float value)
     {
-        if (Float.isNaN(value) || Float.isInfinite(value)) return (float)Math.sqrt((double)value);
-        if (value <= 0.0F) return 0.0F;
-        if (fastMath)
-        {
-            return value * (float)fastInvSqrt((double)value);
-        }
         return (float)Math.sqrt((double)value);
     }
 
     public static float sqrt_double(double value)
     {
-        if (!Double.isFinite(value)) return (float)Math.sqrt(value);
-        if (value <= 0.0D) return 0.0F;
-        if (fastMath)
-        {
-            return (float)(value * fastInvSqrt(value));
-        }
         return (float)Math.sqrt(value);
     }
 
@@ -471,7 +427,6 @@ public class MathHelper
 
     public static double fastInvSqrt(double value)
     {
-        if (!Double.isFinite(value)) return 1.0D / Math.sqrt(value);
         double halfValue = 0.5D * value;
         long bits = Double.doubleToRawLongBits(value);
         bits = 6910469410427058090L - (bits >> 1);
@@ -482,35 +437,23 @@ public class MathHelper
 
     public static double fastSqrt_double(double value)
     {
-        if (!Double.isFinite(value)) return Math.sqrt(value);
-        if (value <= 0.0D) return 0.0D;
-        if (fastMath) return value * fastInvSqrt(value);
         return Math.sqrt(value);
     }
 
     public static float fastSqrt_float(float value)
     {
-        if (!Float.isFinite(value)) return (float)Math.sqrt((double)value);
-        if (value <= 0.0F) return 0.0F;
-        if (fastMath) return value * (float)fastInvSqrt((double)value);
         return (float)Math.sqrt((double)value);
     }
 
     public static double length_double(double x, double y, double z)
     {
         double lenSq = x * x + y * y + z * z;
-        if (!Double.isFinite(lenSq)) return Math.sqrt(lenSq);
-        if (lenSq <= 0.0D) return 0.0D;
-        if (fastMath) return lenSq * fastInvSqrt(lenSq);
         return Math.sqrt(lenSq);
     }
 
     public static double length_double(double x, double z)
     {
         double lenSq = x * x + z * z;
-        if (!Double.isFinite(lenSq)) return Math.sqrt(lenSq);
-        if (lenSq <= 0.0D) return 0.0D;
-        if (fastMath) return lenSq * fastInvSqrt(lenSq);
         return Math.sqrt(lenSq);
     }
 
@@ -524,12 +467,12 @@ public class MathHelper
 
     public static float atan2(float y, float x)
     {
-        return optimization.FastTrig.atan2((double)y, (double)x);
+        return (float)atan2((double)y, (double)x);
     }
 
     public static double atan2_double(double y, double x)
     {
-        return (double)optimization.FastTrig.atan2(y, x);
+        return atan2(y, x);
     }
 
     public static int hsvToRGB(float hue, float saturation, float value)
@@ -593,7 +536,9 @@ public class MathHelper
 
     static
     {
+        for (int index = 0; index < SIN_TABLE.length; ++index)
         {
+            SIN_TABLE[index] = (float)Math.sin((double)index * Math.PI * 2.0D / 65536.0D);
         }
 
         multiplyDeBruijnBitPosition = new int[] {0, 1, 28, 2, 29, 14, 24, 3, 30, 22, 20, 15, 25, 17, 4, 8, 31, 27, 13, 23, 21, 19, 16, 7, 26, 12, 18, 6, 11, 5, 10, 9};

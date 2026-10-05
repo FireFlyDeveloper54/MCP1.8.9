@@ -52,6 +52,7 @@ public class GuiIngame extends Gui
     private final Random rand = new Random();
     private final Minecraft mc;
     private final RenderItem itemRenderer;
+    private final GuiStreamIndicator streamIndicator;
     private final GuiNewChat persistantChatGUI;
     private int updateCounter;
     private String recordPlaying = "";
@@ -83,6 +84,7 @@ public class GuiIngame extends Gui
     {
         this.mc = mcIn;
         this.itemRenderer = mcIn.getRenderItem();
+        this.streamIndicator = new GuiStreamIndicator(mcIn);
         this.overlayDebug = new GuiOverlayDebug(mcIn);
         this.spectatorGui = new GuiSpectator(mcIn);
         this.persistantChatGUI = new GuiNewChat(mcIn);
@@ -1070,6 +1072,7 @@ public class GuiIngame extends Gui
         }
 
         ++this.updateCounter;
+        this.streamIndicator.updateStreamAlpha();
 
         if (this.mc.thePlayer != null)
         {
@@ -1181,5 +1184,9 @@ public class GuiIngame extends Gui
     public void resetPlayersOverlayFooterHeader()
     {
         this.overlayPlayerList.resetFooterHeader();
+    }
+    public void renderStreamIndicator(ScaledResolution scaledRes)
+    {
+        this.streamIndicator.render(scaledRes.getScaledWidth() - 10, 10);
     }
 }

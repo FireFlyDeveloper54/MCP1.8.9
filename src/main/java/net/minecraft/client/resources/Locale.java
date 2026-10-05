@@ -51,7 +51,23 @@ public class Locale
 
     private void checkUnicode()
     {
-        this.unicode = false;
+        int unicodeCharacters = 0;
+        int totalCharacters = 0;
+
+        for (String value : this.properties.values())
+        {
+            totalCharacters += value.length();
+
+            for (int index = 0; index < value.length(); ++index)
+            {
+                if (value.charAt(index) >= 256)
+                {
+                    ++unicodeCharacters;
+                }
+            }
+        }
+
+        this.unicode = (double)((float)unicodeCharacters / (float)totalCharacters) > 0.1D;
     }
 
     private void loadLocaleData(List<IResource> resourcesList) throws IOException

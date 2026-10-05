@@ -29,8 +29,8 @@ public abstract class TileEntity
     private int blockMetadata = -1;
     protected Block blockType;
 
-    private boolean culled = false;
-    private long cullingTimeout = 0;
+    private volatile boolean culled = false;
+    private volatile long cullingTimeout = 0;
     public boolean isForcedVisible()
     {
         return this.cullingTimeout > System.currentTimeMillis();

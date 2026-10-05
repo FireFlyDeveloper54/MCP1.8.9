@@ -57,6 +57,7 @@ public class FontRenderer implements IResourceManagerReloadListener
     public ResourceLocation locationFontTextureBase;
     public float offsetBold = 1.0F;
     private float[] charWidthFloat = new float[256];
+    private boolean customFontMetrics;
     private float eastAsianGlyphYOffset;
     private boolean blend = false;
     private GlBlendState oldBlendState = new GlBlendState();
@@ -135,6 +136,7 @@ public class FontRenderer implements IResourceManagerReloadListener
         this.blend = FontUtils.readBoolean(properties, "blend", false);
         int i = bufferedImage.getWidth();
         int j = bufferedImage.getHeight();
+        this.customFontMetrics = !this.locationFontTexture.equals(this.locationFontTextureBase) || i != 128 || j != 128 || !properties.isEmpty();
         int k = i / 16;
         int l = j / 16;
         float f = (float)i / 128.0F;
@@ -509,7 +511,8 @@ public class FontRenderer implements IResourceManagerReloadListener
                     character = secondCharacter;
                 }
 
-                float secondFloatValue = j != -1 && !this.unicodeFlag ? this.offsetBold : 0.5F;
+                boolean customMetricsGlyph = this.customFontMetrics && j != -1 && !this.unicodeFlag;
+                float secondFloatValue = this.unicodeFlag ? 0.5F : (customMetricsGlyph ? this.offsetBold : 1.0F);
                 boolean flag = (character == 0 || j == -1 || this.unicodeFlag) && shadow;
 
                 if (flag)
@@ -545,10 +548,16 @@ public class FontRenderer implements IResourceManagerReloadListener
                         this.posY += secondFloatValue;
                     }
 
-                    f += secondFloatValue;
+                    f += customMetricsGlyph ? this.offsetBold : 1.0F;
                 }
 
+                float previousPosX = this.posX;
                 this.doDraw(f);
+
+                if (!customMetricsGlyph)
+                {
+                    this.posX = previousPosX + (float)((int)f);
+                }
             }
         }
     }

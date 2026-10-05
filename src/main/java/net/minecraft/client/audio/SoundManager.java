@@ -11,6 +11,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 import net.minecraft.client.settings.GameSettings;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.MathHelper;
@@ -26,8 +29,19 @@ public class SoundManager
     private static final Logger logger = LogManager.getLogger();
     private final SoundHandler sndHandler;
     private final GameSettings options;
+    private final ExecutorService lifecycleExecutor = Executors.newSingleThreadExecutor(new ThreadFactory()
+    {
+        public Thread newThread(Runnable task)
+        {
+            Thread thread = new Thread(task, "Sound Library Loader");
+            thread.setDaemon(true);
+            return thread;
+        }
+    });
     private volatile OpenAlEngine engine;
     private volatile boolean loaded;
+    private boolean loading;
+    private int loadGeneration;
     private int playTime = 0;
     private int deviceCheckTimer;
     private String lastAudioDevice;
@@ -51,7 +65,7 @@ public class SoundManager
         this.options = optionsIn;
     }
 
-    public void reloadSoundSystem()
+    public synchronized void reloadSoundSystem()
     {
         this.unloadSoundSystem();
         this.loadSoundSystem();
@@ -59,38 +73,89 @@ public class SoundManager
 
     private synchronized void loadSoundSystem()
     {
-        if (!this.loaded)
+        if (!this.loaded && !this.loading)
         {
+            this.loading = true;
+            final int generation = ++this.loadGeneration;
+
             try
             {
-                (new Thread(new Runnable()
+                this.lifecycleExecutor.execute(new Runnable()
                 {
                     public void run()
                     {
+                        synchronized (SoundManager.this)
+                        {
+                            if (generation != SoundManager.this.loadGeneration || !SoundManager.this.loading)
+                            {
+                                return;
+                            }
+                        }
+
+                        OpenAlEngine openAlEngine = new OpenAlEngine();
+                        boolean published = false;
+
                         try
                         {
-                            OpenAlEngine openAlEngine = new OpenAlEngine();
                             openAlEngine.create();
-                            SoundManager.this.engine = openAlEngine;
-                            SoundManager.this.loaded = true;
-                            SoundManager.this.engine.setMasterVolume(SoundManager.this.options.getSoundLevel(SoundCategory.MASTER));
-                            SoundManager.logger.info(SoundManager.LOG_MARKER, "Sound engine started");
+                            openAlEngine.setMasterVolume(SoundManager.this.options.getSoundLevel(SoundCategory.MASTER));
+
+                            synchronized (SoundManager.this)
+                            {
+                                if (generation != SoundManager.this.loadGeneration || !SoundManager.this.loading)
+                                {
+                                    return;
+                                }
+
+                                SoundManager.this.engine = openAlEngine;
+                                SoundManager.this.loading = false;
+                                SoundManager.this.loaded = true;
+                                published = true;
+                                SoundManager.logger.info(SoundManager.LOG_MARKER, "Sound engine started");
+                            }
                         }
                         catch (Throwable throwable)
                         {
-                            SoundManager.logger.error(SoundManager.LOG_MARKER, "Error starting OpenAL. Turning off sounds & music", throwable);
-                            SoundManager.this.options.setSoundLevel(SoundCategory.MASTER, 0.0F);
-                            SoundManager.this.options.saveOptions();
+                            synchronized (SoundManager.this)
+                            {
+                                if (generation == SoundManager.this.loadGeneration)
+                                {
+                                    SoundManager.this.loading = false;
+                                    SoundManager.logger.error(SoundManager.LOG_MARKER, "Error starting OpenAL. Turning off sounds & music", throwable);
+                                    SoundManager.this.options.setSoundLevel(SoundCategory.MASTER, 0.0F);
+                                    SoundManager.this.options.saveOptions();
+                                }
+                            }
+                        }
+                        finally
+                        {
+                            if (!published)
+                            {
+                                SoundManager.this.destroySoundEngine(openAlEngine);
+                            }
                         }
                     }
-                }, "Sound Library Loader")).start();
+                });
             }
             catch (RuntimeException runtimeexception)
             {
+                this.loading = false;
                 logger.error(LOG_MARKER, (String)"Error starting SoundSystem. Turning off sounds & music", (Throwable)runtimeexception);
                 this.options.setSoundLevel(SoundCategory.MASTER, 0.0F);
                 this.options.saveOptions();
             }
+        }
+    }
+
+    private void destroySoundEngine(OpenAlEngine soundEngine)
+    {
+        try
+        {
+            soundEngine.destroy();
+        }
+        catch (Throwable throwable)
+        {
+            logger.error(LOG_MARKER, "Error shutting down OpenAL", throwable);
         }
     }
 
@@ -129,13 +194,23 @@ public class SoundManager
 
     public synchronized void unloadSoundSystem()
     {
+        ++this.loadGeneration;
+        this.loading = false;
+
         if (this.loaded)
         {
             this.stopAllSounds();
-            this.engine.destroy();
-            this.engine = null;
+            final OpenAlEngine soundEngine = this.engine;
             this.loaded = false;
+            this.engine = null;
             this.lastAudioDevice = null;
+            this.lifecycleExecutor.execute(new Runnable()
+            {
+                public void run()
+                {
+                    SoundManager.this.destroySoundEngine(soundEngine);
+                }
+            });
         }
     }
 
@@ -301,8 +376,7 @@ public class SoundManager
         else
         {
             String channelName = this.invPlayingSounds.get(sound);
-            Integer stopTime = channelName == null ? null : this.playingSoundsStopTime.get(channelName);
-            return channelName == null ? false : this.engine.playing(channelName) || stopTime != null && stopTime.intValue() <= this.playTime;
+            return channelName != null && this.engine.playing(channelName);
         }
     }
 
@@ -370,7 +444,7 @@ public class SoundManager
 
                             try
                             {
-                                if (!this.engine.newSource(channelName, soundLocation, repeatImmediately, sound.getXPosF(), sound.getYPosF(), sound.getZPosF(), linear, attenuationDistance))
+                                if (!this.engine.newSource(channelName, soundLocation, repeatImmediately, sound.getXPosF(), sound.getYPosF(), sound.getZPosF(), linear, attenuationDistance, soundEntry.isStreamingSound()))
                                 {
                                     return;
                                 }

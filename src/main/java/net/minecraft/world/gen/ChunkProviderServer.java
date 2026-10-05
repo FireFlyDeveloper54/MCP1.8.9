@@ -317,6 +317,12 @@ public class ChunkProviderServer implements IChunkProvider
                         this.saveChunkExtraData(chunk);
                         this.id2ChunkMap.remove(olong.longValue());
                         this.loadedChunks.remove(chunk);
+                        if (this.lastChunk == chunk)
+                        {
+                            this.lastChunk = null;
+                            this.lastChunkX = Integer.MIN_VALUE;
+                            this.lastChunkZ = Integer.MIN_VALUE;
+                        }
                     }
 
                     this.droppedChunksSet.remove(olong);

@@ -53,6 +53,11 @@ public class PlayerManager
         return this.theWorldServer;
     }
 
+    private boolean isLazyChunkLoading()
+    {
+        return Config.getGameSettings() != null && Config.isLazyChunkLoading();
+    }
+
     public void updatePlayerInstances()
     {
         Set<Entry<EntityPlayerMP, Set<ChunkCoordIntPair>>> pendingEntrySet = this.mapPlayerPendingEntries.entrySet();
@@ -75,7 +80,7 @@ public class PlayerManager
                 {
                     int chunksToLoad = this.playerViewRadius / 3 + 1;
 
-                    if (!Config.isLazyChunkLoading())
+                    if (!this.isLazyChunkLoading())
                     {
                         chunksToLoad = this.playerViewRadius * 2 + 1;
                     }
@@ -297,7 +302,7 @@ public class PlayerManager
                     {
                         if (!this.overlaps(chunkX, chunkZ, previousChunkX, previousChunkZ, viewRadius))
                         {
-                            if (Config.isLazyChunkLoading())
+                            if (this.isLazyChunkLoading())
                             {
                                 pendingChunks.add(new ChunkCoordIntPair(chunkX, chunkZ));
                             }
@@ -353,7 +358,7 @@ public class PlayerManager
                     {
                         for (int chunkZ = playerChunkZ - radius; chunkZ <= playerChunkZ + radius; ++chunkZ)
                         {
-                            if (Config.isLazyChunkLoading())
+                            if (this.isLazyChunkLoading())
                             {
                                 pendingChunks.add(new ChunkCoordIntPair(chunkX, chunkZ));
                             }
@@ -378,7 +383,7 @@ public class PlayerManager
                             if (!this.overlaps(chunkX, chunkZ, playerChunkX, playerChunkZ, radius))
                             {
                                 pendingChunks.remove(new ChunkCoordIntPair(chunkX, chunkZ));
-                                PlayerManager.PlayerInstance playerInstance = this.getPlayerInstance(chunkX, chunkZ, true);
+                                PlayerManager.PlayerInstance playerInstance = this.getPlayerInstance(chunkX, chunkZ, false);
 
                                 if (playerInstance != null)
                                 {

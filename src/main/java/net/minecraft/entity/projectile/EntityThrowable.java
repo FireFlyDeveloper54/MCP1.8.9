@@ -64,8 +64,8 @@ public abstract class EntityThrowable extends Entity implements IProjectile
         this.setLocationAndAngles(throwerIn.posX, throwerIn.posY + (double)throwerIn.getEyeHeight(), throwerIn.posZ, throwerIn.rotationYaw, throwerIn.rotationPitch);
         float[] yawSC = new float[2];
         float[] pitchSC = new float[2];
-        MathHelper.sinCosDeg(this.rotationYaw, yawSC);
-        MathHelper.sinCosDeg(this.rotationPitch, pitchSC);
+        MathHelper.sinCos(this.rotationYaw / 180.0F * (float)Math.PI, yawSC);
+        MathHelper.sinCos(this.rotationPitch / 180.0F * (float)Math.PI, pitchSC);
         this.posX -= (double)(yawSC[1] * 0.16F);
         this.posY -= 0.10000000149011612D;
         this.posZ -= (double)(yawSC[0] * 0.16F);
@@ -73,7 +73,7 @@ public abstract class EntityThrowable extends Entity implements IProjectile
         float f = 0.4F;
         this.motionX = (double)(-yawSC[0] * pitchSC[1] * f);
         this.motionZ = (double)(yawSC[1] * pitchSC[1] * f);
-        this.motionY = (double)(-MathHelper.sinDeg(this.rotationPitch + this.getInaccuracy()) * f);
+        this.motionY = (double)(-MathHelper.sin((this.rotationPitch + this.getInaccuracy()) / 180.0F * (float)Math.PI) * f);
         this.setThrowableHeading(this.motionX, this.motionY, this.motionZ, this.getVelocity(), 1.0F);
     }
 

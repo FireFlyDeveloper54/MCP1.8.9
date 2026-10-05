@@ -23,11 +23,21 @@ public class WorldVertexBufferUploader
 
             if (worldRenderer.isMultiTexture())
             {
+                if (Config.isShaders())
+                {
+                    SVertexBuilder.setupArrayPointers(vertexFormat, pointer);
+                }
+
                 worldRenderer.drawMultiTexture();
+
+                if (Config.isShaders())
+                {
+                    SVertexBuilder.clearArrayPointers();
+                }
             }
             else if (Config.isShaders())
             {
-                SVertexBuilder.drawArrays(worldRenderer.getDrawMode(), 0, worldRenderer.getVertexCount(), worldRenderer);
+                SVertexBuilder.drawArrays(worldRenderer.getDrawMode(), 0, worldRenderer.getVertexCount(), worldRenderer, pointer);
             }
             else
             {
