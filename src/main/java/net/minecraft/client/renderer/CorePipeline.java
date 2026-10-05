@@ -128,26 +128,7 @@ public final class CorePipeline
             return;
         }
 
-        int vertex = compile(GL20.GL_VERTEX_SHADER, DEFAULT_VERTEX);
-        int fragment = compile(GL20.GL_FRAGMENT_SHADER, DEFAULT_FRAGMENT);
-        program = GL20.glCreateProgram();
-        GL20.glAttachShader(program, vertex);
-        GL20.glAttachShader(program, fragment);
-        GL20.glBindAttribLocation(program, ATTR_POSITION, "Position");
-        GL20.glBindAttribLocation(program, ATTR_COLOR, "Color");
-        GL20.glBindAttribLocation(program, ATTR_UV0, "UV0");
-        GL20.glBindAttribLocation(program, ATTR_UV1, "UV1");
-        GL20.glBindAttribLocation(program, ATTR_NORMAL, "Normal");
-        GL20.glLinkProgram(program);
-        onProgramLinked(program);
-
-        if (GL20.glGetProgrami(program, GL20.GL_LINK_STATUS) == 0)
-        {
-            throw new IllegalStateException("Default core shader failed to link: " + GL20.glGetProgramInfoLog(program, 4096));
-        }
-
-        GL20.glDeleteShader(vertex);
-        GL20.glDeleteShader(fragment);
+        program = createDefaultProgram();
         uniformModelView = GL20.glGetUniformLocation(program, "ModelViewMat");
         uniformProj = GL20.glGetUniformLocation(program, "ProjMat");
         uniformTextureMatrix0 = GL20.glGetUniformLocation(program, "TextureMat0");
@@ -1003,15 +984,77 @@ public final class CorePipeline
     private static int compile(int type, String source)
     {
         int shader = GL20.glCreateShader(type);
-        GL20.glShaderSource(shader, source);
-        GL20.glCompileShader(shader);
+        boolean compiled = false;
 
-        if (GL20.glGetShaderi(shader, GL20.GL_COMPILE_STATUS) == 0)
+        try
         {
-            throw new IllegalStateException("Shader compile failed: " + GL20.glGetShaderInfoLog(shader, 4096));
-        }
+            GL20.glShaderSource(shader, source);
+            GL20.glCompileShader(shader);
 
-        return shader;
+            if (GL20.glGetShaderi(shader, GL20.GL_COMPILE_STATUS) == 0)
+            {
+                throw new IllegalStateException("Shader compile failed: " + GL20.glGetShaderInfoLog(shader, 4096));
+            }
+
+            compiled = true;
+            return shader;
+        }
+        finally
+        {
+            if (!compiled && shader != 0)
+            {
+                GL20.glDeleteShader(shader);
+            }
+        }
+    }
+
+    private static int createDefaultProgram()
+    {
+        int vertex = 0;
+        int fragment = 0;
+        int linkedProgram = 0;
+        boolean linked = false;
+
+        try
+        {
+            vertex = compile(GL20.GL_VERTEX_SHADER, DEFAULT_VERTEX);
+            fragment = compile(GL20.GL_FRAGMENT_SHADER, DEFAULT_FRAGMENT);
+            linkedProgram = GL20.glCreateProgram();
+            GL20.glAttachShader(linkedProgram, vertex);
+            GL20.glAttachShader(linkedProgram, fragment);
+            GL20.glBindAttribLocation(linkedProgram, ATTR_POSITION, "Position");
+            GL20.glBindAttribLocation(linkedProgram, ATTR_COLOR, "Color");
+            GL20.glBindAttribLocation(linkedProgram, ATTR_UV0, "UV0");
+            GL20.glBindAttribLocation(linkedProgram, ATTR_UV1, "UV1");
+            GL20.glBindAttribLocation(linkedProgram, ATTR_NORMAL, "Normal");
+            GL20.glLinkProgram(linkedProgram);
+
+            if (GL20.glGetProgrami(linkedProgram, GL20.GL_LINK_STATUS) == 0)
+            {
+                throw new IllegalStateException("Default core shader failed to link: " + GL20.glGetProgramInfoLog(linkedProgram, 4096));
+            }
+
+            onProgramLinked(linkedProgram);
+            linked = true;
+            return linkedProgram;
+        }
+        finally
+        {
+            if (vertex != 0)
+            {
+                GL20.glDeleteShader(vertex);
+            }
+
+            if (fragment != 0)
+            {
+                GL20.glDeleteShader(fragment);
+            }
+
+            if (!linked && linkedProgram != 0)
+            {
+                OpenGlHelper.glDeleteProgram(linkedProgram);
+            }
+        }
     }
 
     private static String replaceVersion(String source)

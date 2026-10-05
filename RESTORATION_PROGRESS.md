@@ -29,16 +29,21 @@
 | Sound | Restore streaming playback, stopped-channel reuse, failure rollback and original channel allocation | Source fixes compiled; playback unverified |
 | Math / fonts / resources | Vanilla trig and square root behavior, Unicode detection, complete reload notifications, mipmap and particle defaults | Source fixes compiled; bounded font review complete |
 | Removed capabilities | Restore original Realms, stream and Snooper interfaces and their reachable client integration | Source and dependencies restored; online/runtime behavior unverified |
-| Validation / restoration commit | Evidence for the full restored scope, then a separate restoration commit | Pending |
-| MCP improvements | Separate changes after the restoration commit, preserving behavior | Pending |
+| Validation / restoration commit | Evidence for the full restored scope, then a separate restoration commit | Audited source restoration committed as 0a0a32b; runtime verification pending |
+| MCP improvements | Separate changes after the restoration commit, preserving behavior | Shader failure cleanup compiled; separate commit ready |
 | Naven main / noauth / Recode-NoAuth | Restore affected MCP behavior using the improved MCP implementation | Pending |
 
 This file records work, not proof of completion. Commit IDs and validation evidence will be added as the corresponding stages are completed.
 
 ## Evidence so far
 
-- Five full Java 21 compilation attempts have been recorded privately; attempts 2–5 exited successfully. Attempt 5 includes all 2006 current Java files and ended with 0 errors / 6 warnings.
+- Six full Java 21 compilation attempts have been recorded privately; attempts 2–6 exited successfully. Attempts 5 and 6 include all 2006 current Java files and ended with 0 errors / 6 warnings.
 - Static Realms linkage: 154 classes retained; 3298 non-JDK member references examined; 0 unresolved names/descriptors. Access rules, initialization and online availability are outside this check.
 - Existing Start.java diff and logging configuration are preserved.
 - No tests or game/runtime launch have been performed.
 - Continued findings and repair scope: [MCP_RESTORATION_AUDIT_2026-10-05.md](C:/Users/Admin/ideaProject/MCP1.8.9/MCP_RESTORATION_AUDIT_2026-10-05.md).
+
+## Commits and separate improvement stage
+
+- Restoration: `0a0a32b9911490d025bb3d43585a55cd60fa62d1` — Restore audited vanilla behavior and client services on GL3. 144 files; Start.java excluded.
+- Subsequent improvement: release shader/program objects if shader compilation or linking fails. Successful rendering behavior and diagnostic messages are preserved. The sixth full compilation exited 0 with the same 6 warnings; separate commit ready.
