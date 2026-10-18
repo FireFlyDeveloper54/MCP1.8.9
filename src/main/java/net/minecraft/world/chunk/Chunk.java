@@ -32,6 +32,7 @@ import net.minecraft.world.biome.WorldChunkManager;
 import net.minecraft.world.chunk.storage.ExtendedBlockStorage;
 import net.minecraft.world.gen.ChunkProviderDebug;
 import net.minecraft.world.lighting.LightingEngine;
+import net.minecraft.world.lighting.LightingEngineHelpers;
 import net.minecraft.world.lighting.LightingHooks;
 import net.minecraft.world.lighting.WorldChunkSlice;
 import org.apache.logging.log4j.LogManager;
@@ -171,7 +172,7 @@ public class Chunk
                 {
                     Block block = this.getBlock0(j, l - 1, k);
 
-                    if (block.getLightOpacity() != 0)
+                    if (LightingEngineHelpers.getLightOpacityForBlock(block, this.worldObj) != 0)
                     {
                         this.heightMap[k << 4 | j] = l;
 
@@ -412,12 +413,12 @@ public class Chunk
 
     public int getBlockLightOpacity(BlockPos pos)
     {
-        return this.getBlock(pos).getLightOpacity();
+        return LightingEngineHelpers.getLightOpacityForBlock(this.getBlock(pos), this.worldObj);
     }
 
     private int getBlockLightOpacity(int x, int y, int z)
     {
-        return this.getBlock0(x, y, z).getLightOpacity();
+        return LightingEngineHelpers.getLightOpacityForBlock(this.getBlock0(x, y, z), this.worldObj);
     }
 
     private Block getBlock0(int x, int y, int z)
@@ -586,8 +587,8 @@ public class Chunk
             }
             else
             {
-                int intValue = block.getLightOpacity();
-                int secondIntValue = block1.getLightOpacity();
+                int intValue = LightingEngineHelpers.getLightOpacityForBlock(block, this.worldObj);
+                int secondIntValue = LightingEngineHelpers.getLightOpacityForBlock(block1, this.worldObj);
 
                 if (intValue > 0)
                 {
@@ -1240,6 +1241,7 @@ public class Chunk
         this.isTerrainPopulated = true;
         this.generateHeightMap();
         LightingHooks.scheduleRelightChecksForChunkBoundaries(this.worldObj, this);
+        LightingHooks.relightClientWater(this, this.worldObj, availableSections);
 
         for (TileEntity tileEntity : this.chunkTileEntityMap.values())
         {

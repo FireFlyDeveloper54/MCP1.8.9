@@ -21,7 +21,6 @@ import net.minecraft.src.Config;
 import net.minecraft.tileentity.TileEntityEndPortal;
 import net.minecraft.util.EnumWorldBlockLayer;
 import net.minecraft.util.ResourceLocation;
-import org.lwjgl.opengl.EXTFramebufferObject;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
@@ -209,7 +208,7 @@ public class ShadersRender
             GlStateManager.matrixMode(GL11.GL_MODELVIEW);
             GlStateManager.pushMatrix();
             minecraft.mcProfiler.endStartSection("shadow clear");
-            EXTFramebufferObject.glBindFramebufferEXT(36160, Shaders.sfb);
+            GL30.glBindFramebuffer(36160, Shaders.sfb);
             Shaders.checkGLError("shadow bind sfb");
             minecraft.mcProfiler.endStartSection("shadow camera");
             entityRenderer.setupCameraTransform(partialTicks, 2);
@@ -220,11 +219,11 @@ public class ShadersRender
             Shaders.checkGLError("shadow drawbuffers");
             GL11.glReadBuffer(0);
             Shaders.checkGLError("shadow readbuffer");
-            EXTFramebufferObject.glFramebufferTexture2DEXT(36160, 36096, 3553, Shaders.sfbDepthTextures.get(0), 0);
+            GL30.glFramebufferTexture2D(36160, 36096, 3553, Shaders.sfbDepthTextures.get(0), 0);
 
             if (Shaders.usedShadowColorBuffers != 0)
             {
-                EXTFramebufferObject.glFramebufferTexture2DEXT(36160, 36064, 3553, Shaders.sfbColorTextures.get(0), 0);
+                GL30.glFramebufferTexture2D(36160, 36064, 3553, Shaders.sfbColorTextures.get(0), 0);
             }
 
             Shaders.checkFramebufferStatus("shadow fb");
@@ -367,7 +366,7 @@ public class ShadersRender
             }
 
             Shaders.checkGLError("shadow postprocess");
-            EXTFramebufferObject.glBindFramebufferEXT(36160, Shaders.dfb);
+            GL30.glBindFramebuffer(36160, Shaders.dfb);
             GL11.glViewport(0, 0, Shaders.renderWidth, Shaders.renderHeight);
             Shaders.activeDrawBuffers = null;
             minecraft.getTextureManager().bindTexture(TextureMap.locationBlocksTexture);

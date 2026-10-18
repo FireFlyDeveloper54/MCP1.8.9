@@ -1153,7 +1153,7 @@ public class NetHandlerPlayServer implements INetHandlerPlayServer, ITickable
 
         if ("MC|BEdit".equals(packetIn.getChannelName()))
         {
-            PacketBuffer packetbuffer3 = new PacketBuffer(Unpooled.wrappedBuffer((ByteBuf)packetIn.getBufferData()));
+            PacketBuffer packetbuffer3 = new PacketBuffer(packetIn.getBufferData().slice());
 
             try
             {
@@ -1190,7 +1190,7 @@ public class NetHandlerPlayServer implements INetHandlerPlayServer, ITickable
         }
         else if ("MC|BSign".equals(packetIn.getChannelName()))
         {
-            PacketBuffer packetBuffer2 = new PacketBuffer(Unpooled.wrappedBuffer((ByteBuf)packetIn.getBufferData()));
+            PacketBuffer packetBuffer2 = new PacketBuffer(packetIn.getBufferData().slice());
 
             try
             {

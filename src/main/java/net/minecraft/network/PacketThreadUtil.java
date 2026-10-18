@@ -3,6 +3,7 @@ package net.minecraft.network;
 import net.minecraft.network.play.server.S01PacketJoinGame;
 import net.minecraft.network.play.server.S07PacketRespawn;
 import net.minecraft.network.play.server.S08PacketPlayerPosLook;
+import net.minecraft.network.play.INetHandlerPlayClient;
 import net.minecraft.src.Config;
 import net.minecraft.util.IThreadListener;
 
@@ -18,7 +19,10 @@ public class PacketThreadUtil
             {
                 public void run()
                 {
-                    PacketThreadUtil.clientPreProcessPacket(packetIn);
+                    if (handler instanceof INetHandlerPlayClient)
+                    {
+                        PacketThreadUtil.clientPreProcessPacket(packetIn);
+                    }
                     packetIn.processPacket(handler);
                 }
             });
@@ -26,7 +30,10 @@ public class PacketThreadUtil
         }
         else
         {
-            clientPreProcessPacket(packetIn);
+            if (handler instanceof INetHandlerPlayClient)
+            {
+                clientPreProcessPacket(packetIn);
+            }
         }
     }
 

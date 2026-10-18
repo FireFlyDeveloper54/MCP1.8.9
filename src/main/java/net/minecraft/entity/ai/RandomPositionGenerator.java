@@ -83,8 +83,9 @@ public class RandomPositionGenerator
                 candidateX = candidateX + MathHelper.floor_double(entitycreatureIn.posX);
                 candidateY = candidateY + MathHelper.floor_double(entitycreatureIn.posY);
                 candidateZ = candidateZ + MathHelper.floor_double(entitycreatureIn.posZ);
+                candidatePos.set(candidateX, candidateY, candidateZ);
 
-                if (!withinHomeRange || entitycreatureIn.isWithinHomeDistanceFromPosition(candidatePos.set(candidateX, candidateY, candidateZ)))
+                if (!withinHomeRange || entitycreatureIn.isWithinHomeDistanceFromPosition(candidatePos))
                 {
                     float pathWeight = entitycreatureIn.getBlockPathWeight(candidatePos);
 

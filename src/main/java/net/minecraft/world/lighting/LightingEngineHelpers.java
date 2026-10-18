@@ -1,10 +1,12 @@
 package net.minecraft.world.lighting;
 
+import net.minecraft.block.Block;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.multiplayer.ChunkProviderClient;
 import net.minecraft.init.Blocks;
 import net.minecraft.util.BlockPos;
 import net.minecraft.world.IBlockAccess;
+import net.minecraft.world.World;
 import net.minecraft.world.chunk.Chunk;
 import net.minecraft.world.chunk.IChunkProvider;
 import net.minecraft.world.chunk.storage.ExtendedBlockStorage;
@@ -39,6 +41,10 @@ public class LightingEngineHelpers {
 
     static int getLightValueForState(final IBlockState state, final IBlockAccess world, final BlockPos pos) {
         return state.getBlock().getLightValue();
+    }
+
+    public static int getLightOpacityForBlock(final Block block, final World world) {
+        return !world.isRemote && (block == Blocks.water || block == Blocks.flowing_water) ? 3 : block.getLightOpacity();
     }
 
     public static Chunk getLoadedChunk(IChunkProvider chunkProvider, int x, int z) {

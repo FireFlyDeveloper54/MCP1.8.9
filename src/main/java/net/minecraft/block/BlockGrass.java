@@ -15,6 +15,7 @@ import net.minecraft.world.ColorizerGrass;
 import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
 import net.minecraft.world.biome.BiomeColorHelper;
+import net.minecraft.world.lighting.LightingEngineHelpers;
 
 public class BlockGrass extends Block implements IGrowable
 {
@@ -53,7 +54,7 @@ public class BlockGrass extends Block implements IGrowable
     {
         if (!worldIn.isRemote)
         {
-            if (worldIn.getLightFromNeighbors(pos.up()) < 4 && worldIn.getBlockState(pos.up()).getBlock().getLightOpacity() > 2)
+            if (worldIn.getLightFromNeighbors(pos.up()) < 4 && LightingEngineHelpers.getLightOpacityForBlock(worldIn.getBlockState(pos.up()).getBlock(), worldIn) > 2)
             {
                 worldIn.setBlockState(pos, Blocks.dirt.getDefaultState());
             }
@@ -67,7 +68,7 @@ public class BlockGrass extends Block implements IGrowable
                         Block block = worldIn.getBlockState(blockPos.up()).getBlock();
                         IBlockState iblockstate = worldIn.getBlockState(blockPos);
 
-                        if (iblockstate.getBlock() == Blocks.dirt && iblockstate.getValue(BlockDirt.VARIANT) == BlockDirt.DirtType.DIRT && worldIn.getLightFromNeighbors(blockPos.up()) >= 4 && block.getLightOpacity() <= 2)
+                        if (iblockstate.getBlock() == Blocks.dirt && iblockstate.getValue(BlockDirt.VARIANT) == BlockDirt.DirtType.DIRT && worldIn.getLightFromNeighbors(blockPos.up()) >= 4 && LightingEngineHelpers.getLightOpacityForBlock(block, worldIn) <= 2)
                         {
                             worldIn.setBlockState(blockPos, Blocks.grass.getDefaultState());
                         }

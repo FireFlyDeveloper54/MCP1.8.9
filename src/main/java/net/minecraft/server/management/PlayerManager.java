@@ -204,7 +204,7 @@ public class PlayerManager
         int playerChunkZ = (int)player.posZ >> 4;
         int chunkOffsetX = 0;
         int chunkOffsetZ = 0;
-        ChunkCoordIntPair chunkCoordIntPair = this.getPlayerInstance(playerChunkX, playerChunkZ, true).chunkCoords;
+        ChunkCoordIntPair chunkCoordIntPair = new ChunkCoordIntPair(playerChunkX, playerChunkZ);
         player.loadedChunks.clear();
 
         if (loadedChunks.contains(chunkCoordIntPair))
@@ -222,7 +222,7 @@ public class PlayerManager
                 {
                     chunkOffsetX += direction[0];
                     chunkOffsetZ += direction[1];
-                    chunkCoordIntPair = this.getPlayerInstance(playerChunkX + chunkOffsetX, playerChunkZ + chunkOffsetZ, true).chunkCoords;
+                    chunkCoordIntPair = new ChunkCoordIntPair(playerChunkX + chunkOffsetX, playerChunkZ + chunkOffsetZ);
 
                     if (loadedChunks.contains(chunkCoordIntPair))
                     {
@@ -238,7 +238,7 @@ public class PlayerManager
         {
             chunkOffsetX += this.xzDirectionsConst[directionIndex][0];
             chunkOffsetZ += this.xzDirectionsConst[directionIndex][1];
-            chunkCoordIntPair = this.getPlayerInstance(playerChunkX + chunkOffsetX, playerChunkZ + chunkOffsetZ, true).chunkCoords;
+            chunkCoordIntPair = new ChunkCoordIntPair(playerChunkX + chunkOffsetX, playerChunkZ + chunkOffsetZ);
 
             if (loadedChunks.contains(chunkCoordIntPair))
             {

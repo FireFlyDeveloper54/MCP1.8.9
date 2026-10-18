@@ -11,7 +11,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import net.optifine.util.IteratorCache;
 
 public class ClassInheritanceMultiMap<T> extends AbstractSet<T>
 {
@@ -151,7 +150,7 @@ public class ClassInheritanceMultiMap<T> extends AbstractSet<T>
 
     public Iterator<T> iterator()
     {
-        return (Iterator<T>)(this.values.isEmpty() ? Collections.<T>emptyList().iterator() : IteratorCache.getReadOnly(this.values));
+        return this.values.isEmpty() ? Collections.<T>emptyList().iterator() : Iterators.unmodifiableIterator(this.values.iterator());
     }
 
     public int size()

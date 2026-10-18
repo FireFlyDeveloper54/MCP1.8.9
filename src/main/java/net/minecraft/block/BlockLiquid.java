@@ -160,7 +160,7 @@ public abstract class BlockLiquid extends Block
                     if (j >= 0)
                     {
                         int k = j - (i - 8);
-                        vec3 = vec3.addVector((double)(enumfacing.getFrontOffsetX() * k), -k, (double)(enumfacing.getFrontOffsetZ() * k));
+                        vec3 = vec3.addVector((double)(enumfacing.getFrontOffsetX() * k), 0.0D, (double)(enumfacing.getFrontOffsetZ() * k));
                     }
                 }
             }

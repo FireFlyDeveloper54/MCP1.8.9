@@ -1,6 +1,5 @@
 package net.optifine.shaders;
 
-import com.google.common.base.Charsets;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -104,17 +103,13 @@ import net.optifine.util.StrUtils;
 import net.optifine.util.TimedEvent;
 import org.apache.commons.io.IOUtils;
 import org.lwjgl.BufferUtils;
-import org.lwjgl.opengl.ARBFragmentShader;
-import org.lwjgl.opengl.ARBGeometryShader4;
-import org.lwjgl.opengl.ARBShaderObjects;
-import org.lwjgl.opengl.ARBVertexShader;
 import org.lwjgl.opengl.GLCapabilities;
-import org.lwjgl.opengl.EXTFramebufferObject;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL14;
 import org.lwjgl.opengl.GL12;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
+import org.lwjgl.opengl.GL32;
 import org.lwjgl.opengl.GL;
 import net.minecraft.client.GlUtil;
 import net.minecraft.util.vector.Vector4f;
@@ -208,9 +203,6 @@ public class Shaders
     public static boolean progUseEntityAttrib = false;
     public static boolean progUseMidTexCoordAttrib = false;
     public static boolean progUseTangentAttrib = false;
-    private static boolean progArbGeometryShader4 = false;
-    private static int progMaxVerticesOut = 3;
-    private static boolean hasGeometryShaders = false;
     public static int atlasSizeX = 0;
     public static int atlasSizeY = 0;
     private static ShaderUniforms shaderUniforms = new ShaderUniforms();
@@ -1865,7 +1857,7 @@ public class Shaders
 
     public static int checkFramebufferStatus(String location)
     {
-        int i = EXTFramebufferObject.glCheckFramebufferStatusEXT(36160);
+        int i = GL30.glCheckFramebufferStatus(36160);
 
         if (i != 36053)
         {
@@ -1902,7 +1894,7 @@ public class Shaders
 
         if (errorCode == 1286)
         {
-            int framebufferStatus = EXTFramebufferObject.glCheckFramebufferStatusEXT(36160);
+            int framebufferStatus = GL30.glCheckFramebufferStatus(36160);
             String framebufferStatusText = getFramebufferStatusText(framebufferStatus);
             String framebufferStatusInfo = ", fbStatus: " + framebufferStatus + " (" + framebufferStatusText + ")";
             stringBuilder.append(framebufferStatusInfo);
@@ -2160,9 +2152,9 @@ public class Shaders
                 printChatAndLogError("No OpenGL 2.0");
             }
 
-            if (!capabilities.GL_EXT_framebuffer_object)
+            if (!capabilities.OpenGL30)
             {
-                printChatAndLogError("No EXT_framebuffer_object");
+                printChatAndLogError("No OpenGL 3.0 framebuffer support");
             }
 
             dfbDrawBuffers.position(0).limit(8);
@@ -2202,7 +2194,6 @@ public class Shaders
             useMidTexCoordAttrib = false;
             useTangentAttrib = false;
             waterShadowEnabled = false;
-            hasGeometryShaders = false;
             updateBlockLightLevel();
             Smoother.resetValues();
             shaderUniforms.reset();
@@ -2480,7 +2471,7 @@ public class Shaders
     private static void setupProgram(Program program, String vShaderPath, String gShaderPath, String fShaderPath)
     {
         checkGLError("pre setupProgram");
-        int i = ARBShaderObjects.glCreateProgramObjectARB();
+        int i = GL20.glCreateProgram();
         checkGLError("create");
 
         if (i != 0)
@@ -2503,47 +2494,38 @@ public class Shaders
             {
                 if (j != 0)
                 {
-                    ARBShaderObjects.glAttachObjectARB(i, j);
+                    GL20.glAttachShader(i, j);
                     checkGLError("attach");
                 }
 
                 if (k != 0)
                 {
-                    ARBShaderObjects.glAttachObjectARB(i, k);
+                    GL20.glAttachShader(i, k);
                     checkGLError("attach");
 
-                    if (progArbGeometryShader4)
-                    {
-                        ARBGeometryShader4.glProgramParameteriARB(i, 36315, 4);
-                        ARBGeometryShader4.glProgramParameteriARB(i, 36316, 5);
-                        ARBGeometryShader4.glProgramParameteriARB(i, 36314, progMaxVerticesOut);
-                        checkGLError("arbGeometryShader4");
-                    }
-
-                    hasGeometryShaders = true;
                 }
 
                 if (l != 0)
                 {
-                    ARBShaderObjects.glAttachObjectARB(i, l);
+                    GL20.glAttachShader(i, l);
                     checkGLError("attach");
                 }
 
                 if (progUseEntityAttrib)
                 {
-                    ARBVertexShader.glBindAttribLocationARB(i, entityAttrib, (CharSequence)"mc_Entity");
+                    GL20.glBindAttribLocation(i, entityAttrib, (CharSequence)"mc_Entity");
                     checkGLError("mc_Entity");
                 }
 
                 if (progUseMidTexCoordAttrib)
                 {
-                    ARBVertexShader.glBindAttribLocationARB(i, midTexCoordAttrib, (CharSequence)"mc_midTexCoord");
+                    GL20.glBindAttribLocation(i, midTexCoordAttrib, (CharSequence)"mc_midTexCoord");
                     checkGLError("mc_midTexCoord");
                 }
 
                 if (progUseTangentAttrib)
                 {
-                    ARBVertexShader.glBindAttribLocationARB(i, tangentAttrib, (CharSequence)"at_tangent");
+                    GL20.glBindAttribLocation(i, tangentAttrib, (CharSequence)"at_tangent");
                     checkGLError("at_tangent");
                 }
 
@@ -2559,26 +2541,26 @@ public class Shaders
 
                 if (j != 0)
                 {
-                    ARBShaderObjects.glDetachObjectARB(i, j);
-                    ARBShaderObjects.glDeleteObjectARB(j);
+                    GL20.glDetachShader(i, j);
+                    GL20.glDeleteShader(j);
                 }
 
                 if (k != 0)
                 {
-                    ARBShaderObjects.glDetachObjectARB(i, k);
-                    ARBShaderObjects.glDeleteObjectARB(k);
+                    GL20.glDetachShader(i, k);
+                    GL20.glDeleteShader(k);
                 }
 
                 if (l != 0)
                 {
-                    ARBShaderObjects.glDetachObjectARB(i, l);
-                    ARBShaderObjects.glDeleteObjectARB(l);
+                    GL20.glDetachShader(i, l);
+                    GL20.glDeleteShader(l);
                 }
 
                 program.setId(i);
                 program.setRef(i);
                 useProgram(program);
-                ARBShaderObjects.glValidateProgramARB(i);
+                GL20.glValidateProgram(i);
                 useProgram(ProgramNone);
                 printLogInfo(i, program.getName());
                 int validateStatus = GL20.glGetProgrami(i, 35715);
@@ -2597,7 +2579,7 @@ public class Shaders
 
     private static int createVertShader(Program program, String filename)
     {
-        int i = ARBShaderObjects.glCreateShaderObjectARB(ARBVertexShader.GL_VERTEX_SHADER_ARB);
+        int i = GL20.glCreateShader(GL20.GL_VERTEX_SHADER);
 
         if (i == 0)
         {
@@ -2614,7 +2596,7 @@ public class Shaders
             }
             catch (Exception caughtException)
             {
-                ARBShaderObjects.glDeleteObjectARB(i);
+                GL20.glDeleteShader(i);
                 return 0;
             }
 
@@ -2676,7 +2658,7 @@ public class Shaders
                 {
                     SMCLog.severe("Couldn\'t read " + filename + "!");
                     net.minecraft.src.Config.warn(exception.getClass().getName() + ": " + exception.getMessage(), exception);
-                    ARBShaderObjects.glDeleteObjectARB(i);
+                    GL20.glDeleteShader(i);
                     return 0;
                 }
             }
@@ -2686,8 +2668,8 @@ public class Shaders
                 saveShader(filename, stringbuilder.toString());
             }
 
-            ARBShaderObjects.glShaderSourceARB(i, CorePipeline.rewritePackShader(stringbuilder.toString(), CorePipeline.SHADER_VERTEX));
-            ARBShaderObjects.glCompileShaderARB(i);
+            GL20.glShaderSource(i, CorePipeline.rewritePackShader(stringbuilder.toString(), CorePipeline.SHADER_VERTEX));
+            GL20.glCompileShader(i);
 
             if (GL20.glGetShaderi(i, 35713) != 1)
             {
@@ -2701,7 +2683,7 @@ public class Shaders
 
     private static int createGeomShader(Program program, String filename)
     {
-        int i = ARBShaderObjects.glCreateShaderObjectARB(36313);
+        int i = GL20.glCreateShader(GL32.GL_GEOMETRY_SHADER);
 
         if (i == 0)
         {
@@ -2718,14 +2700,12 @@ public class Shaders
             }
             catch (Exception caughtException)
             {
-                ARBShaderObjects.glDeleteObjectARB(i);
+                GL20.glDeleteShader(i);
                 return 0;
             }
 
             ShaderOption[] ashaderoption = getChangedOptions(shaderPackOptions);
             List<String> list = new ArrayList();
-            progArbGeometryShader4 = false;
-            progMaxVerticesOut = 3;
 
             if (bufferedreader != null)
             {
@@ -2747,35 +2727,14 @@ public class Shaders
                         s = applyOptions(s, ashaderoption);
                         stringbuilder.append(s).append('\n');
 
-                        if (macrostate.processLine(s))
-                        {
-                            ShaderLine shaderline = ShaderParser.parseLine(s);
-
-                            if (shaderline != null)
-                            {
-                                if (shaderline.isExtension("GL_ARB_geometry_shader4"))
-                                {
-                                    String extensionBehavior = Config.normalize(shaderline.getValue());
-
-                                    if (extensionBehavior.equals("enable") || extensionBehavior.equals("require") || extensionBehavior.equals("warn"))
-                                    {
-                                        progArbGeometryShader4 = true;
-                                    }
-                                }
-
-                                if (shaderline.isConstInt("maxVerticesOut"))
-                                {
-                                    progMaxVerticesOut = shaderline.getValueInt();
-                                }
-                            }
-                        }
+                        macrostate.processLine(s);
                     }
                 }
                 catch (Exception exception)
                 {
                     SMCLog.severe("Couldn\'t read " + filename + "!");
                     net.minecraft.src.Config.warn(exception.getClass().getName() + ": " + exception.getMessage(), exception);
-                    ARBShaderObjects.glDeleteObjectARB(i);
+                    GL20.glDeleteShader(i);
                     return 0;
                 }
             }
@@ -2785,8 +2744,8 @@ public class Shaders
                 saveShader(filename, stringbuilder.toString());
             }
 
-            ARBShaderObjects.glShaderSourceARB(i, CorePipeline.rewritePackShader(stringbuilder.toString(), CorePipeline.SHADER_GEOMETRY));
-            ARBShaderObjects.glCompileShaderARB(i);
+            GL20.glShaderSource(i, CorePipeline.rewritePackShader(stringbuilder.toString(), CorePipeline.SHADER_GEOMETRY));
+            GL20.glCompileShader(i);
 
             if (GL20.glGetShaderi(i, 35713) != 1)
             {
@@ -2800,7 +2759,7 @@ public class Shaders
 
     private static int createFragShader(Program program, String filename)
     {
-        int i = ARBShaderObjects.glCreateShaderObjectARB(ARBFragmentShader.GL_FRAGMENT_SHADER_ARB);
+        int i = GL20.glCreateShader(GL20.GL_FRAGMENT_SHADER);
 
         if (i == 0)
         {
@@ -2817,7 +2776,7 @@ public class Shaders
             }
             catch (Exception caughtException)
             {
-                ARBShaderObjects.glDeleteObjectARB(i);
+                GL20.glDeleteShader(i);
                 return 0;
             }
 
@@ -3141,7 +3100,7 @@ public class Shaders
                 {
                     SMCLog.severe("Couldn\'t read " + filename + "!");
                     net.minecraft.src.Config.warn(exception.getClass().getName() + ": " + exception.getMessage(), exception);
-                    ARBShaderObjects.glDeleteObjectARB(i);
+                    GL20.glDeleteShader(i);
                     return 0;
                 }
             }
@@ -3151,8 +3110,8 @@ public class Shaders
                 saveShader(filename, stringbuilder.toString());
             }
 
-            ARBShaderObjects.glShaderSourceARB(i, CorePipeline.rewritePackShader(stringbuilder.toString(), CorePipeline.SHADER_FRAGMENT));
-            ARBShaderObjects.glCompileShaderARB(i);
+            GL20.glShaderSource(i, CorePipeline.rewritePackShader(stringbuilder.toString(), CorePipeline.SHADER_FRAGMENT));
+            GL20.glCompileShader(i);
 
             if (GL20.glGetShaderi(i, 35713) != 1)
             {
@@ -3212,24 +3171,11 @@ public class Shaders
 
     private static boolean printLogInfo(int obj, String name)
     {
-        IntBuffer intbuffer = BufferUtils.createIntBuffer(1);
-        ARBShaderObjects.glGetObjectParameterivARB(obj, ARBShaderObjects.GL_OBJECT_INFO_LOG_LENGTH_ARB, intbuffer);
-        int i = intbuffer.get();
+        int i = GL20.glGetProgrami(obj, GL20.GL_INFO_LOG_LENGTH);
 
         if (i > 1)
         {
-            ByteBuffer byteBuffer = BufferUtils.createByteBuffer(i);
-            intbuffer.flip();
-            ARBShaderObjects.glGetInfoLogARB(obj, intbuffer, byteBuffer);
-            byte[] abyte = new byte[i];
-            byteBuffer.get(abyte);
-
-            if (abyte[i - 1] == 0)
-            {
-                abyte[i - 1] = 10;
-            }
-
-            String s = new String(abyte, Charsets.US_ASCII);
+            String s = GL20.glGetProgramInfoLog(obj, i);
             s = StrUtils.trim(s, " \n\r\t");
             SMCLog.info("Info log: " + name + "\n" + s);
             return false;
@@ -3305,7 +3251,7 @@ public class Shaders
             }
             else
             {
-                ARBShaderObjects.glUseProgramObjectARB(i);
+                GL20.glUseProgram(i);
                 CorePipeline.notePackProgram(i);
             }
 
@@ -3700,14 +3646,14 @@ public class Shaders
 
             if (dfb != 0)
             {
-                EXTFramebufferObject.glDeleteFramebuffersEXT(dfb);
+                GL30.glDeleteFramebuffers(dfb);
                 dfb = 0;
                 checkGLError("del dfb");
             }
 
             if (sfb != 0)
             {
-                EXTFramebufferObject.glDeleteFramebuffersEXT(sfb);
+                GL30.glDeleteFramebuffers(sfb);
                 sfb = 0;
                 checkGLError("del sfb");
             }
@@ -3790,17 +3736,17 @@ public class Shaders
     {
         if (dfb != 0)
         {
-            EXTFramebufferObject.glDeleteFramebuffersEXT(dfb);
+            GL30.glDeleteFramebuffers(dfb);
             GlStateManager.deleteTextures(dfbDepthTextures);
             GlStateManager.deleteTextures(dfbColorTextures);
         }
 
-        dfb = EXTFramebufferObject.glGenFramebuffersEXT();
+        dfb = GL30.glGenFramebuffers();
         GL11.glGenTextures((IntBuffer)dfbDepthTextures.clear().limit(usedDepthBuffers));
         GL11.glGenTextures((IntBuffer)dfbColorTextures.clear().limit(16));
         dfbDepthTextures.position(0);
         dfbColorTextures.position(0);
-        EXTFramebufferObject.glBindFramebufferEXT(36160, dfb);
+        GL30.glBindFramebuffer(36160, dfb);
         GL20.glDrawBuffers(0);
         GL11.glReadBuffer(0);
 
@@ -3814,7 +3760,7 @@ public class Shaders
             GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL11.GL_DEPTH_COMPONENT, renderWidth, renderHeight, 0, GL11.GL_DEPTH_COMPONENT, GL11.GL_FLOAT, (FloatBuffer)((FloatBuffer)null));
         }
 
-        EXTFramebufferObject.glFramebufferTexture2DEXT(36160, 36096, 3553, dfbDepthTextures.get(0), 0);
+        GL30.glFramebufferTexture2D(36160, 36096, 3553, dfbDepthTextures.get(0), 0);
         GL20.glDrawBuffers(dfbDrawBuffers);
         GL11.glReadBuffer(0);
         checkGLError("FT d");
@@ -3827,7 +3773,7 @@ public class Shaders
             GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR);
             GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
             GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, gbuffersFormat[k], renderWidth, renderHeight, 0, getPixelFormat(gbuffersFormat[k]), GL12.GL_UNSIGNED_INT_8_8_8_8_REV, (ByteBuffer)((ByteBuffer)null));
-            EXTFramebufferObject.glFramebufferTexture2DEXT(36160, 36064 + k, 3553, dfbColorTexturesFlip.getA(k), 0);
+            GL30.glFramebufferTexture2D(36160, 36064 + k, 3553, dfbColorTexturesFlip.getA(k), 0);
             checkGLError("FT c");
         }
 
@@ -3842,7 +3788,7 @@ public class Shaders
             checkGLError("FT ca");
         }
 
-        int framebufferStatus = EXTFramebufferObject.glCheckFramebufferStatusEXT(36160);
+        int framebufferStatus = GL30.glCheckFramebufferStatus(36160);
 
         if (framebufferStatus == 36058)
         {
@@ -3852,11 +3798,11 @@ public class Shaders
             {
                 GlStateManager.bindTexture(dfbColorTexturesFlip.getA(j));
                 GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL11.GL_RGBA, renderWidth, renderHeight, 0, GL12.GL_BGRA, GL12.GL_UNSIGNED_INT_8_8_8_8_REV, (ByteBuffer)((ByteBuffer)null));
-                EXTFramebufferObject.glFramebufferTexture2DEXT(36160, 36064 + j, 3553, dfbColorTexturesFlip.getA(j), 0);
+                GL30.glFramebufferTexture2D(36160, 36064 + j, 3553, dfbColorTexturesFlip.getA(j), 0);
                 checkGLError("FT c");
             }
 
-            framebufferStatus = EXTFramebufferObject.glCheckFramebufferStatusEXT(36160);
+            framebufferStatus = GL30.glCheckFramebufferStatus(36160);
 
             if (framebufferStatus == 36053)
             {
@@ -3901,13 +3847,13 @@ public class Shaders
         {
             if (sfb != 0)
             {
-                EXTFramebufferObject.glDeleteFramebuffersEXT(sfb);
+                GL30.glDeleteFramebuffers(sfb);
                 GlStateManager.deleteTextures(sfbDepthTextures);
                 GlStateManager.deleteTextures(sfbColorTextures);
             }
 
-            sfb = EXTFramebufferObject.glGenFramebuffersEXT();
-            EXTFramebufferObject.glBindFramebufferEXT(36160, sfb);
+            sfb = GL30.glGenFramebuffers();
+            GL30.glBindFramebuffer(36160, sfb);
             GL11.glDrawBuffer(0);
             GL11.glReadBuffer(0);
             GL11.glGenTextures((IntBuffer)sfbDepthTextures.clear().limit(usedShadowDepthBuffers));
@@ -3932,7 +3878,7 @@ public class Shaders
                 GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL11.GL_DEPTH_COMPONENT, shadowMapWidth, shadowMapHeight, 0, GL11.GL_DEPTH_COMPONENT, GL11.GL_FLOAT, (FloatBuffer)((FloatBuffer)null));
             }
 
-            EXTFramebufferObject.glFramebufferTexture2DEXT(36160, 36096, 3553, sfbDepthTextures.get(0), 0);
+            GL30.glFramebufferTexture2D(36160, 36096, 3553, sfbDepthTextures.get(0), 0);
             checkGLError("FT sd");
 
             for (int k = 0; k < usedShadowColorBuffers; ++k)
@@ -3944,7 +3890,7 @@ public class Shaders
                 GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, filterMode);
                 GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, filterMode);
                 GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL11.GL_RGBA, shadowMapWidth, shadowMapHeight, 0, GL12.GL_BGRA, GL12.GL_UNSIGNED_INT_8_8_8_8_REV, (ByteBuffer)((ByteBuffer)null));
-                EXTFramebufferObject.glFramebufferTexture2DEXT(36160, 36064 + k, 3553, sfbColorTextures.get(k), 0);
+                GL30.glFramebufferTexture2D(36160, 36064 + k, 3553, sfbColorTextures.get(k), 0);
                 checkGLError("FT sc");
             }
 
@@ -3955,7 +3901,7 @@ public class Shaders
                 GL20.glDrawBuffers(sfbDrawBuffers);
             }
 
-            int l = EXTFramebufferObject.glCheckFramebufferStatusEXT(36160);
+            int l = GL30.glCheckFramebufferStatus(36160);
 
             if (l != 36053)
             {
@@ -4113,11 +4059,11 @@ public class Shaders
         checkGLError("beginRender");
         ShadersRender.renderShadowMap(entityRenderer, 0, partialTicks, finishTimeNano);
         mc.mcProfiler.endSection();
-        EXTFramebufferObject.glBindFramebufferEXT(36160, dfb);
+        GL30.glBindFramebuffer(36160, dfb);
 
         for (int j = 0; j < usedColorBuffers; ++j)
         {
-            EXTFramebufferObject.glFramebufferTexture2DEXT(36160, 36064 + j, 3553, dfbColorTexturesFlip.getA(j), 0);
+            GL30.glFramebufferTexture2D(36160, 36064 + j, 3553, dfbColorTexturesFlip.getA(j), 0);
         }
 
         checkGLError("end beginRender");
@@ -4222,7 +4168,7 @@ public class Shaders
     {
         if (!isShadowPass)
         {
-            EXTFramebufferObject.glBindFramebufferEXT(36160, dfb);
+            GL30.glBindFramebuffer(36160, dfb);
             GL11.glViewport(0, 0, renderWidth, renderHeight);
             activeDrawBuffers = null;
             ShadersTex.bindNSTextures(defaultTexture.getMultiTexID());
@@ -4242,7 +4188,7 @@ public class Shaders
         else
         {
             GL11.glViewport(0, 0, renderWidth, renderHeight);
-            EXTFramebufferObject.glBindFramebufferEXT(36160, dfb);
+            GL30.glBindFramebuffer(36160, dfb);
             isRenderingDfb = true;
             GlStateManager.enableCull();
             GlStateManager.enableDepth();
@@ -4283,7 +4229,7 @@ public class Shaders
         if (isShadowPass)
         {
             checkGLError("shadow clear pre");
-            EXTFramebufferObject.glFramebufferTexture2DEXT(36160, 36096, 3553, sfbDepthTextures.get(0), 0);
+            GL30.glFramebufferTexture2D(36160, 36096, 3553, sfbDepthTextures.get(0), 0);
             GL11.glClearColor(1.0F, 1.0F, 1.0F, 1.0F);
             GL20.glDrawBuffers(ProgramShadow.getDrawBuffers());
             checkFramebufferStatus("shadow clear");
@@ -4305,10 +4251,10 @@ public class Shaders
 
                 if (dfbColorTexturesFlip.isChanged(0))
                 {
-                    EXTFramebufferObject.glFramebufferTexture2DEXT(36160, 36064, 3553, dfbColorTexturesFlip.getB(0), 0);
+                    GL30.glFramebufferTexture2D(36160, 36064, 3553, dfbColorTexturesFlip.getB(0), 0);
                     GL20.glDrawBuffers(36064);
                     GL11.glClear(16384);
-                    EXTFramebufferObject.glFramebufferTexture2DEXT(36160, 36064, 3553, dfbColorTexturesFlip.getA(0), 0);
+                    GL30.glFramebufferTexture2D(36160, 36064, 3553, dfbColorTexturesFlip.getA(0), 0);
                 }
 
                 GL20.glDrawBuffers(36064);
@@ -4327,10 +4273,10 @@ public class Shaders
 
                 if (dfbColorTexturesFlip.isChanged(1))
                 {
-                    EXTFramebufferObject.glFramebufferTexture2DEXT(36160, 36065, 3553, dfbColorTexturesFlip.getB(1), 0);
+                    GL30.glFramebufferTexture2D(36160, 36065, 3553, dfbColorTexturesFlip.getB(1), 0);
                     GL20.glDrawBuffers(36065);
                     GL11.glClear(16384);
-                    EXTFramebufferObject.glFramebufferTexture2DEXT(36160, 36065, 3553, dfbColorTexturesFlip.getA(1), 0);
+                    GL30.glFramebufferTexture2D(36160, 36065, 3553, dfbColorTexturesFlip.getA(1), 0);
                 }
 
                 GL20.glDrawBuffers(36065);
@@ -4351,10 +4297,10 @@ public class Shaders
 
                     if (dfbColorTexturesFlip.isChanged(i))
                     {
-                        EXTFramebufferObject.glFramebufferTexture2DEXT(36160, 36064 + i, 3553, dfbColorTexturesFlip.getB(i), 0);
+                        GL30.glFramebufferTexture2D(36160, 36064 + i, 3553, dfbColorTexturesFlip.getB(i), 0);
                         GL20.glDrawBuffers(36064 + i);
                         GL11.glClear(16384);
-                        EXTFramebufferObject.glFramebufferTexture2DEXT(36160, 36064 + i, 3553, dfbColorTexturesFlip.getA(i), 0);
+                        GL30.glFramebufferTexture2D(36160, 36064 + i, 3553, dfbColorTexturesFlip.getA(i), 0);
                     }
 
                     GL20.glDrawBuffers(36064 + i);
@@ -4639,7 +4585,7 @@ public class Shaders
 
                 for (int i = 0; i < usedColorBuffers; ++i)
                 {
-                    EXTFramebufferObject.glFramebufferTexture2DEXT(36160, 36064 + i, 3553, dfbColorTexturesFlip.getA(i), 0);
+                    GL30.glFramebufferTexture2D(36160, 36064 + i, 3553, dfbColorTexturesFlip.getA(i), 0);
                 }
 
                 if (ProgramWater.getDrawBuffers() != null)
@@ -4761,10 +4707,10 @@ public class Shaders
 
             for (int l = 0; l < usedColorBuffers; ++l)
             {
-                EXTFramebufferObject.glFramebufferTexture2DEXT(36160, 36064 + l, 3553, dfbColorTexturesFlip.getB(l), 0);
+                GL30.glFramebufferTexture2D(36160, 36064 + l, 3553, dfbColorTexturesFlip.getB(l), 0);
             }
 
-            EXTFramebufferObject.glFramebufferTexture2DEXT(36160, 36096, 3553, dfbDepthTextures.get(0), 0);
+            GL30.glFramebufferTexture2D(36160, 36096, 3553, dfbDepthTextures.get(0), 0);
             GL20.glDrawBuffers(dfbDrawBuffers);
             checkGLError("pre-composite");
 
@@ -4793,7 +4739,7 @@ public class Shaders
                             dfbColorTexturesFlip.flip(j);
                             GlStateManager.setActiveTexture(33984 + colorTextureImageUnit[j]);
                             GlStateManager.bindTexture(dfbColorTexturesFlip.getA(j));
-                            EXTFramebufferObject.glFramebufferTexture2DEXT(36160, 36064 + j, 3553, dfbColorTexturesFlip.getB(j), 0);
+                            GL30.glFramebufferTexture2D(36160, 36064 + j, 3553, dfbColorTexturesFlip.getB(j), 0);
                         }
                     }
 
@@ -5884,7 +5830,7 @@ public class Shaders
 
     public static boolean canRenderQuads()
     {
-        return hasGeometryShaders ? capabilities.GL_NV_geometry_shader4 : true;
+        return true;
     }
 
     static

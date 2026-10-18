@@ -52,6 +52,21 @@ public class PotionHelper
 
     public static int calcPotionLiquidColor(Collection<PotionEffect> potionEffects)
     {
+        return calcPotionLiquidColor(potionEffects, false);
+    }
+
+    public static int getPotionParticleColor(Collection<PotionEffect> potionEffects, int color)
+    {
+        if (potionEffects != null && !potionEffects.isEmpty() && Config.isCustomColors() && calcPotionLiquidColor(potionEffects) == color)
+        {
+            return calcPotionLiquidColor(potionEffects, true);
+        }
+
+        return color;
+    }
+
+    private static int calcPotionLiquidColor(Collection<PotionEffect> potionEffects, boolean customColors)
+    {
         int i = 3694022;
 
         if (potionEffects != null && !potionEffects.isEmpty())
@@ -67,7 +82,7 @@ public class PotionHelper
                 {
                     int j = Potion.potionTypes[potioneffect.getPotionID()].getLiquidColor();
 
-                    if (Config.isCustomColors())
+                    if (customColors)
                     {
                         j = CustomColors.getPotionColor(potioneffect.getPotionID(), j);
                     }
@@ -96,7 +111,7 @@ public class PotionHelper
         }
         else
         {
-            return Config.isCustomColors() ? CustomColors.getPotionColor(0, i) : i;
+            return customColors ? CustomColors.getPotionColor(0, i) : i;
         }
     }
 
@@ -127,14 +142,14 @@ public class PotionHelper
             }
             else
             {
-                int i = calcPotionLiquidColor(getPotionEffects(integer.intValue(), false));
+                int i = calcPotionLiquidColor(getPotionEffects(integer.intValue(), false), Config.isCustomColors());
                 DATAVALUE_COLORS.put(integer, Integer.valueOf(i));
                 return i;
             }
         }
         else
         {
-            return calcPotionLiquidColor(getPotionEffects(integer.intValue(), true));
+            return calcPotionLiquidColor(getPotionEffects(integer.intValue(), true), Config.isCustomColors());
         }
     }
 

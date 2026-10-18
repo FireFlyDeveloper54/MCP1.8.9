@@ -131,12 +131,14 @@ public class GameRules
                 if (value.equals("false"))
                 {
                     this.valueBoolean = false;
+                    this.valueInteger = 0;
                     return;
                 }
 
                 if (value.equals("true"))
                 {
                     this.valueBoolean = true;
+                    this.valueInteger = 1;
                     return;
                 }
             }

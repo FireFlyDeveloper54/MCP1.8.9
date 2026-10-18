@@ -50,6 +50,7 @@ import net.minecraft.world.chunk.Chunk;
 import net.minecraft.world.chunk.IChunkProvider;
 import net.minecraft.world.gen.structure.StructureBoundingBox;
 import net.minecraft.world.lighting.LightingEngine;
+import net.minecraft.world.lighting.LightingEngineHelpers;
 import net.minecraft.world.storage.ISaveHandler;
 import net.minecraft.world.storage.MapStorage;
 import net.minecraft.world.storage.WorldInfo;
@@ -301,7 +302,7 @@ public abstract class World implements IBlockAccess
             {
                 Block block1 = iblockstate.getBlock();
 
-                if (block.getLightOpacity() != block1.getLightOpacity() || block.getLightValue() != block1.getLightValue())
+                if (LightingEngineHelpers.getLightOpacityForBlock(block, this) != LightingEngineHelpers.getLightOpacityForBlock(block1, this) || block.getLightValue() != block1.getLightValue())
                 {
                     this.theProfiler.startSection("checkLight");
                     this.checkLight(pos);
@@ -519,7 +520,7 @@ public abstract class World implements IBlockAccess
                     blockPos.set(x, y, z);
                     Block block = this.getBlockState(blockPos).getBlock();
 
-                    if (block.getLightOpacity() > 0 && !block.getMaterial().isLiquid())
+                    if (LightingEngineHelpers.getLightOpacityForBlock(block, this) > 0 && !block.getMaterial().isLiquid())
                     {
                         return false;
                     }
@@ -2629,7 +2630,7 @@ public abstract class World implements IBlockAccess
 
     public boolean checkLightFor(EnumSkyBlock lightType, BlockPos pos)
     {
-        if (pos.getY() < 0 || pos.getY() >= 256 || !this.isAreaLoaded(pos, 16, false))
+        if (pos.getY() < 0 || pos.getY() >= 256 || !this.isBlockLoaded(pos))
         {
             return false;
         }

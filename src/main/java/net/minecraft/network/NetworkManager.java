@@ -405,7 +405,7 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet>
 
             if (this.channel.pipeline().get("compress") instanceof NettyCompressionEncoder)
             {
-                ((NettyCompressionEncoder)this.channel.pipeline().get("decompress")).setCompressionTreshold(treshold);
+                ((NettyCompressionEncoder)this.channel.pipeline().get("compress")).setCompressionTreshold(treshold);
             }
             else
             {

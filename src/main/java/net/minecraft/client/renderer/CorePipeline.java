@@ -537,11 +537,11 @@ public final class CorePipeline
     {
         String rewritten = source.replace("\r\n", "\n").replace('\r', '\n');
         rewritten = replaceVersion(rewritten);
-        rewritten = rewritten.replace("gl_FragColor", "iris_FragColor");
+        rewritten = rewritten.replace("gl_FragColor", "iris_FragData0");
 
         for (int i = 7; i >= 0; --i)
         {
-            rewritten = rewritten.replace("gl_FragData[" + i + "]", "iris_FragData" + i);
+            rewritten = rewritten.replaceAll("(?<![A-Za-z0-9_])gl_FragData\\s*\\[\\s*" + i + "\\s*\\]", "iris_FragData" + i);
         }
 
         if (shaderType == SHADER_VERTEX)
@@ -555,7 +555,7 @@ public final class CorePipeline
         {
             rewritten = rewritten.replaceAll("(?<![A-Za-z0-9_])varying\\s+", "in ");
             rewritten = insertAfterVersion(rewritten, FRAGMENT_PRELUDE + "\n#define main iris_user_main\n");
-            rewritten = rewritten + "\n#undef main\nvoid main() {\n  iris_initTextureMatrices();\n  iris_FragColor = vec4(1.0);\n  iris_FragData0 = vec4(1.0);\n  iris_user_main();\n  if (iris_FragData0 == vec4(1.0) && iris_FragColor != vec4(1.0)) iris_FragData0 = iris_FragColor;\n}\n";
+            rewritten = rewritten + "\n#undef main\nvoid main() {\n  iris_initTextureMatrices();\n  iris_FragData0 = vec4(1.0);\n  iris_user_main();\n}\n";
         }
         else if (shaderType == SHADER_GEOMETRY)
         {
@@ -1656,8 +1656,7 @@ public final class CorePipeline
         "layout(location=4) out vec4 iris_FragData4;\n" +
         "layout(location=5) out vec4 iris_FragData5;\n" +
         "layout(location=6) out vec4 iris_FragData6;\n" +
-        "layout(location=7) out vec4 iris_FragData7;\n" +
-        "vec4 iris_FragColor;\n";
+        "layout(location=7) out vec4 iris_FragData7;\n";
 
     private static final String DEFAULT_VERTEX =
         "#version 330 core\n" +

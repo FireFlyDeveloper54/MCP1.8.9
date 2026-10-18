@@ -2,7 +2,9 @@ package net.minecraft.world.lighting;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import net.minecraft.block.Block;
 import net.minecraft.block.state.IBlockState;
+import net.minecraft.init.Blocks;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraft.nbt.NBTTagShort;
@@ -371,6 +373,35 @@ public final class LightingHooks {
                     if (chunk.getHeightValue(x, z) <= section.getYLocation()) {
                         for (int y = 0; y < 16; ++y) {
                             section.setExtSkylightValue(x, y, z, EnumSkyBlock.SKY.defaultLightValue);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    public static void relightClientWater(final Chunk chunk, final World world, final int sectionMask) {
+        if (!world.isRemote || Blocks.water.getLightOpacity() == 3 || world.provider.getHasNoSky()) {
+            return;
+        }
+
+        final BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
+        final int xBase = chunk.xPosition << 4;
+        final int zBase = chunk.zPosition << 4;
+
+        final ExtendedBlockStorage[] sections = chunk.getBlockStorageArray();
+        for (int sectionIndex = 0; sectionIndex < sections.length; ++sectionIndex) {
+            final ExtendedBlockStorage section = sections[sectionIndex];
+            if ((sectionMask & 1 << sectionIndex) == 0 || section == null) {
+                continue;
+            }
+
+            for (int x = 0; x < 16; ++x) {
+                for (int z = 0; z < 16; ++z) {
+                    for (int y = 0; y < 16; ++y) {
+                        final Block block = section.getBlockByExtId(x, y, z);
+                        if (block == Blocks.water || block == Blocks.flowing_water || x == 0 || x == 15 || y == 0 || y == 15 || z == 0 || z == 15) {
+                            world.checkLightFor(EnumSkyBlock.SKY, pos.set(xBase + x, section.getYLocation() + y, zBase + z));
                         }
                     }
                 }

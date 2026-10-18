@@ -534,7 +534,7 @@ public class LightingEngine {
     }
 
     private int getPosOpacity(final BlockPos pos, final IBlockState state) {
-        int opacity = state.getBlock().getLightOpacity();
+        int opacity = LightingEngineHelpers.getLightOpacityForBlock(state.getBlock(), this.world);
         // Vanilla applies this exception to both block light and skylight.
         if (opacity >= MAX_LIGHT && LightingEngineHelpers.getLightValueForState(state, this.world, pos) > 0) {
             opacity = 1;

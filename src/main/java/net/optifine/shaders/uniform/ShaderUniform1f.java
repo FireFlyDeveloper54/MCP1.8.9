@@ -1,6 +1,6 @@
 package net.optifine.shaders.uniform;
 
-import org.lwjgl.opengl.ARBShaderObjects;
+import org.lwjgl.opengl.GL20;
 
 public class ShaderUniform1f extends ShaderUniformBase
 {
@@ -25,7 +25,7 @@ public class ShaderUniform1f extends ShaderUniformBase
 
             if (uniformLocation >= 0)
             {
-                ARBShaderObjects.glUniform1fARB(uniformLocation, valueNew);
+                GL20.glUniform1f(uniformLocation, valueNew);
                 this.checkGLError();
             }
         }

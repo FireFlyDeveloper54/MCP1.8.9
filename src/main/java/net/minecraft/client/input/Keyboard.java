@@ -119,6 +119,7 @@ public final class Keyboard
     public static final int KEY_DELETE = 0xD3;
     public static final int KEY_LMETA = 0xDB;
     public static final int KEY_RMETA = 0xDC;
+    public static final int KEY_APPS = 0xDD;
     public static final int KEYBOARD_SIZE = 256;
 
     private static final String[] KEY_NAMES = new String[KEYBOARD_SIZE];
@@ -257,7 +258,7 @@ public final class Keyboard
         map(GLFW.GLFW_KEY_RIGHT_BRACKET, KEY_RBRACKET);
         map(GLFW.GLFW_KEY_APOSTROPHE, KEY_APOSTROPHE);
         map(GLFW.GLFW_KEY_PRINT_SCREEN, KEY_SYSRQ);
-        map(GLFW.GLFW_KEY_MENU, KEY_RMENU);
+        map(GLFW.GLFW_KEY_MENU, KEY_APPS);
         map(GLFW.GLFW_KEY_WORLD_1, KEY_CIRCUMFLEX);
     }
 

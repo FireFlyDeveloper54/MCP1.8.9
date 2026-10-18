@@ -65,7 +65,7 @@ public class NBTTagDouble extends NBTBase.NBTPrimitive
 
     public long getLong()
     {
-        return (long)MathHelper.floor_double(this.data);
+        return (long)Math.floor(this.data);
     }
 
     public int getInt()

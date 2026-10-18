@@ -1,7 +1,7 @@
 package net.optifine.shaders.uniform;
 
 import java.nio.FloatBuffer;
-import org.lwjgl.opengl.ARBShaderObjects;
+import org.lwjgl.opengl.GL20;
 
 public class ShaderUniformM4 extends ShaderUniformBase
 {
@@ -21,7 +21,7 @@ public class ShaderUniformM4 extends ShaderUniformBase
 
         if (uniformLocation >= 0)
         {
-            ARBShaderObjects.glUniformMatrix4fvARB(uniformLocation, transpose, matrix);
+            GL20.glUniformMatrix4fv(uniformLocation, transpose, matrix);
             this.checkGLError();
         }
     }

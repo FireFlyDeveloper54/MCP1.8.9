@@ -536,6 +536,12 @@ public abstract class EntityLivingBase extends Entity
         }
 
         int i = this.dataWatcher.getWatchableObjectInt(7);
+
+        if (this.worldObj.isRemote)
+        {
+            i = PotionHelper.getPotionParticleColor(this.activePotionsMap.values(), i);
+        }
+
         boolean flag1 = this.dataWatcher.getWatchableObjectByte(8) > 0;
 
         if (i > 0)

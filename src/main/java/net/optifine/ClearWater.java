@@ -17,6 +17,11 @@ public class ClearWater
 {
     public static void updateWaterOpacity(GameSettings settings, World world)
     {
+        if (world != null && !world.isRemote)
+        {
+            return;
+        }
+
         if (settings != null)
         {
             int waterLightOpacity = 3;

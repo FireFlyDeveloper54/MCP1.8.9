@@ -2,7 +2,7 @@ package net.optifine.shaders.uniform;
 
 import java.util.Arrays;
 import net.optifine.shaders.Shaders;
-import org.lwjgl.opengl.ARBShaderObjects;
+import org.lwjgl.opengl.GL20;
 
 public abstract class ShaderUniformBase
 {
@@ -62,7 +62,7 @@ public abstract class ShaderUniformBase
 
             if (uniformLocation == Integer.MIN_VALUE)
             {
-                uniformLocation = ARBShaderObjects.glGetUniformLocationARB(this.program, (CharSequence)this.name);
+                uniformLocation = GL20.glGetUniformLocation(this.program, (CharSequence)this.name);
                 this.locations[this.program] = uniformLocation;
             }
 
