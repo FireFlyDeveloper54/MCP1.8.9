@@ -107,7 +107,7 @@ public class GuiLanguage extends GuiScreen
             GuiLanguage.this.languageManager.setCurrentLanguage(language);
             GuiLanguage.this.gameSettings.language = language.getLanguageCode();
             this.mc.refreshResources();
-            GuiLanguage.this.fontRendererObj.setUnicodeFlag(GuiLanguage.this.languageManager.isCurrentLocaleUnicode() || GuiLanguage.this.gameSettings.forceUnicodeFont);
+            GuiLanguage.this.fontRendererObj.setUnicodeFlag(this.mc.isUnicode());
             GuiLanguage.this.fontRendererObj.setBidiFlag(GuiLanguage.this.languageManager.isCurrentLanguageBidirectional());
             GuiLanguage.this.confirmSettingsBtn.displayString = I18n.format("gui.done", new Object[0]);
             GuiLanguage.this.forceUnicodeFontBtn.displayString = GuiLanguage.this.gameSettings.getKeyBinding(GameSettings.Options.FORCE_UNICODE_FONT);
