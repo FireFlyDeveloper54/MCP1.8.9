@@ -21,7 +21,6 @@ import net.minecraft.client.resources.I18n;
 import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.util.MathHelper;
 import net.minecraft.util.ResourceLocation;
-import net.minecraft.realms.RealmsBridge;
 import net.minecraft.world.demo.DemoWorldServer;
 import net.minecraft.world.storage.ISaveFormat;
 import net.minecraft.world.storage.WorldInfo;
@@ -60,9 +59,6 @@ public class GuiMainMenu extends GuiScreen implements GuiYesNoCallback
     private int openGLWarningX2;
     private int openGLWarningY2;
     private ResourceLocation backgroundTexture;
-    private GuiButton realmsButton;
-    private boolean realmsNotificationsInitialized;
-    private GuiScreen realmsNotificationScreen;
 
     public GuiMainMenu()
     {
@@ -132,15 +128,6 @@ public class GuiMainMenu extends GuiScreen implements GuiYesNoCallback
     public void updateScreen()
     {
         ++this.panoramaTimer;
-        if (this.hasRealmsNotifications())
-        {
-            this.realmsNotificationScreen.updateScreen();
-        }
-    }
-
-    private boolean hasRealmsNotifications()
-    {
-        return this.mc.gameSettings.realmsNotifications && this.realmsNotificationScreen != null;
     }
 
     public boolean doesGuiPauseGame()
@@ -184,9 +171,9 @@ public class GuiMainMenu extends GuiScreen implements GuiYesNoCallback
             this.addSingleplayerMultiplayerButtons(j, 24);
         }
 
-        this.buttonList.add(new GuiButton(0, this.width / 2 - 100, j + 72 + 12, 98, 20, I18n.format("menu.options", new Object[0])));
-        this.buttonList.add(new GuiButton(4, this.width / 2 + 2, j + 72 + 12, 98, 20, I18n.format("menu.quit", new Object[0])));
-        this.buttonList.add(new GuiButtonLanguage(5, this.width / 2 - 124, j + 72 + 12));
+        this.buttonList.add(new GuiButton(0, this.width / 2 - 100, j + (this.mc.isDemo() ? 72 : 48) + 12, 98, 20, I18n.format("menu.options", new Object[0])));
+        this.buttonList.add(new GuiButton(4, this.width / 2 + 2, j + (this.mc.isDemo() ? 72 : 48) + 12, 98, 20, I18n.format("menu.quit", new Object[0])));
+        this.buttonList.add(new GuiButtonLanguage(5, this.width / 2 - 124, j + (this.mc.isDemo() ? 72 : 48) + 12));
 
         synchronized (this.threadLock)
         {
@@ -199,23 +186,12 @@ public class GuiMainMenu extends GuiScreen implements GuiYesNoCallback
             this.openGLWarningY2 = this.openGLWarningY1 + 24;
         }
 
-        this.mc.setConnectedToRealms(false);
-        if (this.mc.gameSettings.realmsNotifications && !this.realmsNotificationsInitialized)
-        {
-            this.realmsNotificationScreen = new RealmsBridge().getNotificationScreen(this);
-            this.realmsNotificationsInitialized = true;
-        }
-        if (this.hasRealmsNotifications())
-        {
-            this.realmsNotificationScreen.setWorldAndResolution(this.mc, this.width, this.height);
-        }
     }
 
     private void addSingleplayerMultiplayerButtons(int y, int verticalSpacing)
     {
         this.buttonList.add(new GuiButton(1, this.width / 2 - 100, y, I18n.format("menu.singleplayer", new Object[0])));
         this.buttonList.add(new GuiButton(2, this.width / 2 - 100, y + verticalSpacing * 1, I18n.format("menu.multiplayer", new Object[0])));
-        this.buttonList.add(this.realmsButton = new GuiButton(14, this.width / 2 - 100, y + verticalSpacing * 2, I18n.format("menu.online", new Object[0])));
     }
 
     private void addDemoButtons(int y, int verticalSpacing)
@@ -251,11 +227,6 @@ public class GuiMainMenu extends GuiScreen implements GuiYesNoCallback
         if (button.id == 2)
         {
             this.mc.displayGuiScreen(new GuiMultiplayer(this));
-        }
-
-        if (button.id == 14 && this.realmsButton != null && this.realmsButton.visible)
-        {
-            new RealmsBridge().switchToRealms(this);
         }
 
         if (button.id == 4)
@@ -575,10 +546,6 @@ public class GuiMainMenu extends GuiScreen implements GuiYesNoCallback
         }
 
         super.drawScreen(mouseX, mouseY, partialTicks);
-        if (this.hasRealmsNotifications())
-        {
-            this.realmsNotificationScreen.drawScreen(mouseX, mouseY, partialTicks);
-        }
     }
 
     protected void mouseClicked(int mouseX, int mouseY, int mouseButton) throws IOException
@@ -595,17 +562,6 @@ public class GuiMainMenu extends GuiScreen implements GuiYesNoCallback
             }
         }
 
-        if (this.hasRealmsNotifications())
-        {
-            this.realmsNotificationScreen.mouseClicked(mouseX, mouseY, mouseButton);
-        }
     }
 
-    public void onGuiClosed()
-    {
-        if (this.realmsNotificationScreen != null)
-        {
-            this.realmsNotificationScreen.onGuiClosed();
-        }
-    }
 }

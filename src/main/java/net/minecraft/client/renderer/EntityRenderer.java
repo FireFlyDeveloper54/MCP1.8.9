@@ -2701,9 +2701,4 @@ public class EntityRenderer implements IResourceManagerReloadListener
             this.mc.gameSettings.ofLazyChunkLoading = flag;
         }
     }
-    public void renderStreamIndicator(float partialTicks)
-    {
-        this.setupOverlayRendering();
-        this.mc.ingameGUI.renderStreamIndicator(new ScaledResolution(this.mc));
-    }
 }

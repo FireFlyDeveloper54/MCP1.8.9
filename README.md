@@ -19,7 +19,7 @@
 - Apache Commons：Codec 1.23.0、Compress 1.28.0、IO 2.22.0、Lang 3.21.0、Text 1.15.0、Logging 1.4.0
 - 兼容版本：HttpClient 4.5.14、HttpCore 4.4.16、jopt-simple 5.0.4
 
-Minecraft Authlib、ICU4J、Realms 和 Twitch 组件使用 1.8.9 对应版本；Realms JAR 保留项目的 GL3 适配版。
+Minecraft Authlib 和 ICU4J 使用 1.8.9 对应版本。
 
  ## 本项目相较于原版的改动
 

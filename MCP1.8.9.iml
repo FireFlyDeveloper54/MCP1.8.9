@@ -17,14 +17,11 @@
     <orderEntry type="module-library">
       <library name="Vanilla client services">
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/libraries/minecraft/twitch-6.5.jar!/" />
           <root url="jar://$MODULE_DIR$/libraries/minecraft/commons-compress-1.28.0.jar!/" />
-          <root url="jar://$MODULE_DIR$/libraries/common/realms/realms-1.7.59-gl3.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
         <NATIVE>
-          <root url="file://$MODULE_DIR$/natives/twitch" />
         </NATIVE>
       </library>
     </orderEntry>

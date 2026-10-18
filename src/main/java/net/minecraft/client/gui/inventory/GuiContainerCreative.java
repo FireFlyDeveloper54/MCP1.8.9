@@ -15,6 +15,7 @@ import net.minecraft.client.renderer.InventoryEffectRenderer;
 import net.minecraft.client.renderer.RenderHelper;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.client.settings.GameSettings;
+import net.minecraft.client.settings.HotbarSnapshot;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.enchantment.Enchantment;
 import net.minecraft.enchantment.EnchantmentHelper;
@@ -28,9 +29,11 @@ import net.minecraft.inventory.Slot;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.EnumChatFormatting;
+import net.minecraft.util.ChatComponentTranslation;
 import net.minecraft.util.MathHelper;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.client.GameWindow;
+import net.minecraft.client.Minecraft;
 
 public class GuiContainerCreative extends InventoryEffectRenderer
 {
@@ -791,6 +794,37 @@ public class GuiContainerCreative extends InventoryEffectRenderer
     public int getSelectedTabIndex()
     {
         return selectedTabIndex;
+    }
+
+    public static void handleHotbarSnapshots(Minecraft client, int slot, boolean load, boolean save)
+    {
+        HotbarSnapshot snapshot = client.creativeSettings.getHotbarSnapshot(slot);
+
+        if (load)
+        {
+            for (int hotbarIndex = 0; hotbarIndex < InventoryPlayer.getHotbarSize(); ++hotbarIndex)
+            {
+                ItemStack itemStack = snapshot.get(hotbarIndex);
+                ItemStack restoredStack = itemStack == null ? null : itemStack.copy();
+                client.thePlayer.inventory.setInventorySlotContents(hotbarIndex, restoredStack);
+                client.playerController.sendSlotPacket(restoredStack, 36 + hotbarIndex);
+            }
+
+            client.thePlayer.inventoryContainer.detectAndSendChanges();
+        }
+        else if (save)
+        {
+            for (int hotbarIndex = 0; hotbarIndex < InventoryPlayer.getHotbarSize(); ++hotbarIndex)
+            {
+                ItemStack itemStack = client.thePlayer.inventory.getStackInSlot(hotbarIndex);
+                snapshot.set(hotbarIndex, itemStack == null ? null : itemStack.copy());
+            }
+
+            String hotbarKey = GameSettings.getKeyDisplayString(client.gameSettings.keyBindsHotbar[slot].getKeyCode());
+            String loadKey = GameSettings.getKeyDisplayString(client.gameSettings.keyBindLoadToolbar.getKeyCode());
+            client.ingameGUI.getChatGUI().printChatMessage(new ChatComponentTranslation("inventory.hotbarSaved", new Object[] {loadKey, hotbarKey}));
+            client.creativeSettings.write();
+        }
     }
 
     static class ContainerCreative extends Container

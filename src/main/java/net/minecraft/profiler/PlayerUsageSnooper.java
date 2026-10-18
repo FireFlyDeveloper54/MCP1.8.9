@@ -38,7 +38,7 @@ public class PlayerUsageSnooper
         {
             this.serverUrl = new URL("http://snoop.minecraft.net/" + side + "?version=" + 2);
         }
-        catch (MalformedURLException var6)
+        catch (MalformedURLException malformedUrlException)
         {
             throw new IllegalArgumentException();
         }
