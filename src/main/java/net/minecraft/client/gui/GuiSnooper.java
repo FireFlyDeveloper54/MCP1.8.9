@@ -73,7 +73,6 @@ public class GuiSnooper extends GuiScreen
             if (button.id == 2)
             {
                 this.gameSettings.saveOptions();
-                this.gameSettings.saveOptions();
                 this.mc.displayGuiScreen(this.parentScreen);
             }
 

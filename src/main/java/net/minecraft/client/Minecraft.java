@@ -682,6 +682,11 @@ public class Minecraft implements IThreadListener, IPlayerUsage
         return this.gameSettings.forceUnicodeFont;
     }
 
+    public float getRenderPartialTicks()
+    {
+        return this.timer.renderPartialTicks;
+    }
+
     public void refreshResources()
     {
         List<IResourcePack> list = Lists.newArrayList(this.defaultResourcePacks);
@@ -1293,6 +1298,7 @@ public class Minecraft implements IThreadListener, IPlayerUsage
 
     public void shutdown()
     {
+        EntityCulling.instance.shutdown();
         this.running = false;
     }
 
@@ -1302,6 +1308,11 @@ public class Minecraft implements IThreadListener, IPlayerUsage
         {
             if (!this.inGameHasFocus)
             {
+                if (!isRunningOnMac)
+                {
+                    KeyBinding.updateKeyBindState();
+                }
+
                 this.inGameHasFocus = true;
                 this.mouseHelper.grabMouseCursor();
                 this.displayGuiScreen((GuiScreen)null);

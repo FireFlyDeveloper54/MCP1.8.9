@@ -1342,17 +1342,17 @@ public class GameSettings
 
         if (option == GameSettings.Options.CULL_TRACING_DISTANCE)
         {
-            this.ofCullTracingDistance = (int)value;
+            this.ofCullTracingDistance = MathHelper.clamp_int((int)value, 64, 256);
         }
 
         if (option == GameSettings.Options.CULL_SLEEP_DELAY)
         {
-            this.ofCullSleepDelay = (int)value;
+            this.ofCullSleepDelay = MathHelper.clamp_int((int)value, 5, 20);
         }
 
         if (option == GameSettings.Options.CULL_HITBOX_LIMIT)
         {
-            this.ofCullHitboxLimit = (int)value;
+            this.ofCullHitboxLimit = MathHelper.clamp_int((int)value, 30, 80);
         }
 
         if (option == GameSettings.Options.CHUNK_UPDATE_LIMIT)
@@ -2938,17 +2938,17 @@ public class GameSettings
 
                     if (astring[0].equals("ofCullTracingDistance") && astring.length >= 2)
                     {
-                        this.ofCullTracingDistance = Integer.parseInt(astring[1]);
+                        this.ofCullTracingDistance = MathHelper.clamp_int(Integer.parseInt(astring[1]), 64, 256);
                     }
 
                     if (astring[0].equals("ofCullSleepDelay") && astring.length >= 2)
                     {
-                        this.ofCullSleepDelay = Integer.parseInt(astring[1]);
+                        this.ofCullSleepDelay = MathHelper.clamp_int(Integer.parseInt(astring[1]), 5, 20);
                     }
 
                     if (astring[0].equals("ofCullHitboxLimit") && astring.length >= 2)
                     {
-                        this.ofCullHitboxLimit = Integer.parseInt(astring[1]);
+                        this.ofCullHitboxLimit = MathHelper.clamp_int(Integer.parseInt(astring[1]), 30, 80);
                     }
 
                     if (astring[0].equals("ofChunkUpdateLimit") && astring.length >= 2)
@@ -3424,15 +3424,15 @@ public class GameSettings
         RENDER_REGIONS("of.options.RENDER_REGIONS", false, false),
         SHOW_GL_ERRORS("of.options.SHOW_GL_ERRORS", false, false),
         SMART_ANIMATIONS("of.options.SMART_ANIMATIONS", false, false),
-        ENTITY_CULLING("Entity Culling", false, true),
-        CULL_ARMOR_STANDS("Cull Armor Stands", false, true),
-        CULL_INTERPOLATE_CAMERA("Cull Interpolate Camera", false, true),
-        CULL_TILE_BOUNDS("Cull Tile Bounds", false, true),
-        CULL_LOADED_CHUNKS("Cull Loaded Chunks", false, true),
-        LIMIT_CHUNK_UPDATES("Limit Chunk Updates", false, true),
-        CULL_TRACING_DISTANCE("Cull Tracing Distance", true, false, 64.0F, 256.0F, 1.0F),
-        CULL_SLEEP_DELAY("Cull Sleep Delay", true, false, 5.0F, 20.0F, 1.0F),
-        CULL_HITBOX_LIMIT("Cull Hitbox Limit", true, false, 30.0F, 80.0F, 1.0F),
+        ENTITY_CULLING("of.options.ENTITY_CULLING", false, true),
+        CULL_ARMOR_STANDS("of.options.CULL_ARMOR_STANDS", false, true),
+        CULL_INTERPOLATE_CAMERA("of.options.CULL_INTERPOLATE_CAMERA", false, true),
+        CULL_TILE_BOUNDS("of.options.CULL_TILE_BOUNDS", false, true),
+        CULL_LOADED_CHUNKS("of.options.CULL_LOADED_CHUNKS", false, true),
+        LIMIT_CHUNK_UPDATES("of.options.LIMIT_CHUNK_UPDATES", false, true),
+        CULL_TRACING_DISTANCE("of.options.CULL_TRACING_DISTANCE", true, false, 64.0F, 256.0F, 1.0F),
+        CULL_SLEEP_DELAY("of.options.CULL_SLEEP_DELAY", true, false, 5.0F, 20.0F, 1.0F),
+        CULL_HITBOX_LIMIT("of.options.CULL_HITBOX_LIMIT", true, false, 30.0F, 80.0F, 1.0F),
         CHUNK_UPDATE_LIMIT("Chunk Update Limit", true, false, 1.0F, 250.0F, 1.0F),
         PARTICLES_LIMIT("Particles Limit", true, false, 1.0F, 4000.0F, 1.0F);
 

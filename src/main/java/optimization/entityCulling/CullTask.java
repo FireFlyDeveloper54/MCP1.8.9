@@ -1,7 +1,9 @@
 package optimization.entityCulling;
 
-import optimization.occlusionCulling.OcclusionCullingInstance;
-import optimization.occlusionCulling.util.Vec3d;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
 import net.minecraft.block.Block;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.Minecraft;
@@ -12,191 +14,340 @@ import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.util.BlockPos;
 import net.minecraft.util.Vec3;
+import optimization.occlusionCulling.OcclusionCullingInstance;
+import optimization.occlusionCulling.util.Vec3d;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
-
-public class CullTask implements Runnable {
+public class CullTask implements Runnable
+{
+    private static final double MAX_CAMERA_DELTA_SQ = 4.0D;
     private volatile OcclusionCullingInstance culling;
     private final Minecraft client = Minecraft.getMinecraft();
     private final Set<String> unCullable;
-    public volatile boolean requestCull = false;
-    public volatile long lastTime = 0;
-
-    private final Vec3d lastPos = new Vec3d(0, 0, 0);
-    private final Vec3d aabbMin = new Vec3d(0, 0, 0);
-    private final Vec3d aabbMax = new Vec3d(0, 0, 0);
     private volatile Snapshot snapshot = Snapshot.EMPTY;
+    public volatile boolean requestCull;
+    public volatile long lastTime;
+    private final Vec3d camera = new Vec3d(0.0D, 0.0D, 0.0D);
+    private final Vec3d aabbMin = new Vec3d(0.0D, 0.0D, 0.0D);
+    private final Vec3d aabbMax = new Vec3d(0.0D, 0.0D, 0.0D);
 
-    public CullTask(OcclusionCullingInstance culling, Set<String> unCullable) {
-        this.culling = culling;
-        this.unCullable = unCullable;
+    public CullTask(OcclusionCullingInstance cullingIn, Set<String> unCullableIn)
+    {
+        this.culling = cullingIn;
+        this.unCullable = unCullableIn;
     }
 
-    public void setCulling(OcclusionCullingInstance culling) {
-        this.culling = culling;
+    public void setCulling(OcclusionCullingInstance cullingIn)
+    {
+        this.culling = cullingIn;
     }
 
-    public void captureSnapshot() {
-        WorldClient world = client.theWorld;
-        Entity viewEntity = client.getRenderViewEntity();
+    public void captureSnapshot()
+    {
+        WorldClient world = this.client.theWorld;
+        Entity viewEntity = this.client.getRenderViewEntity();
 
-        if (world == null || client.thePlayer == null || client.thePlayer.ticksExisted <= 10 || viewEntity == null) {
-            this.snapshot = Snapshot.EMPTY;
-            this.bindProviderWorld(null);
+        if (world == null || this.client.thePlayer == null || this.client.thePlayer.ticksExisted <= 10 || viewEntity == null)
+        {
+            this.clearSnapshot();
             return;
         }
 
-        ArrayList<Entity> entities = new ArrayList<Entity>(world.getLoadedEntityList());
-        ArrayList<TileEntity> tiles = new ArrayList<TileEntity>(world.loadedTileEntityList);
-        Vec3 camera = viewEntity.getPositionEyes(EntityCulling.instance.isInterpolateCamera() ? 1.0F : 0.0F);
-        boolean noCulling = client.thePlayer.isSpectator() || client.gameSettings.thirdPersonView != 0;
-        this.snapshot = new Snapshot(world, entities, tiles, camera, noCulling);
-        this.bindProviderWorld(world);
+        float cameraPartialTicks = EntityCulling.instance.isInterpolateCamera() ? this.client.getRenderPartialTicks() : 1.0F;
+        Vec3 viewPosition = viewEntity.getPositionEyes(cameraPartialTicks);
+        List<EntityData> entities = new ArrayList<EntityData>(world.getLoadedEntityList().size());
+
+        for (Entity entity : world.getLoadedEntityList())
+        {
+            if (entity == null)
+            {
+                continue;
+            }
+
+            AxisAlignedBB bounds = entity.getEntityBoundingBox();
+
+            if (bounds != null)
+            {
+                boolean markerArmorStand = entity instanceof EntityArmorStand && ((EntityArmorStand)entity).hasMarker();
+                entities.add(new EntityData(entity, bounds, entity == viewEntity, markerArmorStand));
+            }
+        }
+
+        List<TileEntityData> tileEntities = new ArrayList<TileEntityData>(world.loadedTileEntityList.size());
+
+        for (TileEntity tileEntity : world.loadedTileEntityList)
+        {
+            if (tileEntity == null || tileEntity.isInvalid() || tileEntity.getBlockType() == null)
+            {
+                continue;
+            }
+
+            BlockPos pos = tileEntity.getPos();
+            boolean unCullableTile = this.unCullable.contains(tileEntity.getBlockType().getUnlocalizedName());
+            AxisAlignedBB bounds = this.getTileEntityBounds(world, pos);
+            tileEntities.add(new TileEntityData(tileEntity, pos, bounds, unCullableTile));
+        }
+
+        boolean noCulling = this.client.thePlayer.isSpectator() || this.client.gameSettings.thirdPersonView != 0;
+        this.snapshot = new Snapshot(world, entities, tileEntities, viewPosition, noCulling);
     }
 
-    private void bindProviderWorld(WorldClient world) {
-        OcclusionCullingInstance currentCulling = this.culling;
-        if (currentCulling != null && currentCulling.getProvider() instanceof Provider) {
-            ((Provider) currentCulling.getProvider()).bindWorld(world);
+    public synchronized void clearSnapshot()
+    {
+        Snapshot previousSnapshot = this.snapshot;
+        this.snapshot = Snapshot.EMPTY;
+        this.requestCull = false;
+
+        for (int index = 0; index < previousSnapshot.entities.size(); ++index)
+        {
+            previousSnapshot.entities.get(index).entity.setCulled(false);
+        }
+
+        for (int index = 0; index < previousSnapshot.tileEntities.size(); ++index)
+        {
+            previousSnapshot.tileEntities.get(index).tileEntity.setCulled(false);
         }
     }
 
-    private void setTileEntityBounds(WorldClient world, TileEntity tileEntity, BlockPos pos) {
-        if (EntityCulling.instance.useTileEntityBounds() && world != null) {
-            try {
+    private synchronized void setCullResult(Snapshot source, Entity entity, boolean culled)
+    {
+        Snapshot currentSnapshot = this.snapshot;
+        boolean canCull = this.canCullFromSnapshot(source, currentSnapshot);
+        entity.setCulled(culled && canCull);
+    }
+
+    private synchronized void setCullResult(Snapshot source, TileEntity tileEntity, boolean culled)
+    {
+        Snapshot currentSnapshot = this.snapshot;
+        boolean canCull = this.canCullFromSnapshot(source, currentSnapshot);
+        tileEntity.setCulled(culled && canCull);
+    }
+
+    private boolean canCullFromSnapshot(Snapshot source, Snapshot currentSnapshot)
+    {
+        if (source.world == null || currentSnapshot.world != source.world || currentSnapshot.noCulling || !EntityCulling.instance.isEnabled())
+        {
+            return false;
+        }
+
+        double dx = source.camera.xCoord - currentSnapshot.camera.xCoord;
+        double dy = source.camera.yCoord - currentSnapshot.camera.yCoord;
+        double dz = source.camera.zCoord - currentSnapshot.camera.zCoord;
+        return dx * dx + dy * dy + dz * dz <= MAX_CAMERA_DELTA_SQ;
+    }
+
+    private boolean isSnapshotActive(Snapshot source)
+    {
+        Snapshot currentSnapshot = this.snapshot;
+
+        if (source.world == null || currentSnapshot.world != source.world || !EntityCulling.instance.isEnabled())
+        {
+            return false;
+        }
+
+        double dx = source.camera.xCoord - currentSnapshot.camera.xCoord;
+        double dy = source.camera.yCoord - currentSnapshot.camera.yCoord;
+        double dz = source.camera.zCoord - currentSnapshot.camera.zCoord;
+        return dx * dx + dy * dy + dz * dz <= MAX_CAMERA_DELTA_SQ;
+    }
+
+    private AxisAlignedBB getTileEntityBounds(WorldClient world, BlockPos pos)
+    {
+        if (EntityCulling.instance.useTileEntityBounds())
+            try
+            {
                 IBlockState state = world.getBlockState(pos);
                 Block block = state.getBlock();
                 AxisAlignedBB bounds = block.getSelectedBoundingBox(world, pos);
-                if (bounds == null) {
+
+                if (bounds == null)
+                {
                     bounds = block.getCollisionBoundingBox(world, pos, state);
                 }
-                if (bounds != null) {
-                    aabbMin.set(bounds.minX, bounds.minY, bounds.minZ);
-                    aabbMax.set(bounds.maxX, bounds.maxY, bounds.maxZ);
-                    return;
+
+                if (bounds != null && bounds.maxX > bounds.minX && bounds.maxY > bounds.minY && bounds.maxZ > bounds.minZ)
+                {
+                    return bounds;
                 }
-            } catch (Throwable ignored) {
             }
-        }
+            catch (Throwable ignoredException)
+            {
+            }
 
-        aabbMin.set(pos.getX(), pos.getY(), pos.getZ());
-        aabbMax.set(pos.getX() + 1.0D, pos.getY() + 1.0D, pos.getZ() + 1.0D);
+        return new AxisAlignedBB(pos.getX(), pos.getY(), pos.getZ(), pos.getX() + 1.0D, pos.getY() + 1.0D, pos.getZ() + 1.0D);
     }
 
-    private boolean isSkippableArmorstand(Entity entity) {
-        if (!EntityCulling.instance.isCullArmorStands()) return false;
-        return entity instanceof EntityArmorStand && ((EntityArmorStand) entity).hasMarker();
-    }
-
-    @Override
-    public void run() {
-        while (!Thread.currentThread().isInterrupted()) {
-            try {
-                int sleepDelay = EntityCulling.instance.getSleepDelay();
-                if (sleepDelay < 1) {
-                    sleepDelay = 1;
-                }
-                Thread.sleep(sleepDelay);
+    public void run()
+    {
+        while (!Thread.currentThread().isInterrupted())
+        {
+            try
+            {
+                Snapshot currentSnapshot = this.snapshot;
+                int sleepDelay = EntityCulling.instance.isEnabled() && currentSnapshot.world != null ? EntityCulling.instance.getSleepDelay() : 50;
+                Thread.sleep(Math.max(1, sleepDelay));
 
                 OcclusionCullingInstance currentCulling = this.culling;
-                Snapshot currentSnapshot = this.snapshot;
-                if (currentCulling == null || currentSnapshot.world == null) {
+                currentSnapshot = this.snapshot;
+
+                if (currentCulling == null || currentSnapshot.world == null || !EntityCulling.instance.isEnabled())
+                {
+                    this.requestCull = false;
                     continue;
                 }
 
-                if (EntityCulling.instance.isEnabled()) {
-                    Vec3 cameraMC = currentSnapshot.camera;
-                    if (requestCull || !(cameraMC.xCoord == lastPos.x && cameraMC.yCoord == lastPos.y && cameraMC.zCoord == lastPos.z)) {
-                        long start = System.currentTimeMillis();
-                        requestCull = false;
-                        lastPos.set(cameraMC.xCoord, cameraMC.yCoord, cameraMC.zCoord);
-                        Vec3d camera = lastPos;
-                        currentCulling.resetCache();
-                        boolean noCulling = currentSnapshot.noCulling;
-                        for (int tileIndex = 0; tileIndex < currentSnapshot.tiles.size(); ++tileIndex) {
-                            TileEntity entry = currentSnapshot.tiles.get(tileIndex);
-                            if (entry == null || entry.getBlockType() == null) {
-                                continue;
-                            }
-
-                            if (unCullable.contains(entry.getBlockType().getUnlocalizedName())) {
-                                continue;
-                            }
-
-                            if (!entry.isForcedVisible()) {
-                                if (noCulling) {
-                                    entry.setCulled(false);
-                                    continue;
-                                }
-                                BlockPos pos = entry.getPos();
-                                if (pos.distanceSq(cameraMC.xCoord, cameraMC.yCoord, cameraMC.zCoord) < 64 * 64) {
-                                    setTileEntityBounds(currentSnapshot.world, entry, pos);
-                                    boolean visible = currentCulling.isAABBVisible(aabbMin, aabbMax, camera);
-                                    entry.setCulled(!visible);
-                                } else {
-                                    entry.setCulled(false);
-                                }
-                            }
-                        }
-                        for (int entityIndex = 0; entityIndex < currentSnapshot.entities.size(); ++entityIndex) {
-                            Entity entity = currentSnapshot.entities.get(entityIndex);
-                            if (entity == null) {
-                                continue;
-                            }
-                            if (!entity.isForcedVisible()) {
-                                if (noCulling || isSkippableArmorstand(entity)) {
-                                    entity.setCulled(false);
-                                    continue;
-                                }
-                                int tracingDistance = EntityCulling.instance.getTracingDistance();
-                                double dx = entity.posX - cameraMC.xCoord;
-                                double dy = entity.posY - cameraMC.yCoord;
-                                double dz = entity.posZ - cameraMC.zCoord;
-                                if (dx * dx + dy * dy + dz * dz > tracingDistance * tracingDistance) {
-                                    entity.setCulled(false);
-                                    continue;
-                                }
-                                int hitboxLimit = EntityCulling.instance.getHitboxLimit();
-                                AxisAlignedBB boundingBox = entity.getEntityBoundingBox();
-                                if (boundingBox.maxX - boundingBox.minX > hitboxLimit || boundingBox.maxY - boundingBox.minY > hitboxLimit || boundingBox.maxZ - boundingBox.minZ > hitboxLimit) {
-                                    entity.setCulled(false);
-                                    continue;
-                                }
-                                aabbMin.set(boundingBox.minX, boundingBox.minY, boundingBox.minZ);
-                                aabbMax.set(boundingBox.maxX, boundingBox.maxY, boundingBox.maxZ);
-                                boolean visible = currentCulling.isAABBVisible(aabbMin, aabbMax, camera);
-                                entity.setCulled(!visible);
-                            }
-                        }
-                        lastTime = (System.currentTimeMillis() - start);
-                    }
+                if (!this.requestCull)
+                {
+                    continue;
                 }
-            } catch (InterruptedException interrupted) {
+
+                this.requestCull = false;
+                Provider provider = (Provider)currentCulling.getProvider();
+                provider.bindWorld(currentSnapshot.world);
+                this.camera.set(currentSnapshot.camera.xCoord, currentSnapshot.camera.yCoord, currentSnapshot.camera.zCoord);
+                currentCulling.resetCache();
+                long startTime = System.currentTimeMillis();
+
+                for (int index = 0; index < currentSnapshot.tileEntities.size() && this.isSnapshotActive(currentSnapshot); ++index)
+                {
+                    TileEntityData data = currentSnapshot.tileEntities.get(index);
+                    TileEntity tileEntity = data.tileEntity;
+
+                    if (data.unCullable || tileEntity.isForcedVisible())
+                    {
+                        continue;
+                    }
+
+                    if (currentSnapshot.noCulling || data.distanceSq(this.camera) >= 64.0D * 64.0D)
+                    {
+                        this.setCullResult(currentSnapshot, tileEntity, false);
+                        continue;
+                    }
+
+                    this.setBounds(data.bounds);
+                    boolean visible = currentCulling.isAABBVisible(this.aabbMin, this.aabbMax, this.camera);
+                    this.setCullResult(currentSnapshot, tileEntity, !visible);
+                }
+
+                int tracingDistance = EntityCulling.instance.getTracingDistance();
+                double maxDistanceSq = (double)tracingDistance * (double)tracingDistance;
+                int hitboxLimit = EntityCulling.instance.getHitboxLimit();
+
+                for (int index = 0; index < currentSnapshot.entities.size() && this.isSnapshotActive(currentSnapshot); ++index)
+                {
+                    EntityData data = currentSnapshot.entities.get(index);
+                    Entity entity = data.entity;
+
+                    if (entity.isForcedVisible())
+                    {
+                        continue;
+                    }
+
+                    if (currentSnapshot.noCulling || data.viewEntity || (data.markerArmorStand && EntityCulling.instance.isCullArmorStands()))
+                    {
+                        this.setCullResult(currentSnapshot, entity, false);
+                        continue;
+                    }
+
+                    if (data.distanceSq(this.camera) > maxDistanceSq || data.isTooLarge(hitboxLimit))
+                    {
+                        this.setCullResult(currentSnapshot, entity, false);
+                        continue;
+                    }
+
+                    this.setBounds(data.bounds);
+                    boolean visible = currentCulling.isAABBVisible(this.aabbMin, this.aabbMax, this.camera);
+                    this.setCullResult(currentSnapshot, entity, !visible);
+                }
+
+                this.lastTime = System.currentTimeMillis() - startTime;
+            }
+            catch (InterruptedException interruptedException)
+            {
                 Thread.currentThread().interrupt();
                 break;
-            } catch (Throwable ignored) {
+            }
+            catch (Throwable ignoredException)
+            {
+                // A world object may be removed while an asynchronous visibility pass is running.
             }
         }
     }
 
-    private static final class Snapshot {
-        static final Snapshot EMPTY = new Snapshot(null, Collections.<Entity>emptyList(), Collections.<TileEntity>emptyList(), new Vec3(0.0D, 0.0D, 0.0D), true);
+    private void setBounds(AxisAlignedBB bounds)
+    {
+        this.aabbMin.set(bounds.minX, bounds.minY, bounds.minZ);
+        this.aabbMax.set(bounds.maxX, bounds.maxY, bounds.maxZ);
+    }
 
-        final WorldClient world;
-        final List<Entity> entities;
-        final List<TileEntity> tiles;
-        final Vec3 camera;
-        final boolean noCulling;
+    private static final class Snapshot
+    {
+        private static final Snapshot EMPTY = new Snapshot(null, Collections.<EntityData>emptyList(), Collections.<TileEntityData>emptyList(), new Vec3(0.0D, 0.0D, 0.0D), true);
+        private final WorldClient world;
+        private final List<EntityData> entities;
+        private final List<TileEntityData> tileEntities;
+        private final Vec3 camera;
+        private final boolean noCulling;
 
-        Snapshot(WorldClient world, List<Entity> entities, List<TileEntity> tiles, Vec3 camera, boolean noCulling) {
-            this.world = world;
-            this.entities = entities;
-            this.tiles = tiles;
-            this.camera = camera;
-            this.noCulling = noCulling;
+        private Snapshot(WorldClient worldIn, List<EntityData> entitiesIn, List<TileEntityData> tileEntitiesIn, Vec3 cameraIn, boolean noCullingIn)
+        {
+            this.world = worldIn;
+            this.entities = entitiesIn;
+            this.tileEntities = tileEntitiesIn;
+            this.camera = cameraIn;
+            this.noCulling = noCullingIn;
+        }
+    }
+
+    private static final class EntityData
+    {
+        private final Entity entity;
+        private final AxisAlignedBB bounds;
+        private final boolean viewEntity;
+        private final boolean markerArmorStand;
+
+        private EntityData(Entity entityIn, AxisAlignedBB boundsIn, boolean viewEntityIn, boolean markerArmorStandIn)
+        {
+            this.entity = entityIn;
+            this.bounds = boundsIn;
+            this.viewEntity = viewEntityIn;
+            this.markerArmorStand = markerArmorStandIn;
+        }
+
+        private double distanceSq(Vec3d camera)
+        {
+            double dx = (this.bounds.minX + this.bounds.maxX) * 0.5D - camera.x;
+            double dy = (this.bounds.minY + this.bounds.maxY) * 0.5D - camera.y;
+            double dz = (this.bounds.minZ + this.bounds.maxZ) * 0.5D - camera.z;
+            return dx * dx + dy * dy + dz * dz;
+        }
+
+        private boolean isTooLarge(int hitboxLimit)
+        {
+            return this.bounds.maxX - this.bounds.minX > hitboxLimit || this.bounds.maxY - this.bounds.minY > hitboxLimit || this.bounds.maxZ - this.bounds.minZ > hitboxLimit;
+        }
+    }
+
+    private static final class TileEntityData
+    {
+        private final TileEntity tileEntity;
+        private final BlockPos pos;
+        private final AxisAlignedBB bounds;
+        private final boolean unCullable;
+
+        private TileEntityData(TileEntity tileEntityIn, BlockPos posIn, AxisAlignedBB boundsIn, boolean unCullableIn)
+        {
+            this.tileEntity = tileEntityIn;
+            this.pos = posIn;
+            this.bounds = boundsIn;
+            this.unCullable = unCullableIn;
+        }
+
+        private double distanceSq(Vec3d camera)
+        {
+            double dx = this.pos.getX() + 0.5D - camera.x;
+            double dy = this.pos.getY() + 0.5D - camera.y;
+            double dz = this.pos.getZ() + 0.5D - camera.z;
+            return dx * dx + dy * dy + dz * dz;
         }
     }
 }

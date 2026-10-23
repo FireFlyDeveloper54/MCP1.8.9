@@ -152,8 +152,10 @@ public abstract class Entity implements ICommandSender
 
     public void setCulled(boolean value)
     {
+        boolean wasCulled = this.culled;
         this.culled = value;
-        if (!value)
+
+        if (wasCulled && !value)
         {
             this.cullingTimeout = System.currentTimeMillis() + 1000;
         }

@@ -1,7 +1,6 @@
 package optimization.entityCulling;
 
 import optimization.occlusionCulling.DataProvider;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ChunkProviderClient;
 import net.minecraft.client.multiplayer.WorldClient;
 import net.minecraft.util.BlockPos;
@@ -9,8 +8,7 @@ import net.minecraft.world.chunk.IChunkProvider;
 
 public class Provider implements DataProvider {
 
-    private final Minecraft client = Minecraft.getMinecraft();
-    private WorldClient world = null;
+    private volatile WorldClient world;
     
     public void bindWorld(WorldClient worldIn) {
         this.world = worldIn;
@@ -18,8 +16,7 @@ public class Provider implements DataProvider {
 
     @Override
     public boolean prepareChunk(int chunkX, int chunkZ) {
-        WorldClient currentWorld = this.world != null ? this.world : client.theWorld;
-        this.world = currentWorld;
+        WorldClient currentWorld = this.world;
         if (currentWorld == null) {
             return false;
         }
@@ -51,7 +48,7 @@ public class Provider implements DataProvider {
 
     @Override
     public void cleanup() {
-        world = null;
+        // Keep the captured world bound for the duration of a culling pass.
     }
 
 }

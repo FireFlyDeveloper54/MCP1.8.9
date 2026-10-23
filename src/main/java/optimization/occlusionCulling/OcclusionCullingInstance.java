@@ -399,7 +399,7 @@ public class OcclusionCullingInstance {
                 int chunkX = currentX >> 4;
                 int chunkZ = currentZ >> 4;
                 if (!provider.prepareChunk(chunkX, chunkZ)) {
-                    return false;
+                    return true;
                 }
 
                 if (provider.isOpaqueFullCube(currentX, currentY, currentZ)) {

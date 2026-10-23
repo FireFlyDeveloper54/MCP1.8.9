@@ -31,20 +31,20 @@ public class EntityCulling {
 
     public int getTracingDistance() {
         Minecraft mc = Minecraft.getMinecraft();
-        if (mc == null || mc.gameSettings == null) return tracingDistance;
-        return mc.gameSettings.ofCullTracingDistance;
+        int distance = mc == null || mc.gameSettings == null ? tracingDistance : mc.gameSettings.ofCullTracingDistance;
+        return Math.max(64, Math.min(256, distance));
     }
 
     public int getSleepDelay() {
         Minecraft mc = Minecraft.getMinecraft();
-        if (mc == null || mc.gameSettings == null) return sleepDelay;
-        return mc.gameSettings.ofCullSleepDelay;
+        int delay = mc == null || mc.gameSettings == null ? sleepDelay : mc.gameSettings.ofCullSleepDelay;
+        return Math.max(5, Math.min(20, delay));
     }
 
     public int getHitboxLimit() {
         Minecraft mc = Minecraft.getMinecraft();
-        if (mc == null || mc.gameSettings == null) return hitboxLimit;
-        return mc.gameSettings.ofCullHitboxLimit;
+        int limit = mc == null || mc.gameSettings == null ? hitboxLimit : mc.gameSettings.ofCullHitboxLimit;
+        return Math.max(30, Math.min(80, limit));
     }
 
     public boolean isCullArmorStands() {
@@ -101,10 +101,30 @@ public class EntityCulling {
     }
     
     public void worldTick() {
+        if (!this.isEnabled()) {
+            if (this.cullTask != null) {
+                this.cullTask.clearSnapshot();
+            }
+            return;
+        }
+
         this.rebuildCulling();
         if (cullTask != null) {
             cullTask.captureSnapshot();
             cullTask.requestCull = true;
+        }
+    }
+
+    public void shutdown() {
+        Thread thread = this.cullThread;
+        if (this.cullTask != null) {
+            this.cullTask.clearSnapshot();
+        }
+        this.cullThread = null;
+        this.cullTask = null;
+        this.culling = null;
+        if (thread != null) {
+            thread.interrupt();
         }
     }
 
